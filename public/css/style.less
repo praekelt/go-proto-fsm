@@ -1,6 +1,21 @@
+#campaign-designer {
+    background: #fafafa;
+    width: 1024px;
+    height: 768px;
+    overflow: hidden;
 
-svg {
-    circle {
-        cursor: pointer;
+    .axis line {
+        fill: none;
+        stroke: #ddd;
+        shape-rendering: crispEdges;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .dragging {
+        cursor: move;
+
+        &.shape {
+            filter: url(#shadow);
+        }
     }
 }
