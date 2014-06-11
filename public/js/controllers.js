@@ -5,14 +5,25 @@ controllers.controller('CampaignMakerController', ['$scope',
 
         $scope.data = [
             {x: 100, y: 100, r: 50},
-            {x: 180, y: 30, r: 15},
-            {x: 160, y: 90, r: 15}
+            {x: 180, y: 30, r: 50},
+            {x: 160, y: 90, r: 30}
         ];
 
         $scope.repaint = function () {
-            var svg = d3.select('svg')
-                , width = parseInt(svg.style('width').replace('px', ''))
-                , height = parseInt(svg.style('height').replace('px', ''));
+            var drag = d3.behavior.drag().on('drag', function (d) {
+                d3.select(this).attr("cx", d3.event.x).attr("cy", d3.event.y);
+                d.x = d3.event.x;
+                d.y = d3.event.y;
+            });
+
+            var zoom = d3.behavior.zoom().scaleExtent([1, 10]).on('zoom', function () {
+                svg.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')');
+            });
+
+            var svg = d3.select('svg').append('g').call(zoom);
+
+            var width = parseInt(svg.style('width').replace('px', ''))
+            var height = parseInt(svg.style('height').replace('px', ''));
 
             var x = d3.scale.identity().domain([0, width]);
             var y = d3.scale.identity().domain([0, height]);
@@ -28,10 +39,12 @@ controllers.controller('CampaignMakerController', ['$scope',
                 .style({'stroke': '#ccc', 'stroke-width': .5});
 
             var circle = svg.selectAll('circle').data($scope.data);
+
             circle.enter().append('circle')
-            .attr('cx', function(d) { return d.x; })
-            .attr('cy', function(d) { return d.y; })
-            .attr('r', function(d) { return d.r; });
+                .attr('cx', function (d) { return d.x; })
+                .attr('cy', function (d) { return d.y; })
+                .attr('r', function (d) { return d.r; })
+                .call(drag);
         };
 
         $scope.repaint();
