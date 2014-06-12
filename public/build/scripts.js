@@ -1671,11 +1671,11 @@ g[c]:r.defaults[c];a.isDefined(f)&&null!==f?(p=encodeURIComponent(f).replace(/%4
 e){r.urlParams[e]||(c.params=c.params||{},c.params[e]=a)})}};return t}])})(window,window.angular);
 //# sourceMappingURL=angular-resource.min.js.map
 
-var app = angular.module('goprotofsm', [
+var app = angular.module('vumigo', [
     'ngRoute',
-    'goprotofsm.services',
-    'goprotofsm.controllers',
-    'goprotofsm.directives'
+    'vumigo.services',
+    'vumigo.controllers',
+    'vumigo.directives'
 ]);
 
 app.config(['$routeProvider', '$httpProvider', '$locationProvider',
@@ -1692,7 +1692,7 @@ app.config(['$routeProvider', '$httpProvider', '$locationProvider',
     function ($rootScope) {}
 ]);
 
-var controllers = angular.module('goprotofsm.controllers', []);
+var controllers = angular.module('vumigo.controllers', []);
 
 controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
@@ -1700,7 +1700,7 @@ controllers.controller('CampaignMakerController', ['$scope',
     }
 ]);
 
-var directives = angular.module('goprotofsm.directives', []);
+var directives = angular.module('vumigo.directives', []);
 
 directives.directive('goCampaignDesigner', [
     function () {
@@ -1879,4 +1879,4 @@ directives.directive('goCampaignDesigner', [
     }
 ]);
 
-var services = angular.module('goprotofsm.services', []);
+var services = angular.module('vumigo.services', []);

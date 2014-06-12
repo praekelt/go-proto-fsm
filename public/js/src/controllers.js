@@ -1,4 +1,4 @@
-var controllers = angular.module('goprotofsm.controllers', []);
+var controllers = angular.module('vumigo.controllers', []);
 
 controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {

@@ -1,4 +1,4 @@
-var directives = angular.module('goprotofsm.directives', []);
+var directives = angular.module('vumigo.directives', []);
 
 directives.directive('goCampaignDesigner', [
     function () {
