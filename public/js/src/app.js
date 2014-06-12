@@ -15,6 +15,8 @@ app.config(['$routeProvider', '$httpProvider', '$locationProvider',
         });
         $locationProvider.html5Mode(true).hashPrefix('!');
     }
+
 ]).run(['$rootScope',
-    function ($rootScope) {}
+    function ($rootScope) {
+    }
 ]);
