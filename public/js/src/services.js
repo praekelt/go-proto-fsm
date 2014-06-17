@@ -3,6 +3,21 @@ var services = angular.module('vumigo.services', []);
 services.factory('utils', [function () {
 
     /**
+     * Return the `node` element inside the given `selection`.
+     * If the `node` does not exist a new one is created.
+     *
+     * @return The `node` element.
+     */
+    function getOrCreate(selection, node) {
+        var element = selection.select(node);
+        if (element[0][0]) {
+            return element;
+        } else {
+            return selection.append(node);
+        }
+    }
+
+    /**
      * Draw a grid of the given size.
      *
      * @param {container} Grid container element.
@@ -34,26 +49,12 @@ services.factory('utils', [function () {
     }
 
     return {
+        getOrCreate: getOrCreate,
         drawGrid: drawGrid
     };
 }]);
 
-services.factory('filters', [function () {
-
-    /**
-     * Returns the <defs> element which contains the filter definitions.
-     * If the <defs> element does not exist, append one and return it.
-     *
-     * @return The <defs> element.
-     */
-    function getDefs(svg) {
-        var defs = svg.select('defs');
-        if (defs[0][0]) {
-            return defs;
-        } else {
-            return svg.append('defs');
-        }
-    }
+services.factory('filters', ['utils', function (utils) {
 
     /**
      * Create a filter which adds a transparent grey drop-shadow that blends
@@ -64,7 +65,8 @@ services.factory('filters', [function () {
      */
     function dropShadow(svg, filterId) {
         var filterId = filterId || 'shadow';
-        var filter = getDefs(svg).append('filter')
+        var defs = utils.getOrCreate(svg, 'defs');
+        var filter = defs.append('filter')
             .attr('id', filterId)
             .attr('width', 1.5)
             .attr('height', 1.5)
