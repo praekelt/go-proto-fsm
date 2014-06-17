@@ -71,11 +71,12 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
         /**
          * Create a new <svg> element.
          *
-         * @param {width} The svg canvas width.
-         * @param {height} The svg canvas height.
+         * @param {selection} Selection to which the <svg> element will be appended.
+         * @param {width} SVG canvas width.
+         * @param {height} SVG canvas height.
          */
-        function createSvg(width, height) {
-            var svg = d3.select('#' + elementId).append('svg')
+        function createSvg(selection, width, height) {
+            var svg = selection.append('svg')
                 .attr('width', width)
                 .attr('height', height);
 
@@ -121,6 +122,8 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
          * @param {$attrs} Attributes object for the element.
          */
         function link(scope, element, attrs) {
+            var selection = d3.selectAll(element.toArray());
+
             var width = scope.canvasWidth;
             var height = scope.canvasHeight;
 
@@ -133,7 +136,7 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
             var zoom = createZoomBehavior([1, 10], zoomed);
             var drag = createDragBehavior(dragstarted, dragged, dragended);
 
-            var svg = createSvg(width, height);
+            var svg = createSvg(selection, width, height);
             filters.dropShadow(svg);
 
             var canvas = createCanvas(svg, width, height, zoom);

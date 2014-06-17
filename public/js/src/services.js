@@ -20,14 +20,14 @@ services.factory('utils', [function () {
     /**
      * Draw a grid of the given size.
      *
-     * @param {container} Grid container element.
+     * @param {selection} Grid selection element.
      * @param {width} Grid width.
      * @param {height} Grid height.
      */
-    function drawGrid(container, width, height, cellSize) {
+    function drawGrid(selection, width, height, cellSize) {
         if (cellSize == 0) return;
 
-        container.append('g')
+        selection.append('g')
                 .attr('class', 'x axis')
             .selectAll('line')
                 .data(d3.range(0, width, cellSize))
@@ -37,7 +37,7 @@ services.factory('utils', [function () {
                 .attr('x2', function (d) { return d; })
                 .attr('y2', height);
 
-        container.append('g')
+        selection.append('g')
                 .attr('class', 'y axis')
             .selectAll('line')
                 .data(d3.range(0, height, cellSize))
@@ -113,7 +113,7 @@ services.factory('conversations', [function () {
          */
         var conversation = function(selection) {
             selection = selection.enter().append('g')
-                .attr('class', 'shape')
+                .attr('class', 'shape conversation')
                 .attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
                 });

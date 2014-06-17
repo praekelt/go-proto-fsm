@@ -8,7 +8,7 @@ describe('CampaignMakerController', function () {
         controller = $controller('CampaignMakerController', {$scope: scope});
     }));
 
-    it ('should have no data', function () {
-        expect(scope.data).to.be.empty;
+    it ('should have some data', function () {
+        expect(scope.data).to.not.be.empty;
     });
 });

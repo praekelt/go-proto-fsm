@@ -1782,11 +1782,12 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
         /**
          * Create a new <svg> element.
          *
-         * @param {width} The svg canvas width.
-         * @param {height} The svg canvas height.
+         * @param {selection} Selection to which the <svg> element will be appended.
+         * @param {width} SVG canvas width.
+         * @param {height} SVG canvas height.
          */
-        function createSvg(width, height) {
-            var svg = d3.select('#' + elementId).append('svg')
+        function createSvg(selection, width, height) {
+            var svg = selection.append('svg')
                 .attr('width', width)
                 .attr('height', height);
 
@@ -1832,6 +1833,8 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
          * @param {$attrs} Attributes object for the element.
          */
         function link(scope, element, attrs) {
+            var selection = d3.selectAll(element.toArray());
+
             var width = scope.canvasWidth;
             var height = scope.canvasHeight;
 
@@ -1844,7 +1847,7 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
             var zoom = createZoomBehavior([1, 10], zoomed);
             var drag = createDragBehavior(dragstarted, dragged, dragended);
 
-            var svg = createSvg(width, height);
+            var svg = createSvg(selection, width, height);
             filters.dropShadow(svg);
 
             var canvas = createCanvas(svg, width, height, zoom);
@@ -1943,14 +1946,14 @@ services.factory('utils', [function () {
     /**
      * Draw a grid of the given size.
      *
-     * @param {container} Grid container element.
+     * @param {selection} Grid selection element.
      * @param {width} Grid width.
      * @param {height} Grid height.
      */
-    function drawGrid(container, width, height, cellSize) {
+    function drawGrid(selection, width, height, cellSize) {
         if (cellSize == 0) return;
 
-        container.append('g')
+        selection.append('g')
                 .attr('class', 'x axis')
             .selectAll('line')
                 .data(d3.range(0, width, cellSize))
@@ -1960,7 +1963,7 @@ services.factory('utils', [function () {
                 .attr('x2', function (d) { return d; })
                 .attr('y2', height);
 
-        container.append('g')
+        selection.append('g')
                 .attr('class', 'y axis')
             .selectAll('line')
                 .data(d3.range(0, height, cellSize))
@@ -2036,7 +2039,7 @@ services.factory('conversations', [function () {
          */
         var conversation = function(selection) {
             selection = selection.enter().append('g')
-                .attr('class', 'shape')
+                .attr('class', 'shape conversation')
                 .attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
                 });
