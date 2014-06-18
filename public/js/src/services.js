@@ -187,17 +187,15 @@ services.factory('conversations', [function () {
         /**
          * Draw Vumi Go conversation components.
          *
-         * @param {selection} Canvas selection.
-         * @param {data} Conversation data.
+         * @param {selection} Conversation component selection.
          */
-        var conversation = function(selection, data) {
-            var conversation = selection.selectAll('.conversation').data(data);
-            var enter = conversation.enter();
+        var conversation = function(selection) {
+            var enter = selection.enter();
             if (!enter.empty()) {
                 draw(enter);
             }
-            conversation.exit().remove();
-            return conversation;
+            selection.exit().remove();
+            return selection;
         };
 
         /**

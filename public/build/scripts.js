@@ -1869,7 +1869,9 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
 
             /** Repaint the canvas **/
             function repaint() {
-                conversation(canvas, scope.data.conversations);
+                canvas.selectAll('.conversation')
+                    .data(scope.data.conversations)
+                    .call(conversation);
             }
 
             $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
@@ -2080,17 +2082,15 @@ services.factory('conversations', [function () {
         /**
          * Draw Vumi Go conversation components.
          *
-         * @param {selection} Canvas selection.
-         * @param {data} Conversation data.
+         * @param {selection} Conversation component selection.
          */
-        var conversation = function(selection, data) {
-            var conversation = selection.selectAll('.conversation').data(data);
-            var enter = conversation.enter();
+        var conversation = function(selection) {
+            var enter = selection.enter();
             if (!enter.empty()) {
                 draw(enter);
             }
-            conversation.exit().remove();
-            return conversation;
+            selection.exit().remove();
+            return selection;
         };
 
         /**

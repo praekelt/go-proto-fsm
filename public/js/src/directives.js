@@ -158,7 +158,9 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
 
             /** Repaint the canvas **/
             function repaint() {
-                conversation(canvas, scope.data.conversations);
+                canvas.selectAll('.conversation')
+                    .data(scope.data.conversations)
+                    .call(conversation);
             }
 
             $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
