@@ -10,11 +10,59 @@ services.factory('utils', [function () {
      */
     function getOrCreate(selection, node) {
         var element = selection.select(node);
-        if (element[0][0]) {
-            return element;
-        } else {
+        if (element.empty()) {
             return selection.append(node);
+        } else {
+            return element;
         }
+    }
+
+    /**
+     * Return a new zoom behavior.
+     *
+     * @param {extent} The zoom scale's allowed range as a two-element array.
+     * @param {zoomed} A callback function for the `zoom` event.
+     * @return The new zoom behavior.
+     */
+    function createZoomBehavior(extent, zoomed) {
+        var zoom = d3.behavior.zoom()
+            .scaleExtent(extent)
+            .on('zoom', zoomed);
+
+        return zoom;
+    }
+
+    /**
+     * Return a new drag behavior.
+     *
+     * @param {dragstarted} A callback function for the `dragstart` event.
+     * @param {dragged} A callback function for the `drag` event.
+     * @param {dragended} A callback function for the `dragend` event.
+     * @return The new drag behavior.
+     */
+    function createDragBehavior(dragstarted, dragged, dragended) {
+        var drag = d3.behavior.drag()
+            .origin(function (d) { return d; })
+            .on('dragstart', dragstarted)
+            .on('drag', dragged)
+            .on('dragend', dragended);
+
+        return drag;
+    }
+
+    /**
+     * Create a new <svg> element.
+     *
+     * @param {selection} Selection to which the <svg> element will be appended.
+     * @param {width} SVG canvas width.
+     * @param {height} SVG canvas height.
+     */
+    function createSvg(selection, width, height) {
+        var svg = selection.append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        return svg;
     }
 
     /**
@@ -50,6 +98,9 @@ services.factory('utils', [function () {
 
     return {
         getOrCreate: getOrCreate,
+        createZoomBehavior: createZoomBehavior,
+        createDragBehavior: createDragBehavior,
+        createSvg: createSvg,
         drawGrid: drawGrid
     };
 }]);
@@ -78,13 +129,15 @@ services.factory('filters', ['utils', function (utils) {
             .attr('stdDeviation', 2.5)
             .attr('result', 'blur');
 
+        var colorMatrix = '1 0 0 0    0\n' +
+                                     '0 1 0 0    0\n' +
+                                     '0 0 1 0    0\n' +
+                                     '0 0 0 0.4 0';
+
         filter.append('feColorMatrix')
             .attr('result', 'bluralpha')
             .attr('type', 'matrix')
-            .attr('values', '1 0 0 0    0\n' +
-                                  '0 1 0 0    0\n' +
-                                  '0 0 1 0    0\n' +
-                                  '0 0 0 0.4 0');
+            .attr('values', colorMatrix);
 
         filter.append('feOffset')
             .attr('in', 'bluralpha')
@@ -105,31 +158,46 @@ services.factory('filters', ['utils', function (utils) {
 services.factory('conversations', [function () {
     return function () {
         var radius = 20;  // Default circle radius
+        var drag = null;  // The drag behavior
 
         /**
-         * Draw a Vumi Go conversation object.
-         *
-         * @param {selection} The d3 selection object.
+         * Draw the conversation components.
          */
-        var conversation = function(selection) {
-            selection = selection.enter().append('g')
-                .attr('class', 'shape conversation')
+        var draw = function (selection) {
+            // Draw the container
+            var container = selection.append('g')
+                .attr('class', 'component conversation')
                 .attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
-                });
+                })
+                .call(drag);
 
             // Draw the circle
-            var circle = selection.append('circle')
+            var circle = container.append('circle')
                 .attr('r', radius)
                 .style('fill', '#ddd');
 
             // Draw the conversation name
-            var text = selection.append('text')
+            var text = container.append('text')
                 .text(function (d) { return d.name; })
-                .attr('x', function (d) { return -(radius + 5); })
-                .attr('y', function (d) { return -(radius + 5); });
+                .attr('x', -(radius + 5))
+                .attr('y', -(radius + 5));
+        }
 
-            return selection;
+        /**
+         * Draw Vumi Go conversation components.
+         *
+         * @param {selection} Canvas selection.
+         * @param {data} Conversation data.
+         */
+        var conversation = function(selection, data) {
+            var conversation = selection.selectAll('.conversation').data(data);
+            var enter = conversation.enter();
+            if (!enter.empty()) {
+                draw(enter);
+            }
+            conversation.exit().remove();
+            return conversation;
         };
 
         /**
@@ -141,6 +209,18 @@ services.factory('conversations', [function () {
         conversation.radius = function(value) {
             if (!arguments.length) return radius;
             radius = value;
+            return conversation;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        conversation.drag = function(value) {
+            if (!arguments.length) return drag;
+            drag = value;
             return conversation;
         };
 

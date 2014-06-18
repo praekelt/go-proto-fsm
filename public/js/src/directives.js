@@ -3,8 +3,8 @@ var directives = angular.module('vumigo.directives', []);
 /**
  * Directive to render the Vumi Go Campaign Designer.
  */
-directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
-    function (filters, conversations, utils) {
+directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversations', 'utils',
+    function ($rootScope, filters, conversations, utils) {
         var elementId = 'campaign-designer';
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -32,55 +32,6 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
             if (!angular.isDefined($scope.gridCellSize)) {
                 $scope.gridCellSize = gridCellSize;
             }
-        }
-
-        /**
-         * Return a new zoom behavior.
-         *
-         * @param {extent} The zoom scale's allowed range as a two-element array.
-         * @param {zoomed} A callback function for the `zoom` event.
-         * @return The new zoom behavior.
-         */
-        function createZoomBehavior(extent, zoomed) {
-            var extent = extent || zoomExtent;
-            var zoom = d3.behavior.zoom()
-                .scaleExtent(extent)
-                .on('zoom', zoomed);
-
-            return zoom;
-        }
-
-        /**
-         * Return a new drag behavior.
-         *
-         * @param {dragstarted} A callback function for the `dragstart` event.
-         * @param {dragged} A callback function for the `drag` event.
-         * @param {dragended} A callback function for the `dragend` event.
-         * @return The new drag behavior.
-         */
-        function createDragBehavior(dragstarted, dragged, dragended) {
-            var drag = d3.behavior.drag()
-                .origin(function (d) { return d; })
-                .on('dragstart', dragstarted)
-                .on('drag', dragged)
-                .on('dragend', dragended);
-
-            return drag;
-        }
-
-        /**
-         * Create a new <svg> element.
-         *
-         * @param {selection} Selection to which the <svg> element will be appended.
-         * @param {width} SVG canvas width.
-         * @param {height} SVG canvas height.
-         */
-        function createSvg(selection, width, height) {
-            var svg = selection.append('svg')
-                .attr('width', width)
-                .attr('height', height);
-
-            return svg;
         }
 
         /**
@@ -133,21 +84,24 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
                 height = Math.ceil(height / scope.gridCellSize) * scope.gridCellSize;
             }
 
-            var zoom = createZoomBehavior([1, 10], zoomed);
-            var drag = createDragBehavior(dragstarted, dragged, dragended);
+            // Create behaviors
+            var zoom = utils.createZoomBehavior(zoomExtent, zoomed);
+            var drag = utils.createDragBehavior(dragstarted, dragged, dragended);
 
-            var svg = createSvg(selection, width, height);
+            // Create the SVG element
+            var svg = utils.createSvg(selection, width, height);
+
+            // Create filters
             filters.dropShadow(svg);
 
+            // Create our canvas and draw the grid
             var canvas = createCanvas(svg, width, height, zoom);
             utils.drawGrid(canvas, width, height, scope.gridCellSize);
 
-            // Draw conversations
-            var conversation = conversations().radius(30);
-            canvas.selectAll('.conversation')
-                .data(scope.data.conversations)
-                .call(conversation)
-                .call(drag);
+            // Create conversation component
+            var conversation = conversations().radius(30).drag(drag);
+
+            repaint(); // Do initial draw
 
             /** Called when the canvas is dragged or scaled. */
             function zoomed() {
@@ -185,6 +139,12 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
                     y = Math.ceil(y / scope.gridCellSize) * scope.gridCellSize;
                 }
 
+                // Make sure objects don't get dragged outside the canvas
+                if (x < 0) x = 0;
+                if (x > width) x = width;
+                if (y < 0) y = 0;
+                if (y > height) y = height;
+
                 d.x = x;
                 d.y = y;
 
@@ -195,6 +155,13 @@ directives.directive('goCampaignDesigner', ['filters', 'conversations', 'utils',
             function dragended(d) {
                 d3.select(this).classed('dragging', false);
             }
+
+            /** Repaint the canvas **/
+            function repaint() {
+                conversation(canvas, scope.data.conversations);
+            }
+
+            $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
         }
 
         return {

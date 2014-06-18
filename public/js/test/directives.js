@@ -22,7 +22,7 @@ describe('goCampaignDesigner', function () {
     });
 
     it('should have created svg element', function () {
-        expect(element.find('svg').length).to.equal(1);
+        expect(element.find('svg')).to.have.length(1);
     });
 
     it('should have used default parameters', function () {
@@ -34,7 +34,7 @@ describe('goCampaignDesigner', function () {
     it('should have drawn the conversations', function () {
         var canvas = element.find('g.canvas');
         var conversations = canvas.find('g.conversation');
-        expect(conversations.length).to.equal(2);
+        expect(conversations).to.have.length(2);
         expect(conversations.eq(0).attr('transform')).to.equal('translate(100,100)');
         expect(conversations.eq(1).attr('transform')).to.equal('translate(200,200)');
     });
