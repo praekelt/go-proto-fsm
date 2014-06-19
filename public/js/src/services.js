@@ -73,7 +73,7 @@ services.factory('utils', [function () {
      * @param {height} Grid height.
      */
     function drawGrid(selection, width, height, cellSize) {
-        if (cellSize == 0) return;
+        if (cellSize === 0) return;
 
         selection.append('g')
                 .attr('class', 'x axis')
@@ -116,7 +116,7 @@ services.factory('filters', ['utils', function (utils) {
      */
     function addDropShadow(svg, filterId) {
         var defs = utils.getOrCreate(svg, 'defs');
-        var filterId = filterId || 'shadow';
+        filterId = filterId || 'shadow';
         if (!defs.select('filter#' + filterId).empty()) return;
 
         var filter = defs.append('filter')
