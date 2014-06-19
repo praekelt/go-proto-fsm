@@ -1803,7 +1803,7 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
             var svg = utils.createSvg(selection, width, height);
 
             // Create filters
-            filters.dropShadow(svg);
+            filters.addDropShadow(svg);
 
             // Create our canvas and draw the grid
             var canvas = createCanvas(svg, width, height, zoom);
@@ -2009,9 +2009,11 @@ services.factory('filters', ['utils', function (utils) {
      * @param {svg} The <svg> element.
      * @param {filterId} The filter ID; defaults to 'shadow'.
      */
-    function dropShadow(svg, filterId) {
-        var filterId = filterId || 'shadow';
+    function addDropShadow(svg, filterId) {
         var defs = utils.getOrCreate(svg, 'defs');
+        var filterId = filterId || 'shadow';
+        if (!defs.select('filter#' + filterId).empty()) return;
+
         var filter = defs.append('filter')
             .attr('id', filterId)
             .attr('width', 1.5)
@@ -2046,7 +2048,7 @@ services.factory('filters', ['utils', function (utils) {
     }
 
     return {
-        dropShadow: dropShadow
+        addDropShadow: addDropShadow
     };
 }]);
 
@@ -2056,40 +2058,41 @@ services.factory('conversations', [function () {
         var drag = null;  // The drag behavior
 
         /**
-         * Draw the conversation components.
-         */
-        var draw = function (selection) {
-            // Draw the container
-            var container = selection.append('g')
-                .attr('class', 'component conversation')
-                .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                })
-                .call(drag);
-
-            // Draw the circle
-            var circle = container.append('circle')
-                .attr('r', radius)
-                .style('fill', '#ddd');
-
-            // Draw the conversation name
-            var text = container.append('text')
-                .text(function (d) { return d.name; })
-                .attr('x', -(radius + 5))
-                .attr('y', -(radius + 5));
-        }
-
-        /**
          * Draw Vumi Go conversation components.
          *
          * @param {selection} Conversation component selection.
          */
         var conversation = function(selection) {
+            // Add new conversations
             var enter = selection.enter();
             if (!enter.empty()) {
-                draw(enter);
+                var container = enter.append('g')
+                    .attr('class', 'component conversation');
+
+                if (drag) {
+                    container.call(drag);
+                }
+
+                container.append('circle')
+                    .style('fill', '#ddd');
+
+                container.append('text');
             }
-            selection.exit().remove();
+
+            // Update conversations
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('circle')
+                .attr('r', radius);
+
+            selection.selectAll('text')
+                .attr('x', -(radius + 5))
+                .attr('y', -(radius + 5))
+                .text(function (d) { return d.name; });
+
+            selection.exit().remove();  // Remove deleted conversations
             return selection;
         };
 

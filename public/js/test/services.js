@@ -33,7 +33,15 @@ describe('filters', function () {
     it('should add shadow filter to defs', inject(function (filters) {
         var element = angular.element('<svg></svg>');
         var selection = d3.selectAll(element.toArray());
-        filters.dropShadow(selection, 'shadow-filter');
+        filters.addDropShadow(selection, 'shadow-filter');
+        expect(element.find('defs').find('filter#shadow-filter')).to.have.length(1);
+    }));
+
+    it('should add shadow filter only once', inject(function (filters) {
+        var element = angular.element('<svg></svg>');
+        var selection = d3.selectAll(element.toArray());
+        filters.addDropShadow(selection, 'shadow-filter');
+        filters.addDropShadow(selection, 'shadow-filter');
         expect(element.find('defs').find('filter#shadow-filter')).to.have.length(1);
     }));
 

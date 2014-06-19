@@ -92,7 +92,7 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
             var svg = utils.createSvg(selection, width, height);
 
             // Create filters
-            filters.dropShadow(svg);
+            filters.addDropShadow(svg);
 
             // Create our canvas and draw the grid
             var canvas = createCanvas(svg, width, height, zoom);
