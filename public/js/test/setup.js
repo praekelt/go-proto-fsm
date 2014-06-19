@@ -37,12 +37,11 @@
                         ? angular.noop
                         : fn;
 
-                    $(selection.node()).on('vumigo:' + event, function(e, data) {
-                        var oldEvent = d3.event;
-
-                        selection.each(function() {
+                    selection.each(function(d, i) {
+                        $(this).on('vumigo:' + event, function(e, data) {
+                            var oldEvent = d3.event;
                             d3.event = d3Event(this, event, data);
-                            try { fn.apply(this, arguments); }
+                            try { fn.call(this, d, i); }
                             finally { d3.event = oldEvent; }
                         });
                     });
