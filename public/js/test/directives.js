@@ -34,7 +34,15 @@ describe('goCampaignDesigner', function () {
     it('should allow canvas to be draggable', function () {
         var container = element.find('g.container');
         var canvas = element.find('g.canvas');
-        container.simulate('drag', {dx: -500, dy: -500});
+
+        container
+            .trigger('vumigo:zoomstart')
+            .trigger('vumigo:zoom', {
+                translate: [-500, -500],
+                scale: 1
+            })
+            .trigger('vumigo:zoomend');
+
         expect(canvas.eq(0).attr('transform')).to.equal('translate(-500,-500)scale(1)');
     });
 
@@ -50,7 +58,14 @@ describe('goCampaignDesigner', function () {
         var canvas = element.find('g.canvas');
         var conversations = canvas.find('g.conversation');
 
-        conversations.eq(0).simulate('drag', {dx: 500, dy: 500});
+        conversations.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: 600,
+                y: 600
+            })
+            .trigger('vumigo:dragend');
+
         expect(conversations.eq(0).attr('transform')).to.equal('translate(600,600)');
     });
 
@@ -58,10 +73,22 @@ describe('goCampaignDesigner', function () {
         var canvas = element.find('g.canvas');
         var conversations = canvas.find('g.conversation');
 
-        conversations.eq(0).simulate('drag', {dx: -500, dy: -500});
+        conversations.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: -500,
+                y: -500
+            })
+            .trigger('vumigo:dragend');
         expect(conversations.eq(0).attr('transform')).to.equal('translate(0,0)');
 
-        conversations.eq(0).simulate('drag', {dx: 5000, dy: 5000});
+        conversations.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: 5000,
+                y: 5000
+            })
+            .trigger('vumigo:dragend');
         var svg = element.find('svg');
         var transform = 'translate(' + [svg.attr('width'), svg.attr('height')] +')';
         expect(conversations.eq(0).attr('transform')).to.equal(transform);
@@ -71,10 +98,13 @@ describe('goCampaignDesigner', function () {
         var canvas = element.find('g.canvas');
         expect(canvas.attr('transform')).to.be.undefined;
 
-        canvas.trigger('vumigo:zoom', {
-            translate: [0, 0],
-            scale: [40, 50]
-        });
+        canvas
+            .trigger('vumigo:zoomstart')
+            .trigger('vumigo:zoom', {
+                translate: [0, 0],
+                scale: [40, 50]
+            })
+            .trigger('vumigo:zoomend');
 
         expect(canvas.attr('transform')).to.equal('translate(0,0)scale(40,50)');
     });

@@ -10,10 +10,12 @@
      */
     function d3Event(target, name, data) {
         data = angular.extend({}, data || {});
-        data.type = name;
-        data.sourceEvent = d3.event;
-        data.target = target;
-        return data;
+        angular.extend(data, {
+            sourceEvent: d3.event,
+            target: target
+        });
+
+        return angular.extend($.Event(name), data);
     }
 
     /**

@@ -125,7 +125,7 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
 
             /** Called when the user starts dragging an object */
             function dragstarted(d) {
-                d3.event.sourceEvent.stopPropagation();
+                if (d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation();
                 d3.select(this).classed('dragging', true);
             }
 
