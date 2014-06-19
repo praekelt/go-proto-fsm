@@ -1756,6 +1756,7 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'filters', 'conversati
          */
         function createCanvas(svg, width, height, zoom) {
             var container = svg.append('g')
+                .attr('class', 'container')
                 .attr('transform', 'translate(0, 0)')
                 .call(zoom)
                 .on('mousedown', function (e) {

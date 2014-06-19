@@ -31,6 +31,13 @@ describe('goCampaignDesigner', function () {
         expect(svg.attr('height')).to.equal('2060');
     });
 
+    it('should allow canvas to be draggable', function () {
+        var container = element.find('g.container');
+        var canvas = element.find('g.canvas');
+        container.simulate('drag', {dx: -500, dy: -500});
+        expect(canvas.eq(0).attr('transform')).to.equal('translate(-500,-500)scale(1)');
+    });
+
     it('should have drawn the conversations', function () {
         var canvas = element.find('g.canvas');
         var conversations = canvas.find('g.conversation');
@@ -38,4 +45,26 @@ describe('goCampaignDesigner', function () {
         expect(conversations.eq(0).attr('transform')).to.equal('translate(100,100)');
         expect(conversations.eq(1).attr('transform')).to.equal('translate(200,200)');
     });
+
+    it('should allow conversations to be draggable', function () {
+        var canvas = element.find('g.canvas');
+        var conversations = canvas.find('g.conversation');
+
+        conversations.eq(0).simulate('drag', {dx: 500, dy: 500});
+        expect(conversations.eq(0).attr('transform')).to.equal('translate(600,600)');
+    });
+
+    it('should not allow conversation to be dragged outside canvas', function () {
+        var canvas = element.find('g.canvas');
+        var conversations = canvas.find('g.conversation');
+
+        conversations.eq(0).simulate('drag', {dx: -500, dy: -500});
+        expect(conversations.eq(0).attr('transform')).to.equal('translate(0,0)');
+
+        conversations.eq(0).simulate('drag', {dx: 5000, dy: 5000});
+        var svg = element.find('svg');
+        var transform = 'translate(' + [svg.attr('width'), svg.attr('height')] +')';
+        expect(conversations.eq(0).attr('transform')).to.equal(transform);
+    });
+
 });
