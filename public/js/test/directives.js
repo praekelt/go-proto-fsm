@@ -67,4 +67,15 @@ describe('goCampaignDesigner', function () {
         expect(conversations.eq(0).attr('transform')).to.equal(transform);
     });
 
+    it('should be zoomable', function() {
+        var canvas = element.find('g.canvas');
+        expect(canvas.attr('transform')).to.be.undefined;
+
+        canvas.trigger('vumigo:zoom', {
+            translate: [0, 0],
+            scale: [40, 50]
+        });
+
+        expect(canvas.attr('transform')).to.equal('translate(0,0)scale(40,50)');
+    });
 });
