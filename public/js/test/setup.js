@@ -11,7 +11,7 @@
     function d3Event(target, name, data) {
         data = angular.extend({}, data || {}, {
             sourceEvent: d3.event,
-            target: target
+            target: target,
         });
 
         return angular.extend($.Event(name), data);
