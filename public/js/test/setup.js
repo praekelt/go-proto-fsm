@@ -9,12 +9,10 @@
      * https://github.com/mbostock/d3/blob/master/src/event/event.js#L35-L46
      */
     function d3Event(target, name, data) {
-        data = angular.extend({}, data || {}, {
+        return $.Event(name, angular.extend({}, data || {}, {
             sourceEvent: d3.event,
-            target: target,
-        });
-
-        return angular.extend($.Event(name), data);
+            target: target
+        }));
     }
 
     /**
