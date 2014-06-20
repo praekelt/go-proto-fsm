@@ -3,66 +3,50 @@ var services = angular.module('vumigo.services', []);
 services.factory('utils', [function () {
 
     /**
-     * Return the `node` element inside the given `selection`.
-     * If the `node` does not exist a new one is created.
+     * Create a filter which adds a transparent grey drop-shadow that blends
+     * with the background colour.
      *
-     * @return The `node` element.
+     * @param {svg} The <svg> element.
      */
-    function getOrCreate(selection, node) {
-        var element = selection.select(node);
-        if (element.empty()) {
-            return selection.append(node);
-        } else {
-            return element;
+    function addDropShadowFilter(svg) {
+        var defs =  svg.select('defs');
+        if (defs.empty()) {
+            defs = svg.append('defs');
         }
-    }
 
-    /**
-     * Return a new zoom behavior.
-     *
-     * @param {extent} The zoom scale's allowed range as a two-element array.
-     * @param {zoomed} A callback function for the `zoom` event.
-     * @return The new zoom behavior.
-     */
-    function createZoomBehavior(extent, zoomed) {
-        var zoom = d3.behavior.zoom()
-            .scaleExtent(extent)
-            .on('zoom', zoomed);
+        if (defs.select('filter#shadow').empty()) {
+            var filter = defs.append('filter')
+                .attr('id', 'shadow')
+                .attr('width', 1.5)
+                .attr('height', 1.5)
+                .attr('x', -0.25)
+                .attr('y', -0.25);
 
-        return zoom;
-    }
+            filter.append('feGaussianBlur')
+                .attr('in', 'SourceAlpha')
+                .attr('stdDeviation', 2.5)
+                .attr('result', 'blur');
 
-    /**
-     * Return a new drag behavior.
-     *
-     * @param {dragstarted} A callback function for the `dragstart` event.
-     * @param {dragged} A callback function for the `drag` event.
-     * @param {dragended} A callback function for the `dragend` event.
-     * @return The new drag behavior.
-     */
-    function createDragBehavior(dragstarted, dragged, dragended) {
-        var drag = d3.behavior.drag()
-            .origin(function (d) { return d; })
-            .on('dragstart', dragstarted)
-            .on('drag', dragged)
-            .on('dragend', dragended);
+            var colorMatrix = '1 0 0 0    0\n' +
+                                         '0 1 0 0    0\n' +
+                                         '0 0 1 0    0\n' +
+                                         '0 0 0 0.4 0';
 
-        return drag;
-    }
+            filter.append('feColorMatrix')
+                .attr('result', 'bluralpha')
+                .attr('type', 'matrix')
+                .attr('values', colorMatrix);
 
-    /**
-     * Create a new <svg> element.
-     *
-     * @param {selection} Selection to which the <svg> element will be appended.
-     * @param {width} SVG canvas width.
-     * @param {height} SVG canvas height.
-     */
-    function createSvg(selection, width, height) {
-        var svg = selection.append('svg')
-            .attr('width', width)
-            .attr('height', height);
+            filter.append('feOffset')
+                .attr('in', 'bluralpha')
+                .attr('dx', 3)
+                .attr('dy', 3)
+                .attr('result', 'offsetBlur');
 
-        return svg;
+            var femerge = filter.append('feMerge');
+            femerge.append('feMergeNode').attr('in', 'offsetBlur');
+            femerge.append('feMergeNode').attr('in', 'SourceGraphic');
+        }
     }
 
     /**
@@ -97,67 +81,109 @@ services.factory('utils', [function () {
     }
 
     return {
-        getOrCreate: getOrCreate,
-        createZoomBehavior: createZoomBehavior,
-        createDragBehavior: createDragBehavior,
-        createSvg: createSvg,
+        addDropShadowFilter: addDropShadowFilter,
         drawGrid: drawGrid
     };
 }]);
 
-services.factory('filters', ['utils', function (utils) {
+services.factory('canvas', ['utils', function (utils) {
+    return function () {
+        var width = 2048;
+        var height = 2048;
+        var gridCellSize = 0;
+        var zoomExtent = [1, 10];
 
-    /**
-     * Create a filter which adds a transparent grey drop-shadow that blends
-     * with the background colour.
-     *
-     * @param {svg} The <svg> element.
-     * @param {filterId} The filter ID; defaults to 'shadow'.
-     */
-    function addDropShadow(svg, filterId) {
-        var defs = utils.getOrCreate(svg, 'defs');
-        filterId = filterId || 'shadow';
-        if (!defs.select('filter#' + filterId).empty()) return;
+        var canvas = function(selection) {
+            var viewport = $(selection[0]);
 
-        var filter = defs.append('filter')
-            .attr('id', filterId)
-            .attr('width', 1.5)
-            .attr('height', 1.5)
-            .attr('x', -0.25)
-            .attr('y', -0.25);
+            // Round `width` and `height` up to the nearest `gridCellSize`
+            if (gridCellSize > 0) {
+                width = Math.ceil(width / gridCellSize) * gridCellSize;
+                height = Math.ceil(height / gridCellSize) * gridCellSize;
+            }
 
-        filter.append('feGaussianBlur')
-            .attr('in', 'SourceAlpha')
-            .attr('stdDeviation', 2.5)
-            .attr('result', 'blur');
+            var svg = selection.append('svg')
+                .attr('width', width)
+                .attr('height', height);
 
-        var colorMatrix = '1 0 0 0    0\n' +
-                                     '0 1 0 0    0\n' +
-                                     '0 0 1 0    0\n' +
-                                     '0 0 0 0.4 0';
+            utils.addDropShadowFilter(svg);
 
-        filter.append('feColorMatrix')
-            .attr('result', 'bluralpha')
-            .attr('type', 'matrix')
-            .attr('values', colorMatrix);
+            var zoom = d3.behavior.zoom()
+                .scaleExtent(zoomExtent)
+                .on('zoom', zoomed);
 
-        filter.append('feOffset')
-            .attr('in', 'bluralpha')
-            .attr('dx', 3)
-            .attr('dy', 3)
-            .attr('result', 'offsetBlur');
+            var container = svg.append('g')
+                .attr('class', 'container')
+                .attr('transform', 'translate(0, 0)')
+                .call(zoom)
+                .on('mousedown', function () {
+                    d3.select(this).classed('dragging', true);
+                }).on('mouseup', function () {
+                    d3.select(this).classed('dragging', false);
+                });
 
-        var femerge = filter.append('feMerge');
-        femerge.append('feMergeNode').attr('in', 'offsetBlur');
-        femerge.append('feMergeNode').attr('in', 'SourceGraphic');
-    }
+            var rect = container.append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .style('fill', 'none')
+                .style('pointer-events', 'all');
 
-    return {
-        addDropShadow: addDropShadow
+            var canvas = container.append('g')
+                .attr('class', 'canvas');
+
+            utils.drawGrid(canvas, width, height, gridCellSize);
+
+            /** Called when the canvas is dragged or scaled. */
+            function zoomed() {
+                // Prevent canvas being moved beyond the viewport
+                var translate = d3.event.translate;
+                var scale = d3.event.scale;
+
+                if (translate[0] > 0) translate[0] = 0;
+                var limit = viewport.width() - width * scale;
+                if (translate[0] < limit) translate[0] = limit;
+
+                if (translate[1] > 0) { translate[1] = 0; }
+                limit = viewport.height() - height * scale;
+                if (translate[1] < limit) { translate[1] = limit; }
+
+                zoom.translate(translate);  // Set the zoom translation vector
+
+                canvas.attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+            }
+
+            return canvas;
+        }
+
+        canvas.width = function(value) {
+            if (!arguments.length) return width;
+            width = value;
+            return canvas;
+        };
+
+       canvas.height = function(value) {
+            if (!arguments.length) return height;
+            height = value;
+            return canvas;
+        };
+
+       canvas.gridCellSize = function(value) {
+            if (!arguments.length) return gridCellSize;
+            gridCellSize = value;
+            return canvas;
+        };
+
+       canvas.zoomExtent = function(value) {
+            if (!arguments.length) return zoomExtent;
+            zoomExtent = value;
+            return canvas;
+        };
+
+        return canvas;
     };
 }]);
 
-services.factory('conversations', [function () {
+services.factory('conversation', [function () {
     return function () {
         var radius = 20;  // Default circle radius
         var drag = null;  // The drag behavior
