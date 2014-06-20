@@ -9,13 +9,10 @@
      * https://github.com/mbostock/d3/blob/master/src/event/event.js#L35-L46
      */
     function d3Event(target, name, data) {
-        data = angular.extend({}, data || {});
-        angular.extend(data, {
+        return $.Event(name, angular.extend({}, data || {}, {
             sourceEvent: d3.event,
             target: target
-        });
-
-        return angular.extend($.Event(name), data);
+        }));
     }
 
     /**
@@ -24,11 +21,11 @@
      * normally would), but also allows us to trigger the behavior's
      * events on jquery selections.
      */
-    function wrapBehavior(behaviorName, events) {
-        var behaviorType = d3.behavior[behaviorName];
+    function wrapBehavior(name, events) {
+        var type = d3.behavior[name];
 
-        d3.behavior[behaviorName] = rebind(function() {
-            var behavior = behaviorType();
+        d3.behavior[name] = rebind(function() {
+            var behavior = type.apply(this, arguments);
 
             return rebind(function(selection) {
                 events.forEach(function(event) {
@@ -50,7 +47,7 @@
                 return behavior.call(this, selection);
             }, behavior);
 
-        }, behaviorType);
+        }, type);
     }
 
     wrapBehavior('zoom', ['zoomstart', 'zoom', 'zoomend']);
