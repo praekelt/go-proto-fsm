@@ -1,22 +1,6 @@
 describe('utils', function () {
     beforeEach(module('vumigo.services'));
 
-    it('getOrCreate should create a new element', inject(function (utils) {
-        var element = angular.element('<svg width="100" height="100"></svg>');
-        var selection = d3.selectAll(element.toArray());
-        var g = utils.getOrCreate(selection, 'g');
-        expect(g).to.have.length(1);
-        expect(element.find('g')).to.have.length(1);
-    }));
-
-    it('getOrCreate should return existing element', inject(function (utils) {
-        var element = angular.element('<svg width="100" height="100"><g></g></svg>');
-        var selection = d3.selectAll(element.toArray());
-        var g = utils.getOrCreate(selection, 'g');
-        expect(g).to.have.length(1);
-        expect(element.find('g')).to.have.length(1);
-    }));
-
     it('drawGrid should draw grid in selection', inject(function (utils) {
         var element = angular.element('<svg width="100" height="100"></svg>');
         var selection = d3.selectAll(element.toArray());
@@ -25,35 +9,30 @@ describe('utils', function () {
         expect(element.find('g.y.axis')).to.have.length(1);
     }));
 
-});
-
-describe('filters', function () {
-    beforeEach(module('vumigo.services'));
-
-    it('should add shadow filter to defs', inject(function (filters) {
+    it('addDropShadowFilter should add shadow filter to defs', inject(function (utils) {
         var element = angular.element('<svg></svg>');
         var selection = d3.selectAll(element.toArray());
-        filters.addDropShadow(selection, 'shadow-filter');
-        expect(element.find('defs').find('filter#shadow-filter')).to.have.length(1);
+        utils.addDropShadowFilter(selection);
+        expect(element.find('defs').find('filter#shadow')).to.have.length(1);
     }));
 
-    it('should add shadow filter only once', inject(function (filters) {
+    it('addDropShadowFilter should add shadow filter only once', inject(function (utils) {
         var element = angular.element('<svg></svg>');
         var selection = d3.selectAll(element.toArray());
-        filters.addDropShadow(selection, 'shadow-filter');
-        filters.addDropShadow(selection, 'shadow-filter');
-        expect(element.find('defs').find('filter#shadow-filter')).to.have.length(1);
+        utils.addDropShadowFilter(selection);
+        utils.addDropShadowFilter(selection);
+        expect(element.find('defs').find('filter#shadow')).to.have.length(1);
     }));
 
 });
 
-describe('conversations', function () {
+describe('conversation', function () {
     beforeEach(module('vumigo.services'));
 
-    it('should draw a conversation shape', inject(function (conversations) {
+    it('should draw a conversation shape', inject(function (conversation) {
         var element = angular.element('<svg width="100" height="100"></svg>');
         var selection = d3.selectAll(element.toArray());
-        var conversation = conversations().radius(30);
+        conversation = conversation().radius(30);
         selection.selectAll('.conversation')
             .data([{x: 50, y: 50, name: "Conversation 1"}])
             .call(conversation);
