@@ -3,8 +3,12 @@ var directives = angular.module('vumigo.directives', []);
 /**
  * Directive to render the Vumi Go Campaign Designer.
  */
-directives.directive('goCampaignDesigner', ['$rootScope', 'canvas', 'conversation',
-    function ($rootScope, canvasService, conversationService) {
+directives.directive('goCampaignDesigner', [
+    '$rootScope',
+    'canvasBuilder',
+    'dragBehavior',
+    'conversationComponent',
+    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -40,61 +44,30 @@ directives.directive('goCampaignDesigner', ['$rootScope', 'canvas', 'conversatio
          * @param {$attrs} Attributes object for the element.
          */
         function link(scope, element, attrs) {
-            var canvasFactory = canvasService()
-                .width(scope.canvasWidth)
-                .height(scope.canvasHeight)
-                .gridCellSize(scope.gridCellSize);
+            var width = scope.canvasWidth;
+            var height = scope.canvasHeight;
 
-            var canvas = canvasFactory(d3.selectAll(element.toArray()));
+            // Round `width` and `height` up to the nearest `scope.gridCellSize`
+            if (scope.gridCellSize > 0) {
+                width = Math.ceil(width / scope.gridCellSize) * scope.gridCellSize;
+                height = Math.ceil(height / scope.gridCellSize) * scope.gridCellSize;
+            }
 
-            var drag = d3.behavior.drag()
-                .on('dragstart', dragstarted)
-                .on('drag', dragged)
-                .on('dragend', dragended);
+            var canvas = canvasBuilder()
+                .width(width)
+                .height(height)
+                .gridCellSize(scope.gridCellSize)
+                .apply(null, [d3.selectAll(element.toArray())]);
 
-            conversation = conversationService().drag(drag);
+            var drag = dragBehavior()
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
+                .call();
+
+            var conversation = conversationComponent().drag(drag);
 
             repaint(); // Do initial draw
-
-            /** Called when the user starts dragging a component */
-            function dragstarted() {
-                if (d3.event.sourceEvent) {
-                    d3.event.sourceEvent.stopPropagation();
-                }
-                d3.select(this).classed('dragging', true);
-            }
-
-            /** Called while the user is dragging a component */
-            function dragged(d) {
-                var x = d3.event.x;
-                var y = d3.event.y;
-
-                // If we have a grid, snap to it
-                var cellSize = canvasFactory.gridCellSize;
-                if (cellSize > 0) {
-                    x = Math.ceil(x / cellSize) * cellSize;
-                    y = Math.ceil(y / cellSize) * cellSize;
-                }
-
-                // Make sure components don't get dragged outside the canvas
-                var width = canvasFactory.width();
-                if (x < 0) x = 0;
-                if (x > width) x = width;
-
-                var height = canvasFactory.height();
-                if (y < 0) y = 0;
-                if (y > height) y = height;
-
-                d.x = x;
-                d.y = y;
-
-                d3.select(this).attr('transform', 'translate(' + [x, y] + ')');
-            }
-
-            /** Called after the user drops a component */
-            function dragended() {
-                d3.select(this).classed('dragging', false);
-            }
 
             /** Repaint the canvas **/
             function repaint() {

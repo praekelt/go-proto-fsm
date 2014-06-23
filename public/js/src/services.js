@@ -1,22 +1,29 @@
 var services = angular.module('vumigo.services', []);
 
-services.factory('utils', [function () {
+services.factory('svgToolbox', [function () {
 
     /**
-     * Create a filter which adds a transparent grey drop-shadow that blends
-     * with the background colour.
-     *
-     * @param {svg} The <svg> element.
+     * Select the first element from the given selection that matches the
+     * selector. If selector matches nothing a new element is created.
      */
-    function addDropShadowFilter(svg) {
-        var defs =  svg.select('defs');
-        if (defs.empty()) {
-            defs = svg.append('defs');
+    function selectOrAppend(selection, selector) {
+        var element = selection.select(selector);
+        if (element.empty()) {
+            return selection.append(selector);
         }
+        return element;
+    }
 
-        if (defs.select('filter#shadow').empty()) {
+    /**
+     * Create an SVG filter which gives a shadow effect
+     * when applied to an SVG element.
+     */
+    function createShadowFilter(selection) {
+        var filterId = 'shadow';
+        var defs = selectOrAppend(selection, 'defs');
+        if (defs.select('filter#' + filterId).empty()) {
             var filter = defs.append('filter')
-                .attr('id', 'shadow')
+                .attr('id', filterId)
                 .attr('width', 1.5)
                 .attr('height', 1.5)
                 .attr('x', -0.25)
@@ -50,148 +57,294 @@ services.factory('utils', [function () {
     }
 
     /**
-     * Draw a grid of the given size.
-     *
-     * @param {selection} Grid selection element.
-     * @param {width} Grid width.
-     * @param {height} Grid height.
+     * Draw a grid of the supplied width and height in the given selection.
      */
     function drawGrid(selection, width, height, cellSize) {
-        if (cellSize === 0) return;
+        if (cellSize > 0) {
+            selection.append('g')
+                    .attr('class', 'x axis')
+                .selectAll('line')
+                    .data(d3.range(0, width, cellSize))
+                .enter().append('line')
+                    .attr('x1', function (d) { return d; })
+                    .attr('y1', 0)
+                    .attr('x2', function (d) { return d; })
+                    .attr('y2', height);
 
-        selection.append('g')
-                .attr('class', 'x axis')
-            .selectAll('line')
-                .data(d3.range(0, width, cellSize))
-            .enter().append('line')
-                .attr('x1', function (d) { return d; })
-                .attr('y1', 0)
-                .attr('x2', function (d) { return d; })
-                .attr('y2', height);
-
-        selection.append('g')
-                .attr('class', 'y axis')
-            .selectAll('line')
-                .data(d3.range(0, height, cellSize))
-            .enter().append('line')
-                .attr('x1', 0)
-                .attr('y1', function (d) { return d; })
-                .attr('x2', width)
-                .attr('y2', function (d) { return d; });
+            selection.append('g')
+                    .attr('class', 'y axis')
+                .selectAll('line')
+                    .data(d3.range(0, height, cellSize))
+                .enter().append('line')
+                    .attr('x1', 0)
+                    .attr('y1', function (d) { return d; })
+                    .attr('x2', width)
+                    .attr('y2', function (d) { return d; });
+        }
     }
 
     return {
-        addDropShadowFilter: addDropShadowFilter,
+        selectOrAppend: selectOrAppend,
+        createShadowFilter: createShadowFilter,
         drawGrid: drawGrid
     };
 }]);
 
-services.factory('canvas', ['utils', function (utils) {
+services.factory('zoomBehavior', [function () {
     return function () {
-        var width = 2048;
-        var height = 2048;
-        var gridCellSize = 0;
-        var zoomExtent = [1, 10];
+        var zoomBehavior = null;  // Zoom behavior instance
+        var canvas = null;  // Canvas to get zoomed/dragged
+        var canvasWidth = 0; // Canvas width
+        var canvasHeight = 0; // Canvas height
+        var viewportElement = null;  // Viewport wrapped in a jQuery object
+        var zoomExtent = [1, 10];  // Default zoom extent
 
-        var canvas = function(selection) {
-            var viewport = $(selection[0]);
+        /**
+         * Called when the canvas is dragged or scaled.
+         */
+        function zoomed() {
+            var translate = d3.event.translate;
+            var scale = d3.event.scale;
 
-            // Round `width` and `height` up to the nearest `gridCellSize`
-            if (gridCellSize > 0) {
-                width = Math.ceil(width / gridCellSize) * gridCellSize;
-                height = Math.ceil(height / gridCellSize) * gridCellSize;
+            if (translate[0] > 0) {
+                translate[0] = 0;
             }
 
-            var svg = selection.append('svg')
-                .attr('width', width)
-                .attr('height', height);
+            if (translate[1] > 0) {
+                translate[1] = 0;
+            }
 
-            utils.addDropShadowFilter(svg);
+            // Prevent canvas being moved beyond the viewport
+            if (viewportElement && viewportElement.length > 0) {
+                if (canvasWidth > 0) {
+                    var x = viewportElement.width() - canvasWidth * scale;
+                    if (translate[0] < x) {
+                        translate[0] = x;
+                    }
+                }
 
-            var zoom = d3.behavior.zoom()
+                if (canvasHeight > 0) {
+                    var y = viewportElement.height() - canvasHeight * scale;
+                    if (translate[1] < y) {
+                        translate[1] = y;
+                    }
+                }
+            }
+
+            zoomBehavior.translate(translate);  // Set the zoom translation vector
+
+            canvas.attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+        }
+
+        var zoom = function () {
+            zoomBehavior = d3.behavior.zoom()
                 .scaleExtent(zoomExtent)
                 .on('zoom', zoomed);
 
-            var container = svg.append('g')
-                .attr('class', 'container')
-                .attr('transform', 'translate(0, 0)')
-                .call(zoom)
-                .on('mousedown', function () {
-                    d3.select(this).classed('dragging', true);
-                }).on('mouseup', function () {
-                    d3.select(this).classed('dragging', false);
-                });
-
-            var rect = container.append('rect')
-                .attr('width', width)
-                .attr('height', height)
-                .style('fill', 'none')
-                .style('pointer-events', 'all');
-
-            var canvas = container.append('g')
-                .attr('class', 'canvas');
-
-            utils.drawGrid(canvas, width, height, gridCellSize);
-
-            /** Called when the canvas is dragged or scaled. */
-            function zoomed() {
-                // Prevent canvas being moved beyond the viewport
-                var translate = d3.event.translate;
-                var scale = d3.event.scale;
-
-                if (translate[0] > 0) translate[0] = 0;
-                var limit = viewport.width() - width * scale;
-                if (translate[0] < limit) translate[0] = limit;
-
-                if (translate[1] > 0) { translate[1] = 0; }
-                limit = viewport.height() - height * scale;
-                if (translate[1] < limit) { translate[1] = limit; }
-
-                zoom.translate(translate);  // Set the zoom translation vector
-
-                canvas.attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
-            }
-
-            return canvas;
-        }
-
-        canvas.width = function(value) {
-            if (!arguments.length) return width;
-            width = value;
-            return canvas;
+            return zoomBehavior;
         };
 
-       canvas.height = function(value) {
-            if (!arguments.length) return height;
-            height = value;
-            return canvas;
+        zoom.canvas = function(value) {
+            if (!arguments.length) return canvas;
+            canvas = value;
+            return zoom;
         };
 
-       canvas.gridCellSize = function(value) {
-            if (!arguments.length) return gridCellSize;
-            gridCellSize = value;
-            return canvas;
+        zoom.canvasWidth = function(value) {
+            if (!arguments.length) return canvasWidth;
+            canvasWidth = value;
+            return zoom;
         };
 
-       canvas.zoomExtent = function(value) {
+       zoom.canvasHeight = function(value) {
+            if (!arguments.length) return canvasHeight;
+            canvasHeight = value;
+            return zoom;
+        };
+
+       zoom.viewportElement = function(value) {
+            if (!arguments.length) return viewportElement;
+            viewportElement = value;
+            return zoom;
+        };
+
+        zoom.zoomExtent = function(value) {
             if (!arguments.length) return zoomExtent;
             zoomExtent = value;
-            return canvas;
+            return zoom;
         };
 
-        return canvas;
+        return zoom;
     };
 }]);
 
-services.factory('conversation', [function () {
+services.factory('dragBehavior', [function () {
+    return function () {
+        var canvasWidth = 0;
+        var canvasHeight = 0;
+        var gridCellSize = 0;
+
+        /**
+         * Called when the user starts dragging a component
+         */
+        function dragstarted() {
+            if (d3.event.sourceEvent) {
+                d3.event.sourceEvent.stopPropagation();
+            }
+            d3.select(this).classed('dragging', true);
+        }
+
+        /**
+         * Called while the user is dragging a component
+         */
+        function dragged(d) {
+            var x = d3.event.x;
+            var y = d3.event.y;
+
+            // If we have a grid, snap to it
+            if (gridCellSize > 0) {
+                x = Math.round(x / gridCellSize) * gridCellSize;
+                y = Math.round(y / gridCellSize) * gridCellSize;
+            }
+
+            // Make sure components don't get dragged outside the canvas
+            if (x < 0) x = 0;
+            if (canvasWidth > 0) {
+                if (x > canvasWidth) x = canvasWidth;
+            }
+
+            if (y < 0) y = 0;
+            if (canvasHeight > 0) {
+                if (y > canvasHeight) y = canvasHeight;
+            }
+
+            d.x = x;
+            d.y = y;
+
+            d3.select(this).attr('transform', 'translate(' + [x, y] + ')');
+        }
+
+        /**
+         * Called after the user drops a component
+         */
+        function dragended() {
+            d3.select(this).classed('dragging', false);
+        }
+
+        var drag = function() {
+            return d3.behavior.drag()
+                .on('dragstart', dragstarted)
+                .on('drag', dragged)
+                .on('dragend', dragended);
+        }
+
+        drag.canvasWidth = function(value) {
+            if (!arguments.length) return canvasWidth;
+            canvasWidth = value;
+            return drag;
+        };
+
+       drag.canvasHeight = function(value) {
+            if (!arguments.length) return canvasHeight;
+            canvasHeight = value;
+            return drag;
+        };
+
+       drag.gridCellSize = function(value) {
+            if (!arguments.length) return gridCellSize;
+            gridCellSize = value;
+            return drag;
+        };
+
+        return drag;
+    }
+}]);
+
+services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
+    function (zoomBehavior, svgToolbox) {
+        return function () {
+            var width = 2048;  // Default canvas width
+            var height = 2048;  // Default canvas height
+            var gridCellSize = 0;  // Disable grid by default
+
+            var canvas = function(selection) {
+                var viewportElement = $(selection[0]);
+
+                var svg = svgToolbox.selectOrAppend(selection, 'svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                svgToolbox.createShadowFilter(svg);
+
+                var container = svg.append('g')
+                    .attr('class', 'container')
+                    .attr('transform', 'translate(0, 0)');
+
+                var rect = container.append('rect')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .style('fill', 'none')
+                    .style('pointer-events', 'all');
+
+                var canvas = container.append('g')
+                    .attr('class', 'canvas');
+
+                svgToolbox.drawGrid(canvas, width, height, gridCellSize);
+
+                var zoom = zoomBehavior()
+                    .canvas(canvas)
+                    .canvasWidth(width)
+                    .canvasHeight(height)
+                    .viewportElement(viewportElement)
+                    .call();
+
+                container.on('mousedown', function () {
+                    d3.select(this).classed('dragging', true);
+                }).on('mouseup', function () {
+                    d3.select(this).classed('dragging', false);
+                }).call(zoom);
+
+                return canvas;
+            };
+
+            canvas.width = function(value) {
+                if (!arguments.length) return width;
+                width = value;
+                return canvas;
+            };
+
+           canvas.height = function(value) {
+                if (!arguments.length) return height;
+                height = value;
+                return canvas;
+            };
+
+           canvas.gridCellSize = function(value) {
+                if (!arguments.length) return gridCellSize;
+                gridCellSize = value;
+                return canvas;
+            };
+
+           canvas.zoomExtent = function(value) {
+                if (!arguments.length) return zoomExtent;
+                zoomExtent = value;
+                return canvas;
+            };
+
+            return canvas;
+        };
+    }
+]);
+
+services.factory('conversationComponent', [function () {
     return function () {
         var radius = 20;  // Default circle radius
         var drag = null;  // The drag behavior
 
         /**
-         * Draw Vumi Go conversation components.
+         * Repaint conversation components.
          *
-         * @param {selection} Conversation component selection.
+         * @param {selection} Selection containing components.
          */
         var conversation = function(selection) {
             // Add new conversations
