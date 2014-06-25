@@ -71,8 +71,7 @@ directives.directive('goCampaignDesigner', [
 
             /** Repaint the canvas **/
             function repaint() {
-                canvas.selectAll('.conversation')
-                    .data(scope.data.conversations)
+                canvas.datum(scope.data)
                     .call(conversation);
             }
 
