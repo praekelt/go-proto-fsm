@@ -347,42 +347,37 @@ services.factory('conversationComponent', [function () {
          * @param {selection} Selection containing components.
          */
         var conversation = function(selection) {
-            selection.each(function (d, i) {
-                var conversation = d3.select(this).selectAll('.conversation')
-                    .data(d.conversations);
+            if (selection.enter) {
+                var container = selection.enter().append('g')
+                    .attr('class', 'component conversation');
 
-                // Enter
-                var enter = conversation.enter();
-                if (!enter.empty()) {
-                    var container = enter.append('g')
-                        .attr('class', 'component conversation');
-
-                    if (drag) {
-                        container.call(drag);
-                    }
-
+                if (!container.empty()) {
                     container.append('circle')
                         .style('fill', '#ddd');
 
                     container.append('text');
+
+                    if (drag) {
+                        container.call(drag);
+                    }
                 }
+            }
 
-                // Update
-                conversation.attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
-
-                conversation.selectAll('circle')
-                    .attr('r', radius);
-
-                conversation.selectAll('text')
-                    .attr('x', -(radius + 5))
-                    .attr('y', -(radius + 5))
-                    .text(function (d) { return d.name; });
-
-                // Exit
-                conversation.exit().remove();
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
             });
+
+            selection.selectAll('circle')
+                .attr('r', radius);
+
+            selection.selectAll('text')
+                .attr('x', -(radius + 5))
+                .attr('y', -(radius + 5))
+                .text(function (d) { return d.name; });
+
+            if (selection.exit) {
+                selection.exit().remove();  // Remove deleted conversations
+            }
 
             return selection;
         };
