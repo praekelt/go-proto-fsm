@@ -1,8 +1,8 @@
-var app = angular.module('goprotofsm', [
+var app = angular.module('vumigo', [
     'ngRoute',
-    'goprotofsm.services',
-    'goprotofsm.controllers',
-    'goprotofsm.directives'
+    'vumigo.services',
+    'vumigo.controllers',
+    'vumigo.directives'
 ]);
 
 app.config(['$routeProvider', '$httpProvider', '$locationProvider',
@@ -15,6 +15,8 @@ app.config(['$routeProvider', '$httpProvider', '$locationProvider',
         });
         $locationProvider.html5Mode(true).hashPrefix('!');
     }
+
 ]).run(['$rootScope',
-    function ($rootScope) {}
+    function ($rootScope) {
+    }
 ]);

@@ -22,3 +22,8 @@ then install the project dependencies:
     nodemon app
 
 then visit [http://localhost:3000](http://localhost:3000) in your browser
+
+# Running the tests
+
+    npm install -g karma-cli
+    karma start
