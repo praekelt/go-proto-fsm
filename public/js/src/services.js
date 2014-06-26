@@ -338,8 +338,12 @@ services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
 
 services.factory('conversationComponent', [function () {
     return function () {
-        var radius = 20;  // Default circle radius
-        var drag = null;  // The drag behavior
+        var outerCircleRadius = 30;
+        var innerCircleFill = '#000';  // black
+        var innerCircleRadius = 10;
+        var textOffset = 30;
+        var fontSize = 2.0;  // em
+        var dragBehavior = null;
 
         /**
          * Repaint conversation components.
@@ -353,30 +357,35 @@ services.factory('conversationComponent', [function () {
 
                 if (!container.empty()) {
                     container.append('circle')
-                        .attr('class', 'outer');
+                        .attr('class', 'outer')
+                        .attr('r', outerCircleRadius);
 
                     container.append('circle')
                         .attr('class', 'inner')
-                        .style('fill', '#000');
+                        .attr('r', innerCircleRadius)
+                        .style('fill', innerCircleFill);
 
                     container.append('text')
                         .attr('class', 'name')
-                        .style('font-size', '2.0em')
+                        .attr('x', -(outerCircleRadius / 2 + textOffset))
+                        .attr('y', 0)
+                        .style('font-size', fontSize + 'em')
                         .style('font-weight', 'bold')
                         .style('text-anchor', 'end')
                         .style('alignment-baseline', 'central');
 
                     container.append('text')
                         .attr('class', 'description')
-                        .attr('dy', '2.5em')
-                        .style('fill', '#3d3d3d')
+                        .attr('x', -(outerCircleRadius / 2 + textOffset))
+                        .attr('y', 0)
+                        .attr('dy', (fontSize + 0.5) + 'em')
                         .style('font-size', '.8em')
                         .style('font-weight', 'normal')
                         .style('text-anchor', 'end')
                         .style('alignment-baseline', 'central');
 
-                    if (drag) {
-                        container.call(drag);
+                    if (dragBehavior) {
+                        container.call(dragBehavior);
                     }
                 }
             }
@@ -386,20 +395,12 @@ services.factory('conversationComponent', [function () {
             });
 
             selection.selectAll('circle.outer')
-                .attr('r', radius)
                 .style('fill', function (d) { return d.colour; });
 
-            selection.selectAll('circle.inner')
-                .attr('r', radius * 0.4);
-
             selection.selectAll('text.name')
-                .attr('x', -(radius + 10))
-                .attr('y', 0)
                 .text(function (d) { return d.name; });
 
             selection.selectAll('text.description')
-                .attr('x', -(radius + 10))
-                .attr('y', 0)
                 .text(function (d) { return d.description; });
 
             if (selection.exit) {
@@ -409,16 +410,99 @@ services.factory('conversationComponent', [function () {
             return selection;
         };
 
-        /**
-         * Get/set the circle radius.
+       /**
+         * Get/set the drag behaviour.
          *
-         * @param {value} The new radius; when setting.
-         * @return The current radius.
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
          */
-        conversation.radius = function(value) {
-            if (!arguments.length) return radius;
-            radius = value;
+        conversation.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
             return conversation;
+        };
+
+        return conversation;
+    };
+}]);
+
+services.factory('channelComponent', [function () {
+    return function () {
+        var outerCircleFill = '#ccc';  // light grey
+        var outerCircleMaxRadius = 100;
+        var outerCircleFillOpacity = 0.6;
+        var innerCircleFill = '#000';  // black
+        var innerCircleRadius = 10;
+        var textOffset = 30;
+        var fontSize = 2.0;  // em
+        var dragBehavior = null;
+
+        /**
+         * Repaint conversation components.
+         *
+         * @param {selection} Selection containing components.
+         */
+        var channel = function(selection) {
+            if (selection.enter) {
+                var container = selection.enter().append('g')
+                    .attr('class', 'component channel');
+
+                if (!container.empty()) {
+                    container.append('circle')
+                        .attr('class', 'outer')
+                        .style('fill', outerCircleFill)
+                        .style('fill-opacity', outerCircleFillOpacity);
+
+                    container.append('circle')
+                        .attr('class', 'inner')
+                        .attr('r', innerCircleRadius)
+                        .style('fill', innerCircleFill);
+
+                    container.append('text')
+                        .attr('class', 'name')
+                        .attr('x', function (d) { return innerCircleRadius / 2 + textOffset })
+                        .attr('y', 0)
+                        .style('font-size', fontSize + 'em')
+                        .style('font-weight', 'bold')
+                        .style('text-anchor', 'start')
+                        .style('alignment-baseline', 'central');
+
+                    container.append('text')
+                        .attr('class', 'description')
+                        .attr('x', function (d) { return innerCircleRadius / 2 + textOffset })
+                        .attr('y', 0)
+                        .attr('dy', (fontSize + 0.5) + 'em')
+                        .style('font-size', '.8em')
+                        .style('font-weight', 'normal')
+                        .style('text-anchor', 'start')
+                        .style('alignment-baseline', 'central');
+
+                    if (dragBehavior) {
+                        container.call(dragBehavior);
+                    }
+                }
+            }
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('circle.outer')
+                .attr('r', function (d) {
+                    return innerCircleRadius + outerCircleMaxRadius * d.utilization;
+                });
+
+            selection.selectAll('text.name')
+                .text(function (d) { return d.name; });
+
+            selection.selectAll('text.description')
+                .text(function (d) { return d.description; });
+
+            if (selection.exit) {
+                selection.exit().remove();  // Remove deleted conversations
+            }
+
+            return selection;
         };
 
        /**
@@ -427,12 +511,12 @@ services.factory('conversationComponent', [function () {
          * @param {value} The new drag behaviour; when setting.
          * @return The current drag behaviour.
          */
-        conversation.drag = function(value) {
-            if (!arguments.length) return drag;
-            drag = value;
-            return conversation;
+        channel.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return channel;
         };
 
-        return conversation;
+        return channel;
     };
 }]);
