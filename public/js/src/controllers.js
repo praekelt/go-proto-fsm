@@ -10,6 +10,14 @@ controllers.controller('CampaignMakerController', ['$scope',
             channels: [
                 {name: "SMS", description: "082 335 29 24", utilization: 0.4, x: 840, y: 360},
                 {name: "USSD", description: "*120*10001#", utilization: 0.9, x: 840, y: 140}
+            ],
+            routers: [
+                {
+                    name: "A",
+                    x: 500,
+                    y: 220,
+                    pins: [{name: "Survey"}, {name: "Support"}, {name: "Results"}]
+                }
             ]
         };
     }

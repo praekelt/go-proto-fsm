@@ -1708,6 +1708,14 @@ controllers.controller('CampaignMakerController', ['$scope',
             channels: [
                 {name: "SMS", description: "082 335 29 24", utilization: 0.4, x: 840, y: 360},
                 {name: "USSD", description: "*120*10001#", utilization: 0.9, x: 840, y: 140}
+            ],
+            routers: [
+                {
+                    name: "A",
+                    x: 500,
+                    y: 220,
+                    pins: [{name: "Survey"}, {name: "Support"}, {name: "Results"}]
+                }
             ]
         };
     }
@@ -1724,8 +1732,9 @@ directives.directive('goCampaignDesigner', [
     'dragBehavior',
     'conversationComponent',
     'channelComponent',
+    'routerComponent',
     function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
-                   channelComponent) {
+                   channelComponent, routerComponent) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -1784,6 +1793,7 @@ directives.directive('goCampaignDesigner', [
 
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
+            var router = routerComponent().drag(drag);
 
             repaint(); // Do initial draw
 
@@ -1796,6 +1806,10 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.channel')
                     .data(scope.data.channels)
                     .call(channel);
+
+                canvas.selectAll('.router')
+                    .data(scope.data.routers)
+                    .call(router);
             }
 
             $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
@@ -2337,5 +2351,126 @@ services.factory('channelComponent', [function () {
         };
 
         return channel;
+    };
+}]);
+
+services.factory('routerComponent', [function () {
+    return function () {
+        var textFill = '#fff';  // white
+        var circleFill = '#000';  // black
+        var minSquareSize = 60;
+        var pinGap = 20;
+        var dragBehavior = null;
+
+        var getSquareSize = function (d) {
+            var size = d.pins.length * pinGap;
+            if (size < minSquareSize) {
+                size = minSquareSize;
+            }
+            return size;
+        };
+
+        var getCircleRadius = function (d) {
+            var size = getSquareSize(d);
+            return Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
+        };
+
+        /**
+         * Repaint router components.
+         *
+         * @param {selection} Selection containing routers.
+         */
+        var router = function(selection) {
+            if (selection.enter) {
+                var container = selection.enter().append('g')
+                    .attr('class', 'component router');
+
+                if (!container.empty()) {
+                    container.append('circle')
+                        .attr('r', getCircleRadius)
+                        .style('fill', circleFill);
+
+                    container.append('rect')
+                        .attr('x', function (d) {
+                            var radius = getCircleRadius(d);
+                            var offset = Math.sqrt(Math.pow(radius, 2) / 2.0);
+                            return -offset;
+                        })
+                        .attr('y', function (d) {
+                            var radius = getCircleRadius(d);
+                            var offset = Math.sqrt(Math.pow(radius, 2) / 2.0);
+                            return -offset;
+                        })
+                        .attr('width', getSquareSize)
+                        .attr('height', getSquareSize);
+
+                    container.append('text')
+                        .attr('class', 'name')
+                        .style('fill', textFill)
+                        .style('font-size', function (d) {
+                            return getCircleRadius(d) + 'px';
+                        })
+                        .style('font-weight', 'bold')
+                        .style('text-anchor', 'middle')
+                        .style('alignment-baseline', 'central');
+
+                    // Draw pins
+                    container.each(function (d) {
+                        var radius = getCircleRadius(d);
+                        var rect = d3.select(this).select('rect');
+                        var x = parseFloat(rect.attr('x'));
+                        var cx = x - radius;
+                        var cy = parseFloat(rect.attr('y'));
+                        angular.forEach(d.pins, function (pin) {
+                            this.append('circle')
+                                .attr('cx', cx)
+                                .attr('cy', cy)
+                                .attr('r', 5);
+
+                            this.append('line')
+                                .attr('x1', cx)
+                                .attr('y1', cy)
+                                .attr('x2', x)
+                                .attr('y2', cy)
+                                .attr('stroke-width', 2)
+                                .attr('stroke', '#000');
+
+                            cy += pinGap;
+                        }, d3.select(this));
+                    });
+
+                    if (dragBehavior) {
+                        container.call(dragBehavior);
+                    }
+                }
+            }
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('text.name')
+                .text(function (d) { return d.name; });
+
+            if (selection.exit) {
+                selection.exit().remove();  // Remove deleted conversations
+            }
+
+            return selection;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        router.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return router;
+        };
+
+        return router;
     };
 }]);
