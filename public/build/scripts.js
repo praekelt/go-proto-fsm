@@ -1702,8 +1702,8 @@ controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
         $scope.data = {
             conversations: [
-                {x: 200, y: 200, name: "My cool app"},
-                {x: 500, y: 500, name: "Some other app"},
+                {name: "Register", description: "4 Steps", colour: '#f82943', x: 200, y: 200},
+                {name: "Survey", description: "4 Questions", colour: '#fbcf3b', x: 500, y: 500},
             ]
         };
     }
@@ -2161,9 +2161,27 @@ services.factory('conversationComponent', [function () {
 
                 if (!container.empty()) {
                     container.append('circle')
-                        .style('fill', '#ddd');
+                        .attr('class', 'outer');
 
-                    container.append('text');
+                    container.append('circle')
+                        .attr('class', 'inner')
+                        .style('fill', '#000');
+
+                    container.append('text')
+                        .attr('class', 'name')
+                        .style('font-size', '2.0em')
+                        .style('font-weight', 'bold')
+                        .style('text-anchor', 'end')
+                        .style('alignment-baseline', 'central');
+
+                    container.append('text')
+                        .attr('class', 'description')
+                        .attr('dy', '2.5em')
+                        .style('fill', '#3d3d3d')
+                        .style('font-size', '.8em')
+                        .style('font-weight', 'normal')
+                        .style('text-anchor', 'end')
+                        .style('alignment-baseline', 'central');
 
                     if (drag) {
                         container.call(drag);
@@ -2175,13 +2193,22 @@ services.factory('conversationComponent', [function () {
                 return 'translate(' + [d.x, d.y] + ')';
             });
 
-            selection.selectAll('circle')
-                .attr('r', radius);
+            selection.selectAll('circle.outer')
+                .attr('r', radius)
+                .style('fill', function (d) { return d.colour; });
 
-            selection.selectAll('text')
-                .attr('x', -(radius + 5))
-                .attr('y', -(radius + 5))
+            selection.selectAll('circle.inner')
+                .attr('r', radius * 0.4);
+
+            selection.selectAll('text.name')
+                .attr('x', -(radius + 10))
+                .attr('y', 0)
                 .text(function (d) { return d.name; });
+
+            selection.selectAll('text.description')
+                .attr('x', -(radius + 10))
+                .attr('y', 0)
+                .text(function (d) { return d.description; });
 
             if (selection.exit) {
                 selection.exit().remove();  // Remove deleted conversations

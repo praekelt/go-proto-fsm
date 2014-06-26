@@ -4,8 +4,8 @@ controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
         $scope.data = {
             conversations: [
-                {x: 200, y: 200, name: "My cool app"},
-                {x: 500, y: 500, name: "Some other app"},
+                {name: "Register", description: "4 Steps", colour: '#f82943', x: 200, y: 200},
+                {name: "Survey", description: "4 Questions", colour: '#fbcf3b', x: 500, y: 500},
             ]
         };
     }
