@@ -18,4 +18,33 @@
             filter: url(#shadow);
         }
     }
+
+    .component {
+        &.router {
+            @bg: #000;
+            @fg: #fff;
+
+            .disc {
+                fill: @bg;
+            }
+
+            .name {
+                fill: @fg;
+                font-weight: bold;
+                text-anchor: middle;
+                alignment-baseline: central;
+            }
+
+            .pin {
+                .head {
+                    fill: @bg;
+                }
+
+                .line {
+                    stroke: @bg;
+                    stroke-width: 2px;
+                }
+            }
+        }
+    }
 }

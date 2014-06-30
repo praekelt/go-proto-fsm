@@ -1733,8 +1733,9 @@ directives.directive('goCampaignDesigner', [
     'conversationComponent',
     'channelComponent',
     'routerComponent',
+    'routerLayout',
     function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
-                   channelComponent, routerComponent) {
+                   channelComponent, routerComponent, routerLayout) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -1795,6 +1796,8 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
 
+            var layoutRouters = routerLayout();
+
             repaint(); // Do initial draw
 
             /** Repaint the canvas **/
@@ -1808,7 +1811,7 @@ directives.directive('goCampaignDesigner', [
                     .call(channel);
 
                 canvas.selectAll('.router')
-                    .data(scope.data.routers)
+                    .data(layoutRouters(scope.data.routers))
                     .call(router);
             }
 
@@ -2354,109 +2357,100 @@ services.factory('channelComponent', [function () {
     };
 }]);
 
+services.factory('routerLayout', [function () {
+    return function() {
+        var minSize = 60;
+        var gap = 20;
+
+        function pins(router) {
+            return router.data.pins.map(function (d, i) {
+                return {
+                    len: router.r,
+                    y: gap * (i - 1),
+                    data: d
+                };
+            });
+        }
+
+        function layout(data) {
+            return data.map(function (d) {
+                var size = Math.max(minSize, d.pins.length * gap);
+
+                var router = {
+                    x: d.x,
+                    y: d.y,
+                    r: Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0,
+                    data: d,
+                };
+
+                router.pins = pins(router);
+                return router;
+            });
+        }
+
+        return layout;
+    };
+}]);
+
 services.factory('routerComponent', [function () {
     return function () {
-        var textFill = '#fff';  // white
-        var circleFill = '#000';  // black
-        var minSquareSize = 60;
-        var pinGap = 20;
+        var pin = pinComponent();
         var dragBehavior = null;
 
-        var getSquareSize = function (d) {
-            var size = d.pins.length * pinGap;
-            if (size < minSquareSize) {
-                size = minSquareSize;
-            }
-            return size;
-        };
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component router');
 
-        var getCircleRadius = function (d) {
-            var size = getSquareSize(d);
-            return Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
-        };
+            selection.append('circle')
+                .attr('class', 'disc');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('g')
+                .attr('class', 'pins');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc')
+                .attr('r', function (d) { return d.r; });
+
+            selection.selectAll('.name')
+                .style('font-size', function (d) {
+                    return d.r + 'px';
+                })
+                .text(function (d) { return d.data.name; });
+
+            selection.select('.pins')
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d.r, 0] + ')';
+                })
+                .selectAll('.pin')
+                    .data(function(d) { return d.pins; },
+                             function(d) { return d.data.name; })
+                    .call(pin);
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
 
         /**
          * Repaint router components.
          *
          * @param {selection} Selection containing routers.
          */
-        var router = function(selection) {
-            if (selection.enter) {
-                var container = selection.enter().append('g')
-                    .attr('class', 'component router');
-
-                if (!container.empty()) {
-                    container.append('circle')
-                        .attr('r', getCircleRadius)
-                        .style('fill', circleFill);
-
-                    container.append('rect')
-                        .attr('x', function (d) {
-                            var radius = getCircleRadius(d);
-                            var offset = Math.sqrt(Math.pow(radius, 2) / 2.0);
-                            return -offset;
-                        })
-                        .attr('y', function (d) {
-                            var radius = getCircleRadius(d);
-                            var offset = Math.sqrt(Math.pow(radius, 2) / 2.0);
-                            return -offset;
-                        })
-                        .attr('width', getSquareSize)
-                        .attr('height', getSquareSize);
-
-                    container.append('text')
-                        .attr('class', 'name')
-                        .style('fill', textFill)
-                        .style('font-size', function (d) {
-                            return getCircleRadius(d) + 'px';
-                        })
-                        .style('font-weight', 'bold')
-                        .style('text-anchor', 'middle')
-                        .style('alignment-baseline', 'central');
-
-                    // Draw pins
-                    container.each(function (d) {
-                        var radius = getCircleRadius(d);
-                        var rect = d3.select(this).select('rect');
-                        var x = parseFloat(rect.attr('x'));
-                        var cx = x - radius;
-                        var cy = parseFloat(rect.attr('y'));
-                        angular.forEach(d.pins, function (pin) {
-                            this.append('circle')
-                                .attr('cx', cx)
-                                .attr('cy', cy)
-                                .attr('r', 5);
-
-                            this.append('line')
-                                .attr('x1', cx)
-                                .attr('y1', cy)
-                                .attr('x2', x)
-                                .attr('y2', cy)
-                                .attr('stroke-width', 2)
-                                .attr('stroke', '#000');
-
-                            cy += pinGap;
-                        }, d3.select(this));
-                    });
-
-                    if (dragBehavior) {
-                        container.call(dragBehavior);
-                    }
-                }
-            }
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('text.name')
-                .text(function (d) { return d.name; });
-
-            if (selection.exit) {
-                selection.exit().remove();  // Remove deleted conversations
-            }
-
-            return selection;
+        var router = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return router;
         };
 
        /**
@@ -2473,4 +2467,41 @@ services.factory('routerComponent', [function () {
 
         return router;
     };
+
+    function pinComponent() {
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'pin');
+
+            selection.append('circle')
+                .attr('class', 'head')
+                .attr('r', 5);
+
+            selection.append('line')
+                .attr('class', 'line');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d.len / 2.0, d.y] + ')';
+                });
+
+            selection.select('.line')
+                .attr('x2', function (d) { return d.len; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        function pin(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return pin;
+        }
+
+        return pin;
+    }
 }]);
