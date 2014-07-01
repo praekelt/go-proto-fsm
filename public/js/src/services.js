@@ -344,6 +344,9 @@ services.factory('conversationLayout', [function () {
 
         function layout(data) {
             return data.map(function (d) {
+                var textXOffset = -(outerRadius / 2.0 + textOffset);
+                var descriptionYOffset = 2.5;
+
                 var conversation = {
                     x: d.x,
                     y: d.y,
@@ -354,11 +357,11 @@ services.factory('conversationLayout', [function () {
                         r: outerRadius
                     },
                     name: {
-                        x: -(outerRadius / 2.0 + textOffset),
+                        x: textXOffset,
                     },
                     description: {
-                        x: -(outerRadius / 2.0 + textOffset),
-                        dy: 2.5
+                        x: textXOffset,
+                        dy: descriptionYOffset
                     },
                     data: d
                 };
@@ -449,16 +452,92 @@ services.factory('conversationComponent', [function () {
     };
 }]);
 
+services.factory('channelLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var maxOuterRadius = 100;
+        var textOffset = 20;
+
+        function layout(data) {
+            return data.map(function (d) {
+                var outerRadius = innerRadius + maxOuterRadius * d.utilization;
+                var textXOffset = innerRadius / 2.0 + textOffset;
+                var descriptionYOffset = 2.5;
+
+                var channel = {
+                    x: d.x,
+                    y: d.y,
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: textXOffset
+                    },
+                    description: {
+                        x: textXOffset,
+                        dy: descriptionYOffset
+                    },
+                    data: d
+                };
+
+                return channel;
+            });
+        }
+
+        return layout;
+    };
+}]);
+
 services.factory('channelComponent', [function () {
     return function () {
-        var outerCircleFill = '#ccc';  // light grey
-        var outerCircleMaxRadius = 100;
-        var outerCircleFillOpacity = 0.6;
-        var innerCircleFill = '#000';  // black
-        var innerCircleRadius = 10;
-        var textOffset = 30;
-        var fontSize = 2.0;  // em
         var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component channel');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d.outer.r; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d.name.x; })
+                .text(function (d) { return d.data.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d.description.x; })
+                .attr('dy', function (d) { return d.description.dy + 'em'; })
+                .text(function (d) { return d.data.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
 
         /**
          * Repaint conversation components.
@@ -466,66 +545,10 @@ services.factory('channelComponent', [function () {
          * @param {selection} Selection containing components.
          */
         var channel = function(selection) {
-            if (selection.enter) {
-                var container = selection.enter().append('g')
-                    .attr('class', 'component channel');
-
-                if (!container.empty()) {
-                    container.append('circle')
-                        .attr('class', 'outer')
-                        .style('fill', outerCircleFill)
-                        .style('fill-opacity', outerCircleFillOpacity);
-
-                    container.append('circle')
-                        .attr('class', 'inner')
-                        .attr('r', innerCircleRadius)
-                        .style('fill', innerCircleFill);
-
-                    container.append('text')
-                        .attr('class', 'name')
-                        .attr('x', function (d) { return innerCircleRadius / 2 + textOffset })
-                        .attr('y', 0)
-                        .style('font-size', fontSize + 'em')
-                        .style('font-weight', 'bold')
-                        .style('text-anchor', 'start')
-                        .style('alignment-baseline', 'central');
-
-                    container.append('text')
-                        .attr('class', 'description')
-                        .attr('x', function (d) { return innerCircleRadius / 2 + textOffset })
-                        .attr('y', 0)
-                        .attr('dy', (fontSize + 0.5) + 'em')
-                        .style('font-size', '.8em')
-                        .style('font-weight', 'normal')
-                        .style('text-anchor', 'start')
-                        .style('alignment-baseline', 'central');
-
-                    if (dragBehavior) {
-                        container.call(dragBehavior);
-                    }
-                }
-            }
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('circle.outer')
-                .attr('r', function (d) {
-                    return innerCircleRadius + outerCircleMaxRadius * d.utilization;
-                });
-
-            selection.selectAll('text.name')
-                .text(function (d) { return d.name; });
-
-            selection.selectAll('text.description')
-                .text(function (d) { return d.description; });
-
-            if (selection.exit) {
-                selection.exit().remove();  // Remove deleted conversations
-            }
-
-            return selection;
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return channel;
         };
 
        /**
@@ -562,11 +585,12 @@ services.factory('routerLayout', [function () {
         function layout(data) {
             return data.map(function (d) {
                 var size = Math.max(minSize, d.pins.length * pinGap);
+                var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
                 var router = {
                     x: d.x,
                     y: d.y,
-                    r: Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0,
+                    r: radius,
                     data: d,
                 };
 

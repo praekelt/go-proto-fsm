@@ -70,5 +70,36 @@
                 }
             }
         }
+
+        &.channel {
+            @inner-disc-bg: #000;
+            @outer-disc-bg: #ccc;
+            @outer-disc-opacity: 0.6;
+
+            .disc {
+                &.outer {
+                    fill: @outer-disc-bg;
+                    fill-opacity: @outer-disc-opacity;
+                }
+
+                &.inner {
+                    fill: @inner-disc-bg;
+                }
+            }
+
+            .name {
+                font-size: 2.0em;
+                font-weight: bold;
+                text-anchor: start;
+                alignment-baseline: central;
+            }
+
+            .description {
+                font-size: 0.8em;
+                font-weight: normal;
+                text-anchor: start;
+                alignment-baseline: central;
+            }
+        }
     }
 }
