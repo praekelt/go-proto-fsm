@@ -20,6 +20,30 @@
     }
 
     .component {
+        &.conversation {
+            @inner-disc-bg: #000;
+
+            .name {
+                font-size: 2.0em;
+                font-weight: bold;
+                text-anchor: end;
+                alignment-baseline: central;
+            }
+
+            .description {
+                font-size: .8em;
+                font-weight: normal;
+                text-anchor: end;
+                alignment-baseline: central;
+            }
+
+            .disc {
+                &.inner {
+                    fill: @inner-disc-bg;
+                }
+            }
+        }
+
         &.router {
             @bg: #000;
             @fg: #fff;

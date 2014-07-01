@@ -10,9 +10,11 @@ directives.directive('goCampaignDesigner', [
     'conversationComponent',
     'channelComponent',
     'routerComponent',
+    'conversationLayout',
     'routerLayout',
     function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
-                   channelComponent, routerComponent, routerLayout) {
+                   channelComponent, routerComponent, conversationLayout,
+                   routerLayout) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -73,6 +75,7 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
 
+            var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
 
             repaint(); // Do initial draw
@@ -80,7 +83,7 @@ directives.directive('goCampaignDesigner', [
             /** Repaint the canvas **/
             function repaint() {
                 canvas.selectAll('.conversation')
-                    .data(scope.data.conversations)
+                    .data(layoutConversations(scope.data.conversations))
                     .call(conversation);
 
                 canvas.selectAll('.channel')

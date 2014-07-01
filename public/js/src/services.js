@@ -336,14 +336,90 @@ services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
     }
 ]);
 
+services.factory('conversationLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var outerRadius = 30;
+        var textOffset = 20;
+
+        function layout(data) {
+            return data.map(function (d) {
+                var conversation = {
+                    x: d.x,
+                    y: d.y,
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: -(outerRadius / 2.0 + textOffset),
+                    },
+                    description: {
+                        x: -(outerRadius / 2.0 + textOffset),
+                        dy: 2.5
+                    },
+                    data: d
+                };
+
+                return conversation;
+            });
+        }
+
+        return layout;
+    };
+}]);
+
 services.factory('conversationComponent', [function () {
     return function () {
-        var outerCircleRadius = 30;
-        var innerCircleFill = '#000';  // black
-        var innerCircleRadius = 10;
-        var textOffset = 30;
-        var fontSize = 2.0;  // em
         var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component conversation');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d.outer.r; })
+                .style('fill', function (d) { return d.data.colour; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d.name.x })
+                .text(function (d) { return d.data.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d.description.x; })
+                .attr('dy', function (d) { return d.description.dy + 'em' })
+                .text(function (d) { return d.data.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
 
         /**
          * Repaint conversation components.
@@ -351,63 +427,10 @@ services.factory('conversationComponent', [function () {
          * @param {selection} Selection containing components.
          */
         var conversation = function(selection) {
-            if (selection.enter) {
-                var container = selection.enter().append('g')
-                    .attr('class', 'component conversation');
-
-                if (!container.empty()) {
-                    container.append('circle')
-                        .attr('class', 'outer')
-                        .attr('r', outerCircleRadius);
-
-                    container.append('circle')
-                        .attr('class', 'inner')
-                        .attr('r', innerCircleRadius)
-                        .style('fill', innerCircleFill);
-
-                    container.append('text')
-                        .attr('class', 'name')
-                        .attr('x', -(outerCircleRadius / 2 + textOffset))
-                        .attr('y', 0)
-                        .style('font-size', fontSize + 'em')
-                        .style('font-weight', 'bold')
-                        .style('text-anchor', 'end')
-                        .style('alignment-baseline', 'central');
-
-                    container.append('text')
-                        .attr('class', 'description')
-                        .attr('x', -(outerCircleRadius / 2 + textOffset))
-                        .attr('y', 0)
-                        .attr('dy', (fontSize + 0.5) + 'em')
-                        .style('font-size', '.8em')
-                        .style('font-weight', 'normal')
-                        .style('text-anchor', 'end')
-                        .style('alignment-baseline', 'central');
-
-                    if (dragBehavior) {
-                        container.call(dragBehavior);
-                    }
-                }
-            }
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('circle.outer')
-                .style('fill', function (d) { return d.colour; });
-
-            selection.selectAll('text.name')
-                .text(function (d) { return d.name; });
-
-            selection.selectAll('text.description')
-                .text(function (d) { return d.description; });
-
-            if (selection.exit) {
-                selection.exit().remove();  // Remove deleted conversations
-            }
-
-            return selection;
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return conversation;
         };
 
        /**
@@ -524,13 +547,13 @@ services.factory('channelComponent', [function () {
 services.factory('routerLayout', [function () {
     return function() {
         var minSize = 60;
-        var gap = 20;
+        var pinGap = 20;
 
         function pins(router) {
             return router.data.pins.map(function (d, i) {
                 return {
                     len: router.r,
-                    y: gap * (i - 1),
+                    y: pinGap * (i - 1),
                     data: d
                 };
             });
@@ -538,7 +561,7 @@ services.factory('routerLayout', [function () {
 
         function layout(data) {
             return data.map(function (d) {
-                var size = Math.max(minSize, d.pins.length * gap);
+                var size = Math.max(minSize, d.pins.length * pinGap);
 
                 var router = {
                     x: d.x,
