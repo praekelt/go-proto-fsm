@@ -290,13 +290,17 @@ describe('conversationComponent', function () {
         conversation = conversationComponent().drag(drag);
 
         var data = [{
+            name: "Conversation 1",
+            description: "Test conversation",
+            colour: '#cccccc',
             x: 50,
             y: 50,
-            inner: {r: 10},
-            outer: {r: 30},
-            name: {x: -25},
-            description: {x: -25, dy: 2.5},
-            data: {x: 50, y: 50, name: "Conversation 1", description: "Test conversation", colour: '#cccccc'}
+            _layout: {
+                inner: { r: 10 },
+                outer: { r: 30 },
+                name: { x: -25 },
+                description: { x: -25 }
+            }
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
@@ -324,7 +328,6 @@ describe('conversationComponent', function () {
         var description = conversation.find('.description').eq(0);
         expect(description.text()).to.equal('Test conversation');
         expect(description.attr('x')).to.equal('-25');
-        expect(description.attr('dy')).to.equal('2.5em');
     }));
 
     it('conversation should be draggable', inject(function () {
@@ -338,6 +341,168 @@ describe('conversationComponent', function () {
             .trigger('vumigo:dragend');
 
         expect(conversations.eq(0).attr('transform')).to.equal('translate(70,70)');
+    }));
+
+});
+
+describe('conversationComponent', function () {
+    var element;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (channelComponent, dragBehavior) {
+        element = angular.element(
+            '<div id="viewport" style="width: 20px; height: 20px">' +
+                '<svg width="100" height="100"></svg>' +
+            '</div>');
+
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .call();
+
+        channel = channelComponent().drag(drag);
+
+        var data = [{
+            name: "Channel 1",
+            description: "Test channel",
+            utilization: 0.4,
+            x: 100,
+            y: 100,
+            _layout: {
+                inner: { r: 10 },
+                outer: { r: 100 },
+                name: { x: 25 },
+                description: { x: 25 }
+            }
+        }];
+
+        d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
+            .data(data)
+            .call(channel);
+    }));
+
+    it('should have drawn the channel component', inject(function () {
+        var channels = element.find('.channel');
+        expect(channels).to.have.length(1);
+
+        var channel = channels.eq(0);
+        expect(channel.attr('transform')).to.equal('translate(100,100)');
+        expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal('100');
+        expect(channel.find('.disc.inner').eq(0).attr('r')).to.equal('10');
+
+        var name = channel.find('.name').eq(0);
+        expect(name.text()).to.equal('Channel 1');
+        expect(name.attr('x')).to.equal('25');
+
+        var description = channel.find('.description').eq(0);
+        expect(description.text()).to.equal('Test channel');
+        expect(description.attr('x')).to.equal('25');
+    }));
+
+    it('channel should be draggable', inject(function () {
+        var channels = element.find('.channel');
+        channels.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: 70,
+                y: 70
+            })
+            .trigger('vumigo:dragend');
+
+        expect(channels.eq(0).attr('transform')).to.equal('translate(70,70)');
+    }));
+
+});
+
+describe('routerComponent', function () {
+    var element;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (routerComponent, dragBehavior) {
+        element = angular.element(
+            '<div id="viewport" style="width: 20px; height: 20px">' +
+                '<svg width="100" height="100"></svg>' +
+            '</div>');
+
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .call();
+
+        router = routerComponent().drag(drag);
+
+        var data = [{
+            name: "Router 1",
+            x: 100,
+            y: 100,
+            pins: [
+                {
+                    name: "Pin 1",
+                    _layout: {
+                        len: 60,
+                        y: 0,
+                        r: 5
+                    }
+                },
+                {
+                    name: "Pin 2",
+                    _layout: {
+                        len: 60,
+                        y: 20,
+                        r: 5
+                    }
+                }
+            ],
+            _layout: {
+                r: 60
+            }
+        }];
+
+        d3.selectAll(element.find('svg').toArray()).selectAll('.router')
+            .data(data)
+            .call(router);
+    }));
+
+    it('should have drawn the router component', inject(function () {
+        var routers = element.find('.router');
+        expect(routers).to.have.length(1);
+
+        var router = routers.eq(0);
+        expect(router.attr('transform')).to.equal('translate(100,100)');
+        expect(router.find('.disc').eq(0).attr('r')).to.equal('60');
+
+        var name = router.find('.name').eq(0);
+        expect(name.text()).to.equal('Router 1');
+
+        var pins = router.find('.pins').eq(0);
+        expect(pins.find('.pin')).to.have.length(2);
+
+        var pin = pins.find('.pin').eq(0);
+        expect(pin.attr('transform')).to.equal('translate(' + [-30, 0] + ')');
+        expect(pin.find('.head')).to.have.length(1);
+        expect(pin.find('.head').eq(0).attr('r')).to.equal('5');
+        expect(pin.find('.line')).to.have.length(1);
+        expect(pin.find('.line').eq(0).attr('x2')).to.equal('60');
+
+        pin = pins.find('.pin').eq(1);
+        expect(pin.attr('transform')).to.equal('translate(' + [-30, 20] + ')');
+    }));
+
+    it('router should be draggable', inject(function () {
+        var routers = element.find('.router');
+        routers.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: 70,
+                y: 70
+            })
+            .trigger('vumigo:dragend');
+
+        expect(routers.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));
 
 });
