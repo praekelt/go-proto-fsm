@@ -287,18 +287,44 @@ describe('conversationComponent', function () {
             .gridCellSize(10)
             .call();
 
-        conversation = conversationComponent().radius(30).drag(drag);
+        conversation = conversationComponent().drag(drag);
+
+        var data = [{
+            x: 50,
+            y: 50,
+            inner: {r: 10},
+            outer: {r: 30},
+            name: {x: -25},
+            description: {x: -25, dy: 2.5},
+            data: {x: 50, y: 50, name: "Conversation 1", description: "Test conversation", colour: '#cccccc'}
+        }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data([{x: 50, y: 50, name: "Conversation 1"}])
+            .data(data)
             .call(conversation);
     }));
 
     it('should have drawn the conversation component', inject(function () {
         var conversations = element.find('.conversation');
         expect(conversations).to.have.length(1);
-        expect(conversations.eq(0).attr('transform')).to.equal('translate(50,50)');
-        expect(conversations.eq(0).find('circle').attr('r')).to.equal('30');
+
+        var conversation = conversations.eq(0);
+        expect(conversation.attr('transform')).to.equal('translate(50,50)');
+
+        var disc = conversation.find('.disc.outer').eq(0);
+        expect(disc.attr('r')).to.equal('30');
+        expect(disc.css('fill')).to.equal('rgb(204, 204, 204)');
+
+        expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal('10');
+
+        var name = conversation.find('.name').eq(0);
+        expect(name.text()).to.equal('Conversation 1');
+        expect(name.attr('x')).to.equal('-25');
+
+        var description = conversation.find('.description').eq(0);
+        expect(description.text()).to.equal('Test conversation');
+        expect(description.attr('x')).to.equal('-25');
+        expect(description.attr('dy')).to.equal('2.5em');
     }));
 
     it('conversation should be draggable', inject(function () {

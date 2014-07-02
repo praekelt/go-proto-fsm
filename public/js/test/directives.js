@@ -11,6 +11,18 @@ describe('goCampaignDesigner', function () {
             conversations: [
                 {x: 100, y: 100, name: "Conversation 1"},
                 {x: 200, y: 200, name: "Conversation 2"}
+            ],
+            channels: [
+                {name: "Channel 1", description: "Test channel", utilization: 0.4, x: 840, y: 360},
+                {name: "Channel 2", description: "Test channel", utilization: 0.9, x: 840, y: 140}
+            ],
+            routers: [
+                {
+                    name: "A",
+                    x: 500,
+                    y: 220,
+                    pins: [{name: "Pin 1"}, {name: "Pin 2"}, {name: "Pin 3"}]
+                }
             ]
         };
         $compile(element)(scope);
@@ -27,11 +39,19 @@ describe('goCampaignDesigner', function () {
         expect(svg.eq(0).attr('height')).to.equal('2060');
     });
 
-    it('should have drawn the conversations', function () {
+    it('should have drawn conversations', function () {
         var conversations = element.find('g.conversation');
         expect(conversations).to.have.length(2);
-        expect(conversations.eq(0).attr('transform')).to.equal('translate(100,100)');
-        expect(conversations.eq(1).attr('transform')).to.equal('translate(200,200)');
+    });
+
+    it('should have drawn router', function () {
+        var routers = element.find('g.router');
+        expect(routers).to.have.length(1);
+    });
+
+    it('should have drawn channels', function () {
+        var channels = element.find('g.channel');
+        expect(channels).to.have.length(2);
     });
 
 });

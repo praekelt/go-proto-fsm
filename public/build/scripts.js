@@ -2181,16 +2181,13 @@ services.factory('conversationLayout', [function () {
     return function() {
         var innerRadius = 10;
         var outerRadius = 30;
-        var textOffset = 20;
+        var textMargin = 20;
 
         function layout(data) {
-            return data.map(function (d) {
-                var textXOffset = -(outerRadius / 2.0 + textOffset);
-                var descriptionYOffset = 2.5;
+            angular.forEach(data, function (conversation) {
+                var textX = -(outerRadius / 2.0 + textMargin);
 
-                var conversation = {
-                    x: d.x,
-                    y: d.y,
+                conversation._layout = {
                     inner: {
                         r: innerRadius
                     },
@@ -2198,17 +2195,15 @@ services.factory('conversationLayout', [function () {
                         r: outerRadius
                     },
                     name: {
-                        x: textXOffset,
+                        x: textX
                     },
                     description: {
-                        x: textXOffset,
-                        dy: descriptionYOffset
-                    },
-                    data: d
-                };
-
-                return conversation;
+                        x: textX
+                    }
+                }
             });
+
+            return data;
         }
 
         return layout;
@@ -2245,20 +2240,25 @@ services.factory('conversationComponent', [function () {
                 });
 
             selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d.outer.r; })
-                .style('fill', function (d) { return d.data.colour; });
+                .attr('r', function (d) { return d._layout.outer.r; })
+                .style('fill', function (d) { return d.colour; });
 
             selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d.inner.r; });
+                .attr('r', function (d) { return d._layout.inner.r; });
 
             selection.selectAll('.name')
-                .attr('x', function (d) { return d.name.x })
-                .text(function (d) { return d.data.name; });
+                .attr('x', function (d) { return d._layout.name.x })
+                .text(function (d) { return d.name; });
 
             selection.selectAll('.description')
-                .attr('x', function (d) { return d.description.x; })
-                .attr('dy', function (d) { return d.description.dy + 'em' })
-                .text(function (d) { return d.data.description; });
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
         }
 
         function exit(selection) {
@@ -2300,14 +2300,13 @@ services.factory('channelLayout', [function () {
         var textOffset = 20;
 
         function layout(data) {
-            return data.map(function (d) {
-                var outerRadius = innerRadius + maxOuterRadius * d.utilization;
-                var textXOffset = innerRadius / 2.0 + textOffset;
-                var descriptionYOffset = 2.5;
+            angular.forEach(data, function (channel) {
+                var outerRadius = innerRadius
+                    + maxOuterRadius * channel.utilization;
 
-                var channel = {
-                    x: d.x,
-                    y: d.y,
+                var textX = innerRadius / 2.0 + textOffset;
+
+                channel._layout = {
                     inner: {
                         r: innerRadius
                     },
@@ -2315,17 +2314,15 @@ services.factory('channelLayout', [function () {
                         r: outerRadius
                     },
                     name: {
-                        x: textXOffset
+                        x: textX
                     },
                     description: {
-                        x: textXOffset,
-                        dy: descriptionYOffset
-                    },
-                    data: d
+                        x: textX
+                    }
                 };
-
-                return channel;
             });
+
+            return data;
         }
 
         return layout;
@@ -2361,19 +2358,24 @@ services.factory('channelComponent', [function () {
             });
 
             selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d.outer.r; });
+                .attr('r', function (d) { return d._layout.outer.r; });
 
             selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d.inner.r; });
+                .attr('r', function (d) { return d._layout.inner.r; });
 
             selection.selectAll('.name')
-                .attr('x', function (d) { return d.name.x; })
-                .text(function (d) { return d.data.name; });
+                .attr('x', function (d) { return d._layout.name.x; })
+                .text(function (d) { return d.name; });
 
             selection.selectAll('.description')
-                .attr('x', function (d) { return d.description.x; })
-                .attr('dy', function (d) { return d.description.dy + 'em'; })
-                .text(function (d) { return d.data.description; });
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
         }
 
         function exit(selection) {
@@ -2412,32 +2414,31 @@ services.factory('routerLayout', [function () {
     return function() {
         var minSize = 60;
         var pinGap = 20;
+        var pinHeadRadius = 5;
 
         function pins(router) {
-            return router.data.pins.map(function (d, i) {
-                return {
-                    len: router.r,
+            angular.forEach(router.pins, function (pin, i) {
+                pin._layout = {
+                    len: router._layout.r,
                     y: pinGap * (i - 1),
-                    data: d
+                    r: pinHeadRadius
                 };
             });
         }
 
         function layout(data) {
-            return data.map(function (d) {
-                var size = Math.max(minSize, d.pins.length * pinGap);
+            angular.forEach(data, function (router) {
+                var size = Math.max(minSize, router.pins.length * pinGap);
                 var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
-                var router = {
-                    x: d.x,
-                    y: d.y,
-                    r: radius,
-                    data: d,
+                router._layout = {
+                    r: radius
                 };
 
-                router.pins = pins(router);
-                return router;
+                pins(router);
             });
+
+            return data;
         }
 
         return layout;
@@ -2471,21 +2472,21 @@ services.factory('routerComponent', [function () {
             });
 
             selection.selectAll('.disc')
-                .attr('r', function (d) { return d.r; });
+                .attr('r', function (d) { return d._layout.r; });
 
             selection.selectAll('.name')
                 .style('font-size', function (d) {
-                    return d.r + 'px';
+                    return d._layout.r + 'px';
                 })
-                .text(function (d) { return d.data.name; });
+                .text(function (d) { return d.name; });
 
             selection.select('.pins')
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d.r, 0] + ')';
+                    return 'translate(' + [-d._layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
                     .data(function(d) { return d.pins; },
-                             function(d) { return d.data.name; })
+                             function(d) { return d.name; })
                     .call(pin);
         }
 
@@ -2526,8 +2527,7 @@ services.factory('routerComponent', [function () {
                 .attr('class', 'pin');
 
             selection.append('circle')
-                .attr('class', 'head')
-                .attr('r', 5);
+                .attr('class', 'head');
 
             selection.append('line')
                 .attr('class', 'line');
@@ -2536,11 +2536,14 @@ services.factory('routerComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d.len / 2.0, d.y] + ')';
+                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
                 });
 
+            selection.select('.head')
+                .attr('r', function (d) { return d._layout.r; })
+
             selection.select('.line')
-                .attr('x2', function (d) { return d.len; });
+                .attr('x2', function (d) { return d._layout.len; });
         }
 
         function exit(selection) {
