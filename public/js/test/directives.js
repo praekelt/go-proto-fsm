@@ -12,8 +12,8 @@ describe('goCampaignDesigner', function () {
         scope = $rootScope;
         scope.data = {
             conversations: [
-                { name: "Conversation 1", x: 100, y: 100 },
-                { name: "Conversation 2", x: 200, y: 200 }
+                { name: "Conversation 1", description: "Test conversation", x: 100, y: 100 },
+                { name: "Conversation 2", description: "Test conversation", x: 200, y: 200 }
             ],
             channels: [
                 { name: "Channel 1", description: "Test channel", utilization: 0.4, x: 840, y: 360 },

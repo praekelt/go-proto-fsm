@@ -506,3 +506,116 @@ describe('routerComponent', function () {
     }));
 
 });
+
+describe('conversationLayout', function () {
+    var layout;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (conversationLayout, dragBehavior) {
+        layout = conversationLayout();
+    }));
+
+    it('should compute conversation layout', inject(function () {
+        var data = [{
+            name: "Conversation 1",
+            description: "Test conversation",
+            x: 100,
+            y: 100
+        }];
+
+        layout(data);
+
+        var expected = [{
+            name: "Conversation 1",
+            description: "Test conversation",
+            x: 100,
+            y: 100,
+            _layout: {
+                inner: { r: 10 },
+                outer: { r: 30 },
+                name: { x: -35 },
+                description: { x: -35 }
+            }
+        }];
+
+        expect(data).to.deep.equal(expected);
+    }));
+
+});
+
+describe('channelLayout', function () {
+    var layout;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (channelLayout, dragBehavior) {
+        layout = channelLayout();
+    }));
+
+    it('should compute channel layout', inject(function () {
+        var data = [{
+            name: "Channel 1",
+            description: "Test channel",
+            utilization: 0.5,
+            x: 100,
+            y: 100
+        }];
+
+        layout(data);
+
+        var expected = [{
+            name: "Channel 1",
+            description: "Test channel",
+            utilization: 0.5,
+            x: 100,
+            y: 100,
+            _layout: {
+                inner: { r: 10 },
+                outer: { r: 60 },
+                name: { x: 25 },
+                description: { x: 25 }
+            }
+        }];
+
+        expect(data).to.deep.equal(expected);
+    }));
+
+});
+
+describe('routerLayout', function () {
+    var layout;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (routerLayout, dragBehavior) {
+        layout = routerLayout();
+    }));
+
+    it('should compute router layout', inject(function () {
+        var data = [{
+            name: "A",
+            x: 100,
+            y: 100,
+            pins: [
+                { name: "Pin 1" }
+            ]
+        }];
+
+        layout(data);
+
+        var expected = [{
+            name: "A",
+            x: 100,
+            y: 100,
+            pins: [{
+                name: "Pin 1",
+                _layout: { len: 42.42640687119285, y: -20, r: 5 }
+            }],
+            _layout: { r: 42.42640687119285 }
+        }];
+
+        expect(data).to.deep.equal(expected);
+    }));
+
+});
