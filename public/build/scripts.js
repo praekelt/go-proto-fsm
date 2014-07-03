@@ -1702,8 +1702,20 @@ controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
         $scope.data = {
             conversations: [
-                {x: 200, y: 200, name: "My cool app"},
-                {x: 500, y: 500, name: "Some other app"},
+                {name: "Register", description: "4 Steps", colour: '#f82943', x: 220, y: 120},
+                {name: "Survey", description: "4 Questions", colour: '#fbcf3b', x: 220, y: 340},
+            ],
+            channels: [
+                {name: "SMS", description: "082 335 29 24", utilization: 0.4, x: 840, y: 360},
+                {name: "USSD", description: "*120*10001#", utilization: 0.9, x: 840, y: 140}
+            ],
+            routers: [
+                {
+                    name: "A",
+                    x: 500,
+                    y: 220,
+                    pins: [{name: "Survey"}, {name: "Support"}, {name: "Results"}]
+                }
             ]
         };
     }
@@ -1719,7 +1731,14 @@ directives.directive('goCampaignDesigner', [
     'canvasBuilder',
     'dragBehavior',
     'conversationComponent',
-    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent) {
+    'channelComponent',
+    'routerComponent',
+    'conversationLayout',
+    'routerLayout',
+    'channelLayout',
+    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
+                   channelComponent, routerComponent, conversationLayout,
+                   routerLayout, channelLayout) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -1777,14 +1796,28 @@ directives.directive('goCampaignDesigner', [
                 .call();
 
             var conversation = conversationComponent().drag(drag);
+            var channel = channelComponent().drag(drag);
+            var router = routerComponent().drag(drag);
+
+            var layoutConversations = conversationLayout();
+            var layoutRouters = routerLayout();
+            var layoutChannels = channelLayout();
 
             repaint(); // Do initial draw
 
             /** Repaint the canvas **/
             function repaint() {
                 canvas.selectAll('.conversation')
-                    .data(scope.data.conversations)
+                    .data(layoutConversations(scope.data.conversations))
                     .call(conversation);
+
+                canvas.selectAll('.channel')
+                    .data(layoutChannels(scope.data.channels))
+                    .call(channel);
+
+                canvas.selectAll('.router')
+                    .data(layoutRouters(scope.data.routers))
+                    .call(router);
             }
 
             $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
@@ -2144,10 +2177,93 @@ services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
     }
 ]);
 
+services.factory('conversationLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var outerRadius = 30;
+        var textMargin = 20;
+
+        function layout(data) {
+            angular.forEach(data, function (conversation) {
+                var textX = -(outerRadius / 2.0 + textMargin);
+
+                conversation._layout = {
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: textX
+                    },
+                    description: {
+                        x: textX
+                    }
+                }
+            });
+
+            return data;
+        }
+
+        return layout;
+    };
+}]);
+
 services.factory('conversationComponent', [function () {
     return function () {
-        var radius = 20;  // Default circle radius
-        var drag = null;  // The drag behavior
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component conversation');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d._layout.outer.r; })
+                .style('fill', function (d) { return d.colour; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d._layout.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d._layout.name.x })
+                .text(function (d) { return d.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
 
         /**
          * Repaint conversation components.
@@ -2155,50 +2271,9 @@ services.factory('conversationComponent', [function () {
          * @param {selection} Selection containing components.
          */
         var conversation = function(selection) {
-            if (selection.enter) {
-                var container = selection.enter().append('g')
-                    .attr('class', 'component conversation');
-
-                if (!container.empty()) {
-                    container.append('circle')
-                        .style('fill', '#ddd');
-
-                    container.append('text');
-
-                    if (drag) {
-                        container.call(drag);
-                    }
-                }
-            }
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('circle')
-                .attr('r', radius);
-
-            selection.selectAll('text')
-                .attr('x', -(radius + 5))
-                .attr('y', -(radius + 5))
-                .text(function (d) { return d.name; });
-
-            if (selection.exit) {
-                selection.exit().remove();  // Remove deleted conversations
-            }
-
-            return selection;
-        };
-
-        /**
-         * Get/set the circle radius.
-         *
-         * @param {value} The new radius; when setting.
-         * @return The current radius.
-         */
-        conversation.radius = function(value) {
-            if (!arguments.length) return radius;
-            radius = value;
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
             return conversation;
         };
 
@@ -2209,11 +2284,291 @@ services.factory('conversationComponent', [function () {
          * @return The current drag behaviour.
          */
         conversation.drag = function(value) {
-            if (!arguments.length) return drag;
-            drag = value;
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
             return conversation;
         };
 
         return conversation;
     };
+}]);
+
+services.factory('channelLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var maxOuterRadius = 100;
+        var textOffset = 20;
+
+        function layout(data) {
+            angular.forEach(data, function (channel) {
+                var outerRadius = innerRadius
+                    + maxOuterRadius * channel.utilization;
+
+                var textX = innerRadius / 2.0 + textOffset;
+
+                channel._layout = {
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: textX
+                    },
+                    description: {
+                        x: textX
+                    }
+                };
+            });
+
+            return data;
+        }
+
+        return layout;
+    };
+}]);
+
+services.factory('channelComponent', [function () {
+    return function () {
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component channel');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d._layout.outer.r; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d._layout.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d._layout.name.x; })
+                .text(function (d) { return d.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint conversation components.
+         *
+         * @param {selection} Selection containing components.
+         */
+        var channel = function(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return channel;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        channel.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return channel;
+        };
+
+        return channel;
+    };
+}]);
+
+services.factory('routerLayout', [function () {
+    return function() {
+        var minSize = 60;
+        var pinGap = 20;
+        var pinHeadRadius = 5;
+
+        function pins(router) {
+            angular.forEach(router.pins, function (pin, i) {
+                pin._layout = {
+                    len: router._layout.r,
+                    y: pinGap * (i - 1),
+                    r: pinHeadRadius
+                };
+            });
+        }
+
+        function layout(data) {
+            angular.forEach(data, function (router) {
+                var size = Math.max(minSize, router.pins.length * pinGap);
+                var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
+
+                router._layout = {
+                    r: radius
+                };
+
+                pins(router);
+            });
+
+            return data;
+        }
+
+        layout.minSize = function(value) {
+            if (!arguments.length) return minSize;
+            minSize = value;
+            return layout;
+        };
+
+        layout.pinGap = function(value) {
+            if (!arguments.length) return pinGap;
+            pinGap = value;
+            return layout;
+        };
+
+        return layout;
+    };
+}]);
+
+services.factory('routerComponent', [function () {
+    return function () {
+        var pin = pinComponent();
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component router');
+
+            selection.append('circle')
+                .attr('class', 'disc');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('g')
+                .attr('class', 'pins');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc')
+                .attr('r', function (d) { return d._layout.r; });
+
+            selection.selectAll('.name')
+                .style('font-size', function (d) {
+                    return d._layout.r + 'px';
+                })
+                .text(function (d) { return d.name; });
+
+            selection.select('.pins')
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d._layout.r, 0] + ')';
+                })
+                .selectAll('.pin')
+                    .data(function(d) { return d.pins; },
+                             function(d) { return d.name; })
+                    .call(pin);
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint router components.
+         *
+         * @param {selection} Selection containing routers.
+         */
+        var router = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return router;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        router.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return router;
+        };
+
+        return router;
+    };
+
+    function pinComponent() {
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'pin');
+
+            selection.append('circle')
+                .attr('class', 'head');
+
+            selection.append('line')
+                .attr('class', 'line');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
+                });
+
+            selection.select('.head')
+                .attr('r', function (d) { return d._layout.r; })
+
+            selection.select('.line')
+                .attr('x2', function (d) { return d._layout.len; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        function pin(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return pin;
+        }
+
+        return pin;
+    }
 }]);

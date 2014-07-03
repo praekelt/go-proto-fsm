@@ -8,7 +8,14 @@ directives.directive('goCampaignDesigner', [
     'canvasBuilder',
     'dragBehavior',
     'conversationComponent',
-    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent) {
+    'channelComponent',
+    'routerComponent',
+    'conversationLayout',
+    'routerLayout',
+    'channelLayout',
+    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
+                   channelComponent, routerComponent, conversationLayout,
+                   routerLayout, channelLayout) {
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -66,14 +73,28 @@ directives.directive('goCampaignDesigner', [
                 .call();
 
             var conversation = conversationComponent().drag(drag);
+            var channel = channelComponent().drag(drag);
+            var router = routerComponent().drag(drag);
+
+            var layoutConversations = conversationLayout();
+            var layoutRouters = routerLayout();
+            var layoutChannels = channelLayout();
 
             repaint(); // Do initial draw
 
             /** Repaint the canvas **/
             function repaint() {
                 canvas.selectAll('.conversation')
-                    .data(scope.data.conversations)
+                    .data(layoutConversations(scope.data.conversations))
                     .call(conversation);
+
+                canvas.selectAll('.channel')
+                    .data(layoutChannels(scope.data.channels))
+                    .call(channel);
+
+                canvas.selectAll('.router')
+                    .data(layoutRouters(scope.data.routers))
+                    .call(router);
             }
 
             $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
