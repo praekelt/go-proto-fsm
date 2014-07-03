@@ -271,11 +271,11 @@ describe('dragBehavior', function () {
 });
 
 describe('conversationComponent', function () {
-    var element;
+    var element, data;
 
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (conversationComponent, dragBehavior) {
+    beforeEach(inject(function (conversationComponent, conversationLayout, dragBehavior) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -288,23 +288,18 @@ describe('conversationComponent', function () {
             .call();
 
         conversation = conversationComponent().drag(drag);
+        layout = conversationLayout();
 
-        var data = [{
+        data = [{
             name: "Conversation 1",
             description: "Test conversation",
             colour: '#cccccc',
             x: 50,
-            y: 50,
-            _layout: {
-                inner: { r: 10 },
-                outer: { r: 30 },
-                name: { x: -25 },
-                description: { x: -25 }
-            }
+            y: 50
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(data)
+            .data(layout(data))
             .call(conversation);
     }));
 
@@ -316,18 +311,22 @@ describe('conversationComponent', function () {
         expect(conversation.attr('transform')).to.equal('translate(50,50)');
 
         var disc = conversation.find('.disc.outer').eq(0);
-        expect(disc.attr('r')).to.equal('30');
+        var r = data[0]._layout.outer.r;
+        expect(disc.attr('r')).to.equal(String(r));
         expect(disc.css('fill')).to.equal('rgb(204, 204, 204)');
 
-        expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal('10');
+        r = data[0]._layout.inner.r;
+        expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
 
         var name = conversation.find('.name').eq(0);
         expect(name.text()).to.equal('Conversation 1');
-        expect(name.attr('x')).to.equal('-25');
+        var x = data[0]._layout.name.x;
+        expect(name.attr('x')).to.equal(String(x));
 
         var description = conversation.find('.description').eq(0);
         expect(description.text()).to.equal('Test conversation');
-        expect(description.attr('x')).to.equal('-25');
+        x = data[0]._layout.description.x;
+        expect(description.attr('x')).to.equal(String(x));
     }));
 
     it('conversation should be draggable', inject(function () {
@@ -345,12 +344,12 @@ describe('conversationComponent', function () {
 
 });
 
-describe('conversationComponent', function () {
-    var element;
+describe('channelComponent', function () {
+    var element, data;
 
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (channelComponent, dragBehavior) {
+    beforeEach(inject(function (channelComponent, channelLayout, dragBehavior) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -363,23 +362,18 @@ describe('conversationComponent', function () {
             .call();
 
         channel = channelComponent().drag(drag);
+        layout = channelLayout();
 
-        var data = [{
+        data = [{
             name: "Channel 1",
             description: "Test channel",
             utilization: 0.4,
             x: 100,
-            y: 100,
-            _layout: {
-                inner: { r: 10 },
-                outer: { r: 100 },
-                name: { x: 25 },
-                description: { x: 25 }
-            }
+            y: 100
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
-            .data(data)
+            .data(layout(data))
             .call(channel);
     }));
 
@@ -389,16 +383,20 @@ describe('conversationComponent', function () {
 
         var channel = channels.eq(0);
         expect(channel.attr('transform')).to.equal('translate(100,100)');
-        expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal('100');
-        expect(channel.find('.disc.inner').eq(0).attr('r')).to.equal('10');
+        var r = data[0]._layout.outer.r;
+        expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal(String(r));
+        r = data[0]._layout.inner.r;
+        expect(channel.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
 
         var name = channel.find('.name').eq(0);
         expect(name.text()).to.equal('Channel 1');
-        expect(name.attr('x')).to.equal('25');
+        var x = data[0]._layout.name.x;
+        expect(name.attr('x')).to.equal(String(x));
 
         var description = channel.find('.description').eq(0);
         expect(description.text()).to.equal('Test channel');
-        expect(description.attr('x')).to.equal('25');
+        x = data[0]._layout.description.x;
+        expect(description.attr('x')).to.equal(String(x));
     }));
 
     it('channel should be draggable', inject(function () {
@@ -417,11 +415,11 @@ describe('conversationComponent', function () {
 });
 
 describe('routerComponent', function () {
-    var element;
+    var element, data;
 
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (routerComponent, dragBehavior) {
+    beforeEach(inject(function (routerComponent, routerLayout, dragBehavior) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -434,36 +432,20 @@ describe('routerComponent', function () {
             .call();
 
         router = routerComponent().drag(drag);
+        layout = routerLayout();
 
-        var data = [{
+        data = [{
             name: "Router 1",
             x: 100,
             y: 100,
             pins: [
-                {
-                    name: "Pin 1",
-                    _layout: {
-                        len: 60,
-                        y: 0,
-                        r: 5
-                    }
-                },
-                {
-                    name: "Pin 2",
-                    _layout: {
-                        len: 60,
-                        y: 20,
-                        r: 5
-                    }
-                }
-            ],
-            _layout: {
-                r: 60
-            }
+                { name: "Pin 1" },
+                { name: "Pin 2" }
+            ]
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.router')
-            .data(data)
+            .data(layout(data))
             .call(router);
     }));
 
@@ -473,7 +455,7 @@ describe('routerComponent', function () {
 
         var router = routers.eq(0);
         expect(router.attr('transform')).to.equal('translate(100,100)');
-        expect(router.find('.disc').eq(0).attr('r')).to.equal('60');
+        expect(router.find('.disc').eq(0).attr('r')).to.equal(String(data[0]._layout.r));
 
         var name = router.find('.name').eq(0);
         expect(name.text()).to.equal('Router 1');
@@ -482,14 +464,20 @@ describe('routerComponent', function () {
         expect(pins.find('.pin')).to.have.length(2);
 
         var pin = pins.find('.pin').eq(0);
-        expect(pin.attr('transform')).to.equal('translate(' + [-30, 0] + ')');
+        var len = data[0].pins[0]._layout.len;
+        var x = -(len / 2.0);
+        var y = data[0].pins[0]._layout.y;
+        expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
         expect(pin.find('.head')).to.have.length(1);
         expect(pin.find('.head').eq(0).attr('r')).to.equal('5');
         expect(pin.find('.line')).to.have.length(1);
-        expect(pin.find('.line').eq(0).attr('x2')).to.equal('60');
+        expect(pin.find('.line').eq(0).attr('x2')).to.equal(String(len));
 
         pin = pins.find('.pin').eq(1);
-        expect(pin.attr('transform')).to.equal('translate(' + [-30, 20] + ')');
+        len = data[0].pins[1]._layout.len;
+        x = -(len / 2.0);
+        y = data[0].pins[1]._layout.y;
+        expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
     }));
 
     it('router should be draggable', inject(function () {
