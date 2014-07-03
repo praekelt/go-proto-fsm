@@ -600,6 +600,18 @@ services.factory('routerLayout', [function () {
             return data;
         }
 
+        layout.minSize = function(value) {
+            if (!arguments.length) return minSize;
+            minSize = value;
+            return layout;
+        };
+
+        layout.pinGap = function(value) {
+            if (!arguments.length) return pinGap;
+            pinGap = value;
+            return layout;
+        };
+
         return layout;
     };
 }]);

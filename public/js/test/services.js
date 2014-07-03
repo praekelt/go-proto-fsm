@@ -604,15 +604,20 @@ describe('routerLayout', function () {
 
         layout(data);
 
+        var size = Math.max(layout.minSize(),
+            data[0].pins.length * layout.pinGap());
+
+        var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
+
         var expected = [{
             name: "A",
             x: 100,
             y: 100,
             pins: [{
                 name: "Pin 1",
-                _layout: { len: 42.42640687119285, y: -20, r: 5 }
+                _layout: { len: radius, y: -20, r: 5 }
             }],
-            _layout: { r: 42.42640687119285 }
+            _layout: { r: radius }
         }];
 
         expect(data).to.deep.equal(expected);
