@@ -2024,6 +2024,7 @@ services.factory('dragBehavior', [function () {
         var canvasWidth = 0;
         var canvasHeight = 0;
         var gridCellSize = 0;
+        var bboxPadding = 5;
 
         /**
          * Called when the user starts dragging a component
@@ -2032,7 +2033,25 @@ services.factory('dragBehavior', [function () {
             if (d3.event.sourceEvent) {
                 d3.event.sourceEvent.stopPropagation();
             }
-            d3.select(this).classed('dragging', true);
+
+            // Unselect selected components
+            d3.selectAll('.component.selected')
+                .classed('selected', false)
+                .selectAll('.bbox')
+                    .remove();
+
+            var selection = d3.select(this)
+                .classed('selected', true)
+                .classed('dragging', true);
+
+            var bbox = selection.node().getBBox();
+            selection.append('rect')
+                .attr('class', 'bbox')
+                .attr('x', bbox.x - bboxPadding)
+                .attr('y', bbox.y - bboxPadding)
+                .attr('width', bbox.width + 2*bboxPadding)
+                .attr('height', bbox.height + 2*bboxPadding)
+                .attr('stroke-dasharray', "5,5");
         }
 
         /**
