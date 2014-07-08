@@ -1701,22 +1701,59 @@ var controllers = angular.module('vumigo.controllers', []);
 controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
         $scope.data = {
-            conversations: [
-                {name: "Register", description: "4 Steps", colour: '#f82943', x: 220, y: 120},
-                {name: "Survey", description: "4 Questions", colour: '#fbcf3b', x: 220, y: 340},
-            ],
-            channels: [
-                {name: "SMS", description: "082 335 29 24", utilization: 0.4, x: 840, y: 360},
-                {name: "USSD", description: "*120*10001#", utilization: 0.9, x: 840, y: 140}
-            ],
-            routers: [
-                {
-                    name: "A",
-                    x: 500,
-                    y: 220,
-                    pins: [{name: "Survey"}, {name: "Support"}, {name: "Results"}]
-                }
-            ]
+            conversations: [{
+                uuid: 'conversation1',
+                name: "Register",
+                description: "4 Steps",
+                endpoints: [{uuid: 'endpoint1', name: 'default'}],
+                colour: '#f82943',
+                x: 220,
+                y: 120
+            }, {
+                uuid: 'conversation2',
+                name: "Survey",
+                description: "4 Questions",
+                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                colour: '#fbcf3b',
+                x: 220,
+                y: 340
+            }],
+            channels: [{
+                uuid: 'channel1',
+                name: "SMS",
+                description: "082 335 29 24",
+                endpoints: [{uuid: 'endpoint3', name: 'default'}],
+                utilization: 0.4,
+                x: 840,
+                y: 360
+            }, {
+                uuid: 'channel2',
+                name: "USSD",
+                description: "*120*10001#",
+                endpoints: [{uuid: 'endpoint4', name: 'default'}],
+                utilization: 0.9,
+                x: 840,
+                y: 140
+            }],
+            routers: [{
+                uuid: 'router1',
+                name: "K",
+                description: "Keyword",
+                channel_endpoints: [{uuid: 'endpoint5', name: 'default'}],
+                conversation_endpoints: [{
+                    uuid: 'endpoint6',
+                    name: 'default'
+                }, {
+                    uuid: 'endpoint7',
+                    name: 'default'
+                }],
+                x: 500,
+                y: 220
+            }],
+            routing_entries: [{
+                source: {uuid: 'endpoint1'},
+                target: {uuid: 'endpoint6'}
+            }]
         };
     }
 ]);
@@ -1764,6 +1801,10 @@ directives.directive('goCampaignDesigner', [
             if (!angular.isDefined($scope.gridCellSize)) {
                 $scope.gridCellSize = gridCellSize;
             }
+
+            $scope.refresh = function () {
+                $rootScope.$emit('go:campaignDesignerRepaint');
+            };
         }
 
         /**
@@ -1820,13 +1861,13 @@ directives.directive('goCampaignDesigner', [
                     .call(router);
             }
 
-            $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
+            $rootScope.$on('go:campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('go:campaignDesignerRepaint')
         }
 
         return {
             restrict: 'E',
             replace: true,
-            template: '<div id="campaign-designer"></div>',
+            templateUrl: '/templates/directives/go_campaign_designer.html',
             scope: {
                 data: '=',
                 canvasWidth: '=?',
@@ -2436,7 +2477,7 @@ services.factory('routerLayout', [function () {
         var pinHeadRadius = 5;
 
         function pins(router) {
-            angular.forEach(router.pins, function (pin, i) {
+            angular.forEach(router.conversation_endpoints, function (pin, i) {
                 pin._layout = {
                     len: router._layout.r,
                     y: pinGap * (i - 1),
@@ -2447,7 +2488,7 @@ services.factory('routerLayout', [function () {
 
         function layout(data) {
             angular.forEach(data, function (router) {
-                var size = Math.max(minSize, router.pins.length * pinGap);
+                var size = Math.max(minSize, router.conversation_endpoints.length * pinGap);
                 var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
                 router._layout = {
@@ -2516,8 +2557,8 @@ services.factory('routerComponent', [function () {
                     return 'translate(' + [-d._layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
-                    .data(function(d) { return d.pins; },
-                             function(d) { return d.name; })
+                    .data(function(d) { return d.conversation_endpoints; },
+                             function(d) { return d.uuid; })
                     .call(pin);
         }
 

@@ -291,8 +291,10 @@ describe('conversationComponent', function () {
         layout = conversationLayout();
 
         data = [{
+            uuid: 'conversation1',
             name: "Conversation 1",
             description: "Test conversation",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             colour: '#cccccc',
             x: 50,
             y: 50
@@ -334,8 +336,10 @@ describe('conversationComponent', function () {
         expect(conversations).to.have.length(1);
 
         data.push({
+            uuid: "conversation2",
             name: "Conversation 2",
             description: "Another conversation",
+            endpoints: [{uuid: 'endpoint2', name: 'default'}],
             colour: '#e32',
             x: 100,
             y: 100
@@ -399,8 +403,10 @@ describe('channelComponent', function () {
         layout = channelLayout();
 
         data = [{
+            uuid: 'channel1',
             name: "Channel 1",
             description: "Test channel",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             utilization: 0.4,
             x: 100,
             y: 100
@@ -438,8 +444,10 @@ describe('channelComponent', function () {
         expect(channels).to.have.length(1);
 
         data.push({
+            uuid: "channel2",
             name: "Channel 2",
             description: "Another channel",
+            endpoints: [{uuid: 'endpoint2', name: 'default'}],
             utilization: 0.7,
             x: 500,
             y: 500
@@ -503,13 +511,19 @@ describe('routerComponent', function () {
         layout = routerLayout();
 
         data = [{
+            uuid: 'router1',
             name: "Router 1",
+            description: "Keyword",
+            channel_endpoints: [{uuid: 'endpoint1', name: 'default'}],
+            conversation_endpoints: [{
+                uuid: 'endpoint2',
+                name: 'default'
+            }, {
+                uuid: 'endpoint3',
+                name: 'default'
+            }],
             x: 100,
-            y: 100,
-            pins: [
-                { name: "Pin 1" },
-                { name: "Pin 2" }
-            ]
+            y: 100
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.router')
@@ -532,9 +546,9 @@ describe('routerComponent', function () {
         expect(pins.find('.pin')).to.have.length(2);
 
         var pin = pins.find('.pin').eq(0);
-        var len = data[0].pins[0]._layout.len;
+        var len = data[0].conversation_endpoints[0]._layout.len;
         var x = -(len / 2.0);
-        var y = data[0].pins[0]._layout.y;
+        var y = data[0].conversation_endpoints[0]._layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
         expect(pin.find('.head')).to.have.length(1);
         expect(pin.find('.head').eq(0).attr('r')).to.equal('5');
@@ -542,9 +556,9 @@ describe('routerComponent', function () {
         expect(pin.find('.line').eq(0).attr('x2')).to.equal(String(len));
 
         pin = pins.find('.pin').eq(1);
-        len = data[0].pins[1]._layout.len;
+        len = data[0].conversation_endpoints[1]._layout.len;
         x = -(len / 2.0);
-        y = data[0].pins[1]._layout.y;
+        y = data[0].conversation_endpoints[1]._layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
     }));
 
@@ -553,12 +567,19 @@ describe('routerComponent', function () {
         expect(routers).to.have.length(1);
 
         data.push({
+            uuid: 'router2',
             name: "Router 2",
+            description: "Keyword",
+            channel_endpoints: [{uuid: 'endpoint4', name: 'default'}],
+            conversation_endpoints: [{
+                uuid: 'endpoint5',
+                name: 'default'
+            }, {
+                uuid: 'endpoint6',
+                name: 'default'
+            }],
             x: 200,
-            y: 200,
-            pins: [
-                { name: "Pin 1" }
-            ]
+            y: 200
         });
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.router')
@@ -609,8 +630,10 @@ describe('conversationLayout', function () {
 
     it('should compute conversation layout', inject(function () {
         var data = [{
+            uuid: "conversation1",
             name: "Conversation 1",
             description: "Test conversation",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             x: 100,
             y: 100
         }];
@@ -618,8 +641,10 @@ describe('conversationLayout', function () {
         layout(data);
 
         var expected = [{
+            uuid: "conversation1",
             name: "Conversation 1",
             description: "Test conversation",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             x: 100,
             y: 100,
             _layout: {
@@ -646,8 +671,10 @@ describe('channelLayout', function () {
 
     it('should compute channel layout', inject(function () {
         var data = [{
+            uuid: "channel1",
             name: "Channel 1",
             description: "Test channel",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             utilization: 0.5,
             x: 100,
             y: 100
@@ -656,8 +683,10 @@ describe('channelLayout', function () {
         layout(data);
 
         var expected = [{
+            uuid: "channel1",
             name: "Channel 1",
             description: "Test channel",
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
             utilization: 0.5,
             x: 100,
             y: 100,
@@ -685,29 +714,34 @@ describe('routerLayout', function () {
 
     it('should compute router layout', inject(function () {
         var data = [{
+            uuid: "router1",
             name: "A",
+            description: "Keyword",
+            channel_endpoints: [{uuid: 'endpoint1', name: 'default'}],
+            conversation_endpoints: [{uuid: 'endpoint2', name: 'default'}],
             x: 100,
-            y: 100,
-            pins: [
-                { name: "Pin 1" }
-            ]
+            y: 100
         }];
 
         layout(data);
 
         var size = Math.max(layout.minSize(),
-            data[0].pins.length * layout.pinGap());
+            data[0].conversation_endpoints.length * layout.pinGap());
 
         var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
         var expected = [{
+            uuid: "router1",
             name: "A",
-            x: 100,
-            y: 100,
-            pins: [{
-                name: "Pin 1",
+            description: "Keyword",
+            channel_endpoints: [{uuid: 'endpoint1', name: 'default'}],
+            conversation_endpoints: [{
+                uuid: 'endpoint2',
+                name: 'default',
                 _layout: { len: radius, y: -20, r: 5 }
             }],
+            x: 100,
+            y: 100,
             _layout: { r: radius }
         }];
 

@@ -8,6 +8,13 @@ module.exports = function (config) {
             'public/js/test/setup.js',
             'public/js/test/**/*.js',
             'public/templates/**/*.html'
-        ]
+        ],
+        preprocessors: {
+            'public/templates/**/*.html': ['ng-html2js']
+        },
+        ngHtml2JsPreprocessor: {
+            stripPrefix: 'public',
+            moduleName: 'vumigo.templates'
+        }
     });
 };

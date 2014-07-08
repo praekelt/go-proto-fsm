@@ -14,6 +14,14 @@ module.exports = function (grunt) {
         },
         concat: {
             css: {
+                options: {
+                    process: function (src, filepath) {
+                        if (filepath.indexOf('bootstrap.min.css') != -1) {
+                            src = src.replace(/\.\.\/fonts/g, '../bower_components/bootstrap/dist/fonts');
+                        }
+                        return src;
+                    }
+                },
                 src: [
                     'public/bower_components/bootstrap/dist/css/bootstrap.min.css',
                     'public/css/style.css'

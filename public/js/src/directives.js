@@ -41,6 +41,10 @@ directives.directive('goCampaignDesigner', [
             if (!angular.isDefined($scope.gridCellSize)) {
                 $scope.gridCellSize = gridCellSize;
             }
+
+            $scope.refresh = function () {
+                $rootScope.$emit('go:campaignDesignerRepaint');
+            };
         }
 
         /**
@@ -97,13 +101,13 @@ directives.directive('goCampaignDesigner', [
                     .call(router);
             }
 
-            $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
+            $rootScope.$on('go:campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('go:campaignDesignerRepaint')
         }
 
         return {
             restrict: 'E',
             replace: true,
-            template: '<div id="campaign-designer"></div>',
+            templateUrl: '/templates/directives/go_campaign_designer.html',
             scope: {
                 data: '=',
                 canvasWidth: '=?',

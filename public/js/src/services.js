@@ -595,7 +595,7 @@ services.factory('routerLayout', [function () {
         var pinHeadRadius = 5;
 
         function pins(router) {
-            angular.forEach(router.pins, function (pin, i) {
+            angular.forEach(router.conversation_endpoints, function (pin, i) {
                 pin._layout = {
                     len: router._layout.r,
                     y: pinGap * (i - 1),
@@ -606,7 +606,7 @@ services.factory('routerLayout', [function () {
 
         function layout(data) {
             angular.forEach(data, function (router) {
-                var size = Math.max(minSize, router.pins.length * pinGap);
+                var size = Math.max(minSize, router.conversation_endpoints.length * pinGap);
                 var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
                 router._layout = {
@@ -675,8 +675,8 @@ services.factory('routerComponent', [function () {
                     return 'translate(' + [-d._layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
-                    .data(function(d) { return d.pins; },
-                             function(d) { return d.name; })
+                    .data(function(d) { return d.conversation_endpoints; },
+                             function(d) { return d.uuid; })
                     .call(pin);
         }
 
