@@ -7,15 +7,20 @@ directives.directive('goCampaignDesigner', [
     '$rootScope',
     'canvasBuilder',
     'dragBehavior',
+    'componentHelper',
     'conversationComponent',
     'channelComponent',
     'routerComponent',
+    'connectionComponent',
     'conversationLayout',
     'routerLayout',
     'channelLayout',
-    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
-                   channelComponent, routerComponent, conversationLayout,
-                   routerLayout, channelLayout) {
+    'connectionLayout',
+    function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
+                   conversationComponent, channelComponent, routerComponent,
+                   connectionComponent, conversationLayout, routerLayout,
+                   channelLayout, connectionLayout) {
+
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -42,7 +47,7 @@ directives.directive('goCampaignDesigner', [
                 $scope.gridCellSize = gridCellSize;
             }
 
-            $scope.selectedComponentUUID = null;
+            $scope.selectedComponentId = null;
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
@@ -54,77 +59,12 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            $scope.findComponent = function (uuid) {
-                for (var i = 0; i < $scope.data.conversations.length; i++) {
-                    if ($scope.data.conversations[i].uuid == uuid) {
-                        return {
-                            type: 'conversation',
-                            data: $scope.data.conversations[i]
-                        }
-                    }
-                }
-
-                for (var i = 0; i < $scope.data.channels.length; i++) {
-                    if ($scope.data.channels[i].uuid == uuid) {
-                        return {
-                            type: 'channel',
-                            data: $scope.data.channels[i]
-                        }
-                    }
-                }
-
-                for (var i = 0; i < $scope.data.routers.length; i++) {
-                    if ($scope.data.routers[i].uuid == uuid) {
-                        return {
-                            type: 'router',
-                            data: $scope.data.routers[i]
-                        }
-                    }
-                }
-                return null;
-            };
-
-            $scope.connectComponents = function(component1, component2) {
-                if (!component1 || !component2 || component1.type == component2.type) return;
-
-                var sourceEndpoint = null;
-                if (['conversation', 'channel'].indexOf(component1.type) != -1) {
-                    sourceEndpoint = component1.data.endpoints[0];
-                } else if (component1.type == 'router') {
-                    if (component2.type == 'conversation') {
-                        sourceEndpoint = component1.data.conversation_endpoints[0];
-                    } else if (component2.type == 'channel') {
-                        sourceEndpoint = component1.data.channel_endpoints[0];
-                    }
-                }
-
-                var targetEndpoint = null;
-                if (['conversation', 'channel'].indexOf(component2.type) != -1) {
-                    targetEndpoint = component2.data.endpoints[0];
-                } else if (component2.type == 'router') {
-                    if (component1.type == 'conversation') {
-                        targetEndpoint = component2.data.conversation_endpoints[0];
-                    } else if (component1.type == 'channel') {
-                        sourceEndpoint = component2.data.channel_endpoints[0];
-                    }
-                }
-
-                if (sourceEndpoint && targetEndpoint) {
-                    $scope.data.routing_entries.push({
-                        source: {uuid: sourceEndpoint.uuid},
-                        target: {uuid: targetEndpoint.uuid},
-                    });
-                }
-            };
-
-            $scope.$watch('selectedComponentUUID', function (newValue, oldValue) {
+            $scope.$watch('selectedComponentId', function (newValue, oldValue) {
                 if (newValue) {
                     $scope.componentSelected = true;
 
                     if (oldValue && newValue != oldValue && $scope.connectPressed) {
-                        var oldComponent = $scope.findComponent(oldValue);
-                        var newComponent = $scope.findComponent(newValue);
-                        $scope.connectComponents(oldComponent, newComponent)
+                        componentHelper.connectComponents($scope.data, oldValue, newValue);
                         $scope.refresh();
                     }
 
@@ -135,8 +75,8 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = false;
             });
 
-            $rootScope.$on('go:campaignDesignerSelect', function (event, uuid) {
-                $scope.selectedComponentUUID = uuid;
+            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
+                $scope.selectedComponentId = componentId;
             });
         }
 
@@ -172,10 +112,12 @@ directives.directive('goCampaignDesigner', [
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
+            var connection = connectionComponent();
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
+            var layoutConnections = connectionLayout();
 
             repaint(); // Do initial draw
 
@@ -192,9 +134,13 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.router')
                     .data(layoutRouters(scope.data.routers))
                     .call(router);
+
+                canvas.selectAll('.connection')
+                    .data(layoutConnections(scope.data).routing_entries)
+                    .call(connection);
             }
 
-            $rootScope.$on('go:campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('go:campaignDesignerRepaint')
+            $rootScope.$on('go:campaignDesignerRepaint', repaint);
         }
 
         return {
