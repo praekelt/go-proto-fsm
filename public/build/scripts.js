@@ -1700,6 +1700,7 @@ var controllers = angular.module('vumigo.controllers', []);
 
 controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
+
         $scope.data = {
             conversations: [{
                 uuid: 'conversation1',
@@ -1802,9 +1803,102 @@ directives.directive('goCampaignDesigner', [
                 $scope.gridCellSize = gridCellSize;
             }
 
+            $scope.selectedComponentUUID = null;
+            $scope.componentSelected = false;
+            $scope.connectPressed = false;
+
             $scope.refresh = function () {
                 $rootScope.$emit('go:campaignDesignerRepaint');
             };
+
+            $scope.connect = function () {
+                $scope.connectPressed = !$scope.connectPressed;
+            };
+
+            $scope.findComponent = function (uuid) {
+                for (var i = 0; i < $scope.data.conversations.length; i++) {
+                    if ($scope.data.conversations[i].uuid == uuid) {
+                        return {
+                            type: 'conversation',
+                            data: $scope.data.conversations[i]
+                        }
+                    }
+                }
+
+                for (var i = 0; i < $scope.data.channels.length; i++) {
+                    if ($scope.data.channels[i].uuid == uuid) {
+                        return {
+                            type: 'channel',
+                            data: $scope.data.channels[i]
+                        }
+                    }
+                }
+
+                for (var i = 0; i < $scope.data.routers.length; i++) {
+                    if ($scope.data.routers[i].uuid == uuid) {
+                        return {
+                            type: 'router',
+                            data: $scope.data.routers[i]
+                        }
+                    }
+                }
+                return null;
+            };
+
+            $scope.connectComponents = function(component1, component2) {
+                if (!component1 || !component2 || component1.type == component2.type) return;
+
+                var sourceEndpoint = null;
+                if (['conversation', 'channel'].indexOf(component1.type) != -1) {
+                    sourceEndpoint = component1.data.endpoints[0];
+                } else if (component1.type == 'router') {
+                    if (component2.type == 'conversation') {
+                        sourceEndpoint = component1.data.conversation_endpoints[0];
+                    } else if (component2.type == 'channel') {
+                        sourceEndpoint = component1.data.channel_endpoints[0];
+                    }
+                }
+
+                var targetEndpoint = null;
+                if (['conversation', 'channel'].indexOf(component2.type) != -1) {
+                    targetEndpoint = component2.data.endpoints[0];
+                } else if (component2.type == 'router') {
+                    if (component1.type == 'conversation') {
+                        targetEndpoint = component2.data.conversation_endpoints[0];
+                    } else if (component1.type == 'channel') {
+                        sourceEndpoint = component2.data.channel_endpoints[0];
+                    }
+                }
+
+                if (sourceEndpoint && targetEndpoint) {
+                    $scope.data.routing_entries.push({
+                        source: {uuid: sourceEndpoint.uuid},
+                        target: {uuid: targetEndpoint.uuid},
+                    });
+                }
+            };
+
+            $scope.$watch('selectedComponentUUID', function (newValue, oldValue) {
+                if (newValue) {
+                    $scope.componentSelected = true;
+
+                    if (oldValue && newValue != oldValue && $scope.connectPressed) {
+                        var oldComponent = $scope.findComponent(oldValue);
+                        var newComponent = $scope.findComponent(newValue);
+                        $scope.connectComponents(oldComponent, newComponent)
+                        $scope.refresh();
+                    }
+
+                } else {
+                    $scope.componentSelected = false;
+                }
+
+                $scope.connectPressed = false;
+            });
+
+            $rootScope.$on('go:campaignDesignerSelect', function (event, uuid) {
+                $scope.selectedComponentUUID = uuid;
+            });
         }
 
         /**
@@ -2060,7 +2154,7 @@ services.factory('zoomBehavior', [function () {
     };
 }]);
 
-services.factory('dragBehavior', [function () {
+services.factory('dragBehavior', ['$rootScope', function ($rootScope) {
     return function () {
         var canvasWidth = 0;
         var canvasHeight = 0;
@@ -2075,7 +2169,6 @@ services.factory('dragBehavior', [function () {
                 d3.event.sourceEvent.stopPropagation();
             }
 
-            // Unselect selected components
             d3.selectAll('.component.selected')
                 .classed('selected', false)
                 .selectAll('.bbox')
@@ -2093,6 +2186,11 @@ services.factory('dragBehavior', [function () {
                 .attr('width', bbox.width + 2*bboxPadding)
                 .attr('height', bbox.height + 2*bboxPadding)
                 .attr('stroke-dasharray', "5,5");
+
+            $rootScope.$apply(function () {
+                var d = selection.datum();
+                $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+            });
         }
 
         /**

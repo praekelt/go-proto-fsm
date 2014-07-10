@@ -9,6 +9,10 @@
         padding: .5em;
     }
 
+    .dragging {
+        cursor: move;
+    }
+
     .axis line {
         fill: none;
         stroke: #ddd;
@@ -17,7 +21,10 @@
     }
 
     .component {
+        cursor: pointer;
+
         &.selected {
+            z-index: 9999;
         }
 
         &.dragging {

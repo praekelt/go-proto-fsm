@@ -178,7 +178,7 @@ services.factory('zoomBehavior', [function () {
     };
 }]);
 
-services.factory('dragBehavior', [function () {
+services.factory('dragBehavior', ['$rootScope', function ($rootScope) {
     return function () {
         var canvasWidth = 0;
         var canvasHeight = 0;
@@ -193,7 +193,6 @@ services.factory('dragBehavior', [function () {
                 d3.event.sourceEvent.stopPropagation();
             }
 
-            // Unselect selected components
             d3.selectAll('.component.selected')
                 .classed('selected', false)
                 .selectAll('.bbox')
@@ -211,6 +210,11 @@ services.factory('dragBehavior', [function () {
                 .attr('width', bbox.width + 2*bboxPadding)
                 .attr('height', bbox.height + 2*bboxPadding)
                 .attr('stroke-dasharray', "5,5");
+
+            $rootScope.$apply(function () {
+                var d = selection.datum();
+                $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+            });
         }
 
         /**
