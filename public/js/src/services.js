@@ -877,17 +877,18 @@ services.factory('connectionLayout', ['componentHelper',
             function point(component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
-                // if (component.type == 'router' && endpointId) {
-                //     var endpoint = null;
-                //     for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
-                //         if (component.data.conversation_endpoints[i].uuid = endpointId) {
-                //             endpoint = component.data.conversation_endpoints[i];
-                //         }
-                //     }
-                //     if (endpoint) {
-                //         x = x - (component.data._layout.r + endpoint._layout.len / 2.0);
-                //     }
-                // }
+                if (component.type == 'router' && endpointId) {
+                    var endpoint = null;
+                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                            endpoint = component.data.conversation_endpoints[i];
+                        }
+                    }
+                    if (endpoint) {
+                        x = x - (component.data._layout.r + endpoint._layout.len / 2.0);
+                        y = y + endpoint._layout.y;
+                    }
+                }
                 return {x: x, y: y};
             }
 
@@ -914,10 +915,7 @@ services.factory('connectionComponent', [function () {
 
         function enter(selection) {
             selection.append('path')
-                .attr('class', 'component connection')
-                .attr('stroke', 'black')
-                .attr('stroke-width', 5)
-                .attr('fill', 'none');
+                .attr('class', 'component connection');
         }
 
         function update(selection) {

@@ -123,5 +123,22 @@
                 alignment-baseline: central;
             }
         }
+
+        &.connection {
+            -webkit-transition: all .5s ease-in-out;
+            -moz-transition: all .5s ease-in-out;
+            -o-transition: all .5s ease-in-out;
+            transition: all .5s ease-in-out;
+
+            stroke: black;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+
+            &:hover {
+                stroke-width: 20;
+            }
+        }
     }
 }
