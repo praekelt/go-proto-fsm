@@ -1920,9 +1920,10 @@ directives.directive('goCampaignDesigner', [
     }
 ]);
 
-var services = angular.module('vumigo.services', []);
+angular.module('vumigo.services', []);
 
-services.factory('svgToolbox', [function () {
+
+angular.module('vumigo.services').factory('svgToolbox', [function () {
 
     /**
      * Select the first element from the given selection that matches the
@@ -2012,7 +2013,190 @@ services.factory('svgToolbox', [function () {
     };
 }]);
 
-services.factory('zoomBehavior', [function () {
+angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
+    function (zoomBehavior, svgToolbox) {
+        return function () {
+            var width = 2048;  // Default canvas width
+            var height = 2048;  // Default canvas height
+            var gridCellSize = 0;  // Disable grid by default
+
+            var canvas = function(selection) {
+                var viewportElement = $(selection[0]);
+
+                var svg = svgToolbox.selectOrAppend(selection, 'svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                svgToolbox.createShadowFilter(svg);
+
+                var container = svg.append('g')
+                    .attr('class', 'container')
+                    .attr('transform', 'translate(0, 0)');
+
+                var rect = container.append('rect')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .style('fill', 'none')
+                    .style('pointer-events', 'all');
+
+                var canvas = container.append('g')
+                    .attr('class', 'canvas');
+
+                svgToolbox.drawGrid(canvas, width, height, gridCellSize);
+
+                var zoom = zoomBehavior()
+                    .canvas(canvas)
+                    .canvasWidth(width)
+                    .canvasHeight(height)
+                    .viewportElement(viewportElement)
+                    .call();
+
+                container.on('mousedown', function () {
+                    d3.select(this).classed('dragging', true);
+                }).on('mouseup', function () {
+                    d3.select(this).classed('dragging', false);
+                }).call(zoom);
+
+                return canvas;
+            };
+
+            canvas.width = function(value) {
+                if (!arguments.length) return width;
+                width = value;
+                return canvas;
+            };
+
+           canvas.height = function(value) {
+                if (!arguments.length) return height;
+                height = value;
+                return canvas;
+            };
+
+           canvas.gridCellSize = function(value) {
+                if (!arguments.length) return gridCellSize;
+                gridCellSize = value;
+                return canvas;
+            };
+
+           canvas.zoomExtent = function(value) {
+                if (!arguments.length) return zoomExtent;
+                zoomExtent = value;
+                return canvas;
+            };
+
+            return canvas;
+        };
+    }
+]);
+
+angular.module('vumigo.services').factory('componentHelper', [function () {
+
+    function getById(data, componentId) {
+        for (var i = 0; i < data.conversations.length; i++) {
+            if (data.conversations[i].uuid == componentId) {
+                return {type: 'conversation', data: data.conversations[i]}
+            }
+        }
+
+        for (var i = 0; i < data.channels.length; i++) {
+            if (data.channels[i].uuid == componentId) {
+                return {type: 'channel', data: data.channels[i]}
+            }
+        }
+
+        for (var i = 0; i < data.routers.length; i++) {
+            if (data.routers[i].uuid == componentId) {
+                return {type: 'router', data: data.routers[i]}
+            }
+        }
+
+        return null;
+    };
+
+    function getByEndpointId(data, endpointId) {
+        for (var i = 0; i < data.conversations.length; i++) {
+            for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
+                if (data.conversations[i].endpoints[j].uuid == endpointId) {
+                    return {type: 'conversation', data: data.conversations[i]};
+                }
+            }
+        }
+
+        for (var i = 0; i < data.channels.length; i++) {
+            for (var j = 0; j < data.channels[i].endpoints.length; j++) {
+                if (data.channels[i].endpoints[j].uuid == endpointId) {
+                    return {type: 'channel', data: data.channels[i]};
+                }
+            }
+        }
+
+        for (var i = 0; i < data.routers.length; i++) {
+            for (var j = 0; j < data.routers[i].conversation_endpoints.length; j++) {
+                if (data.routers[i].conversation_endpoints[j].uuid == endpointId) {
+                    return {type: 'router', data: data.routers[i]};
+                }
+            }
+
+            for (var j = 0; j < data.routers[i].channel_endpoints.length; j++) {
+                if (data.routers[i].channel_endpoints[j].uuid == endpointId) {
+                    return {type: 'router', data: data.routers[i]};
+                }
+            }
+        }
+
+        return null;
+    };
+
+    function connectComponents(data, sourceId, targetId) {
+        var source = getById(data, sourceId);
+        var target = getById(data, targetId);
+
+        if (!source || !target || source.type == target.type) return;
+
+        var sourceEndpoint = null;
+        if (['conversation', 'channel'].indexOf(source.type) != -1) {
+            sourceEndpoint = source.data.endpoints[0];
+
+        } else if (source.type == 'router') {
+            if (target.type == 'conversation') {
+                sourceEndpoint = source.data.conversation_endpoints[0];
+
+            } else if (target.type == 'channel') {
+                sourceEndpoint = source.data.channel_endpoints[0];
+            }
+        }
+
+        var targetEndpoint = null;
+        if (['conversation', 'channel'].indexOf(target.type) != -1) {
+            targetEndpoint = target.data.endpoints[0];
+
+        } else if (target.type == 'router') {
+            if (source.type == 'conversation') {
+                targetEndpoint = target.data.conversation_endpoints[0];
+
+            } else if (source.type == 'channel') {
+                sourceEndpoint = target.data.channel_endpoints[0];
+            }
+        }
+
+        if (sourceEndpoint && targetEndpoint) {
+            data.routing_entries.push({
+                source: {uuid: sourceEndpoint.uuid},
+                target: {uuid: targetEndpoint.uuid},
+            });
+        }
+    }
+
+    return {
+        getById: getById,
+        getByEndpointId: getByEndpointId,
+        connectComponents: connectComponents
+    };
+
+}]);
+
+
+angular.module('vumigo.services').factory('zoomBehavior', [function () {
     return function () {
         var zoomBehavior = null;  // Zoom behavior instance
         var canvas = null;  // Canvas to get zoomed/dragged
@@ -2100,7 +2284,7 @@ services.factory('zoomBehavior', [function () {
     };
 }]);
 
-services.factory('dragBehavior', ['$rootScope',
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
     function ($rootScope) {
         return function () {
             var canvasWidth = 0;
@@ -2211,199 +2395,8 @@ services.factory('dragBehavior', ['$rootScope',
     }
 ]);
 
-services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
-    function (zoomBehavior, svgToolbox) {
-        return function () {
-            var width = 2048;  // Default canvas width
-            var height = 2048;  // Default canvas height
-            var gridCellSize = 0;  // Disable grid by default
 
-            var canvas = function(selection) {
-                var viewportElement = $(selection[0]);
-
-                var svg = svgToolbox.selectOrAppend(selection, 'svg')
-                    .attr('width', width)
-                    .attr('height', height);
-
-                svgToolbox.createShadowFilter(svg);
-
-                var container = svg.append('g')
-                    .attr('class', 'container')
-                    .attr('transform', 'translate(0, 0)');
-
-                var rect = container.append('rect')
-                    .attr('width', width)
-                    .attr('height', height)
-                    .style('fill', 'none')
-                    .style('pointer-events', 'all');
-
-                var canvas = container.append('g')
-                    .attr('class', 'canvas');
-
-                svgToolbox.drawGrid(canvas, width, height, gridCellSize);
-
-                var zoom = zoomBehavior()
-                    .canvas(canvas)
-                    .canvasWidth(width)
-                    .canvasHeight(height)
-                    .viewportElement(viewportElement)
-                    .call();
-
-                container.on('mousedown', function () {
-                    d3.select(this).classed('dragging', true);
-                }).on('mouseup', function () {
-                    d3.select(this).classed('dragging', false);
-                }).call(zoom);
-
-                return canvas;
-            };
-
-            canvas.width = function(value) {
-                if (!arguments.length) return width;
-                width = value;
-                return canvas;
-            };
-
-           canvas.height = function(value) {
-                if (!arguments.length) return height;
-                height = value;
-                return canvas;
-            };
-
-           canvas.gridCellSize = function(value) {
-                if (!arguments.length) return gridCellSize;
-                gridCellSize = value;
-                return canvas;
-            };
-
-           canvas.zoomExtent = function(value) {
-                if (!arguments.length) return zoomExtent;
-                zoomExtent = value;
-                return canvas;
-            };
-
-            return canvas;
-        };
-    }
-]);
-
-services.factory('conversationLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var outerRadius = 30;
-        var textMargin = 20;
-
-        function layout(data) {
-            angular.forEach(data, function (conversation) {
-                var textX = -(outerRadius / 2.0 + textMargin);
-
-                conversation._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
-                    }
-                }
-            });
-
-            return data;
-        }
-
-        return layout;
-    };
-}]);
-
-services.factory('conversationComponent', [function () {
-    return function () {
-        var dragBehavior = null;
-
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component conversation');
-
-            selection.append('circle')
-                .attr('class', 'disc outer');
-
-            selection.append('circle')
-                .attr('class', 'disc inner');
-
-            selection.append('text')
-                .attr('class', 'name');
-
-            selection.append('text')
-                .attr('class', 'description');
-        }
-
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
-
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
-
-            selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._layout.outer.r; })
-                .style('fill', function (d) { return d.colour; });
-
-            selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._layout.inner.r; });
-
-            selection.selectAll('.name')
-                .attr('x', function (d) { return d._layout.name.x })
-                .text(function (d) { return d.name; });
-
-            selection.selectAll('.description')
-                .attr('x', function (d) { return d._layout.description.x; })
-                .attr('dy', function (d) {
-                    var fontSize = selection.select('.name')
-                        .style('font-size');
-
-                    return parseInt(fontSize) + 'px';
-                })
-                .text(function (d) { return d.description; });
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        /**
-         * Repaint conversation components.
-         *
-         * @param {selection} Selection containing components.
-         */
-        var conversation = function(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return conversation;
-        };
-
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        conversation.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return conversation;
-        };
-
-        return conversation;
-    };
-}]);
-
-services.factory('channelLayout', [function () {
+angular.module('vumigo.services').factory('channelLayout', [function () {
     return function() {
         var innerRadius = 10;
         var maxOuterRadius = 100;
@@ -2439,7 +2432,8 @@ services.factory('channelLayout', [function () {
     };
 }]);
 
-services.factory('channelComponent', [function () {
+
+angular.module('vumigo.services').factory('channelComponent', [function () {
     return function () {
         var dragBehavior = null;
 
@@ -2520,7 +2514,8 @@ services.factory('channelComponent', [function () {
     };
 }]);
 
-services.factory('routerLayout', [function () {
+
+angular.module('vumigo.services').factory('routerLayout', [function () {
     return function() {
         var minSize = 60;
         var pinGap = 20;
@@ -2567,7 +2562,8 @@ services.factory('routerLayout', [function () {
     };
 }]);
 
-services.factory('routerComponent', [function () {
+
+angular.module('vumigo.services').factory('routerComponent', [function () {
     return function () {
         var pin = pinComponent();
         var dragBehavior = null;
@@ -2683,113 +2679,126 @@ services.factory('routerComponent', [function () {
     }
 }]);
 
-services.factory('componentHelper', [function () {
 
-    function getById(data, componentId) {
-        for (var i = 0; i < data.conversations.length; i++) {
-            if (data.conversations[i].uuid == componentId) {
-                return {type: 'conversation', data: data.conversations[i]}
-            }
-        }
+angular.module('vumigo.services').factory('conversationLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var outerRadius = 30;
+        var textMargin = 20;
 
-        for (var i = 0; i < data.channels.length; i++) {
-            if (data.channels[i].uuid == componentId) {
-                return {type: 'channel', data: data.channels[i]}
-            }
-        }
+        function layout(data) {
+            angular.forEach(data, function (conversation) {
+                var textX = -(outerRadius / 2.0 + textMargin);
 
-        for (var i = 0; i < data.routers.length; i++) {
-            if (data.routers[i].uuid == componentId) {
-                return {type: 'router', data: data.routers[i]}
-            }
-        }
-
-        return null;
-    };
-
-    function getByEndpointId(data, endpointId) {
-        for (var i = 0; i < data.conversations.length; i++) {
-            for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
-                if (data.conversations[i].endpoints[j].uuid == endpointId) {
-                    return {type: 'conversation', data: data.conversations[i]};
+                conversation._layout = {
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: textX
+                    },
+                    description: {
+                        x: textX
+                    }
                 }
-            }
-        }
-
-        for (var i = 0; i < data.channels.length; i++) {
-            for (var j = 0; j < data.channels[i].endpoints.length; j++) {
-                if (data.channels[i].endpoints[j].uuid == endpointId) {
-                    return {type: 'channel', data: data.channels[i]};
-                }
-            }
-        }
-
-        for (var i = 0; i < data.routers.length; i++) {
-            for (var j = 0; j < data.routers[i].conversation_endpoints.length; j++) {
-                if (data.routers[i].conversation_endpoints[j].uuid == endpointId) {
-                    return {type: 'router', data: data.routers[i]};
-                }
-            }
-
-            for (var j = 0; j < data.routers[i].channel_endpoints.length; j++) {
-                if (data.routers[i].channel_endpoints[j].uuid == endpointId) {
-                    return {type: 'router', data: data.routers[i]};
-                }
-            }
-        }
-
-        return null;
-    };
-
-    function connectComponents(data, sourceId, targetId) {
-        var source = getById(data, sourceId);
-        var target = getById(data, targetId);
-
-        if (!source || !target || source.type == target.type) return;
-
-        var sourceEndpoint = null;
-        if (['conversation', 'channel'].indexOf(source.type) != -1) {
-            sourceEndpoint = source.data.endpoints[0];
-
-        } else if (source.type == 'router') {
-            if (target.type == 'conversation') {
-                sourceEndpoint = source.data.conversation_endpoints[0];
-
-            } else if (target.type == 'channel') {
-                sourceEndpoint = source.data.channel_endpoints[0];
-            }
-        }
-
-        var targetEndpoint = null;
-        if (['conversation', 'channel'].indexOf(target.type) != -1) {
-            targetEndpoint = target.data.endpoints[0];
-
-        } else if (target.type == 'router') {
-            if (source.type == 'conversation') {
-                targetEndpoint = target.data.conversation_endpoints[0];
-
-            } else if (source.type == 'channel') {
-                sourceEndpoint = target.data.channel_endpoints[0];
-            }
-        }
-
-        if (sourceEndpoint && targetEndpoint) {
-            data.routing_entries.push({
-                source: {uuid: sourceEndpoint.uuid},
-                target: {uuid: targetEndpoint.uuid},
             });
+
+            return data;
         }
-    }
 
-    return {
-        getById: getById,
-        getByEndpointId: getByEndpointId,
-        connectComponents: connectComponents
+        return layout;
     };
-
 }]);
 
-services.factory('connectionLayout', ['componentHelper',
+
+angular.module('vumigo.services').factory('conversationComponent', [function () {
+    return function () {
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component conversation');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d._layout.outer.r; })
+                .style('fill', function (d) { return d.colour; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d._layout.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d._layout.name.x })
+                .text(function (d) { return d.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint conversation components.
+         *
+         * @param {selection} Selection containing components.
+         */
+        var conversation = function(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return conversation;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        conversation.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return conversation;
+        };
+
+        return conversation;
+    };
+}]);
+
+
+angular.module('vumigo.services').factory('connectionLayout', ['componentHelper',
     function (componentHelper) {
         return function() {
 
@@ -2832,7 +2841,8 @@ services.factory('connectionLayout', ['componentHelper',
     }
 ]);
 
-services.factory('connectionComponent', [function () {
+
+angular.module('vumigo.services').factory('connectionComponent', [function () {
     return function () {
 
         function enter(selection) {
