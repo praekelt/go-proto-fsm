@@ -83,15 +83,17 @@ describe('zoomBehavior', function () {
 });
 
 describe('dragBehavior', function () {
-    var element;
+    var element, scope;
 
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (dragBehavior) {
+    beforeEach(inject(function ($rootScope, dragBehavior) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
             '</div>');
+
+        scope = $rootScope;
 
         var svg = d3.selectAll(element.find('svg').toArray());
 
@@ -109,7 +111,7 @@ describe('dragBehavior', function () {
             .call();
 
         canvas.selectAll('.component')
-            .data([{x: 0, y: 0}])
+            .data([{uuid: 'component1', x: 0, y: 0}])
             .enter().append('g')
                 .attr('class', 'component')
                 .attr('transform', 'translate(0,0)')
@@ -173,6 +175,18 @@ describe('dragBehavior', function () {
             })
             .trigger('vumigo:dragend');
         expect(components.eq(0).attr('transform')).to.equal('translate(20,20)');
+    }));
+
+    it('should select component', inject(function () {
+        sinon.stub(scope, '$emit');
+
+        var component = element.find('.component').eq(0);
+
+        component.trigger('vumigo:dragstart');
+
+        expect(component.attr('class')).to.equal('component selected dragging');
+        expect(component.find('rect.bbox')).to.have.length(1);
+        expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component1')).to.be.true;
     }));
 
 });

@@ -118,8 +118,7 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     .attr('x', bbox.x - bboxPadding)
                     .attr('y', bbox.y - bboxPadding)
                     .attr('width', bbox.width + 2.0 * bboxPadding)
-                    .attr('height', bbox.height + 2.0 * bboxPadding)
-                    .attr('stroke-dasharray', "5,5");
+                    .attr('height', bbox.height + 2.0 * bboxPadding);
 
                 $rootScope.$apply(function () {
                     var d = selection.datum();
