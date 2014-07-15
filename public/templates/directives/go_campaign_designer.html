@@ -1,0 +1,29 @@
+<div id="campaign-designer">
+    <ul class="nav nav-pills">
+        <li>
+            <a href="#" data-ng-click="refresh()">
+                <span class="glyphicon glyphicon-refresh"></span> Refresh
+            </a>
+        </li>
+        <li data-ng-class="{'active': connectPressed, 'disabled': !componentSelected}">
+            <a href="#" class="btn-connect" data-ng-click="connect()">
+                <span class="glyphicon glyphicon-link"></span> Connect
+            </a>
+        </li>
+        <li data-ng-class="{'disabled': !componentSelected}">
+            <a href="#">
+                <span class="glyphicon glyphicon-remove-circle"></span> Remove
+            </a>
+        </li>
+        <li>
+            <a href="#">
+                <span class="glyphicon glyphicon-zoom-in"></span> Zoom in
+            </a>
+        </li>
+        <li>
+            <a href="#">
+                <span class="glyphicon glyphicon-zoom-out"></span> Zoom out
+            </a>
+        </li>
+    </ul>
+</div>

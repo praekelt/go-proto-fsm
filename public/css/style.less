@@ -3,6 +3,15 @@
     width: 1024px;
     height: 768px;
     overflow: hidden;
+    position: relative;
+
+    .nav {
+        padding: .5em;
+    }
+
+    .dragging {
+        cursor: move;
+    }
 
     .axis line {
         fill: none;
@@ -11,11 +20,25 @@
         vector-effect: non-scaling-stroke;
     }
 
-    .dragging {
-        cursor: move;
+    .component {
+        cursor: pointer;
 
-        &.component {
+        &.selected {
+            z-index: 9999;
+        }
+
+        &.dragging {
+            cursor: move;
             filter: url(#shadow);
+        }
+
+        .bbox {
+            fill: #ddd;
+            fill-opacity: .3;
+            stroke: #666;
+            stroke-width: 0.5px;
+            stroke-opacity: 0.6;
+            stroke-dasharray: 5,5;
         }
     }
 
@@ -99,6 +122,23 @@
                 font-weight: normal;
                 text-anchor: start;
                 alignment-baseline: central;
+            }
+        }
+
+        &.connection {
+            -webkit-transition: all .5s ease-in-out;
+            -moz-transition: all .5s ease-in-out;
+            -o-transition: all .5s ease-in-out;
+            transition: all .5s ease-in-out;
+
+            stroke: black;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+
+            &:hover {
+                stroke-width: 20;
             }
         }
     }

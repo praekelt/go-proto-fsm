@@ -1700,23 +1700,61 @@ var controllers = angular.module('vumigo.controllers', []);
 
 controllers.controller('CampaignMakerController', ['$scope',
     function ($scope) {
+
         $scope.data = {
-            conversations: [
-                {name: "Register", description: "4 Steps", colour: '#f82943', x: 220, y: 120},
-                {name: "Survey", description: "4 Questions", colour: '#fbcf3b', x: 220, y: 340},
-            ],
-            channels: [
-                {name: "SMS", description: "082 335 29 24", utilization: 0.4, x: 840, y: 360},
-                {name: "USSD", description: "*120*10001#", utilization: 0.9, x: 840, y: 140}
-            ],
-            routers: [
-                {
-                    name: "A",
-                    x: 500,
-                    y: 220,
-                    pins: [{name: "Survey"}, {name: "Support"}, {name: "Results"}]
-                }
-            ]
+            conversations: [{
+                uuid: 'conversation1',
+                name: "Register",
+                description: "4 Steps",
+                endpoints: [{uuid: 'endpoint1', name: 'default'}],
+                colour: '#f82943',
+                x: 220,
+                y: 120
+            }, {
+                uuid: 'conversation2',
+                name: "Survey",
+                description: "4 Questions",
+                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                colour: '#fbcf3b',
+                x: 220,
+                y: 340
+            }],
+            channels: [{
+                uuid: 'channel1',
+                name: "SMS",
+                description: "082 335 29 24",
+                endpoints: [{uuid: 'endpoint3', name: 'default'}],
+                utilization: 0.4,
+                x: 840,
+                y: 360
+            }, {
+                uuid: 'channel2',
+                name: "USSD",
+                description: "*120*10001#",
+                endpoints: [{uuid: 'endpoint4', name: 'default'}],
+                utilization: 0.9,
+                x: 840,
+                y: 140
+            }],
+            routers: [{
+                uuid: 'router1',
+                name: "K",
+                description: "Keyword",
+                channel_endpoints: [{uuid: 'endpoint5', name: 'default'}],
+                conversation_endpoints: [{
+                    uuid: 'endpoint6',
+                    name: 'default'
+                }, {
+                    uuid: 'endpoint7',
+                    name: 'default'
+                }],
+                x: 500,
+                y: 220
+            }],
+            routing_entries: [{
+                source: {uuid: 'endpoint1'},
+                target: {uuid: 'endpoint6'}
+            }]
         };
     }
 ]);
@@ -1730,15 +1768,20 @@ directives.directive('goCampaignDesigner', [
     '$rootScope',
     'canvasBuilder',
     'dragBehavior',
+    'componentHelper',
     'conversationComponent',
     'channelComponent',
     'routerComponent',
+    'connectionComponent',
     'conversationLayout',
     'routerLayout',
     'channelLayout',
-    function ($rootScope, canvasBuilder, dragBehavior, conversationComponent,
-                   channelComponent, routerComponent, conversationLayout,
-                   routerLayout, channelLayout) {
+    'connectionLayout',
+    function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
+                   conversationComponent, channelComponent, routerComponent,
+                   connectionComponent, conversationLayout, routerLayout,
+                   channelLayout, connectionLayout) {
+
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
@@ -1764,6 +1807,38 @@ directives.directive('goCampaignDesigner', [
             if (!angular.isDefined($scope.gridCellSize)) {
                 $scope.gridCellSize = gridCellSize;
             }
+
+            $scope.selectedComponentId = null;
+            $scope.componentSelected = false;
+            $scope.connectPressed = false;
+
+            $scope.refresh = function () {
+                $rootScope.$emit('go:campaignDesignerRepaint');
+            };
+
+            $scope.connect = function () {
+                $scope.connectPressed = !$scope.connectPressed;
+            };
+
+            $scope.$watch('selectedComponentId', function (newValue, oldValue) {
+                if (newValue) {
+                    $scope.componentSelected = true;
+
+                    if (oldValue && newValue != oldValue && $scope.connectPressed) {
+                        componentHelper.connectComponents($scope.data, oldValue, newValue);
+                        $scope.refresh();
+                    }
+
+                } else {
+                    $scope.componentSelected = false;
+                }
+
+                $scope.connectPressed = false;
+            });
+
+            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
+                $scope.selectedComponentId = componentId;
+            });
         }
 
         /**
@@ -1798,10 +1873,12 @@ directives.directive('goCampaignDesigner', [
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
+            var connection = connectionComponent();
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
+            var layoutConnections = connectionLayout();
 
             repaint(); // Do initial draw
 
@@ -1818,15 +1895,19 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.router')
                     .data(layoutRouters(scope.data.routers))
                     .call(router);
+
+                canvas.selectAll('.connection')
+                    .data(layoutConnections(scope.data).routing_entries)
+                    .call(connection);
             }
 
-            $rootScope.$on('campaignDesignerRepaint', repaint);  // Triggered by $rootScope.$emit('campaignDesignerRepaint')
+            $rootScope.$on('go:campaignDesignerRepaint', repaint);
         }
 
         return {
             restrict: 'E',
             replace: true,
-            template: '<div id="campaign-designer"></div>',
+            templateUrl: '/templates/directives/go_campaign_designer.html',
             scope: {
                 data: '=',
                 canvasWidth: '=?',
@@ -1839,9 +1920,10 @@ directives.directive('goCampaignDesigner', [
     }
 ]);
 
-var services = angular.module('vumigo.services', []);
+angular.module('vumigo.services', []);
 
-services.factory('svgToolbox', [function () {
+
+angular.module('vumigo.services').factory('svgToolbox', [function () {
 
     /**
      * Select the first element from the given selection that matches the
@@ -1931,7 +2013,190 @@ services.factory('svgToolbox', [function () {
     };
 }]);
 
-services.factory('zoomBehavior', [function () {
+angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
+    function (zoomBehavior, svgToolbox) {
+        return function () {
+            var width = 2048;  // Default canvas width
+            var height = 2048;  // Default canvas height
+            var gridCellSize = 0;  // Disable grid by default
+
+            var canvas = function(selection) {
+                var viewportElement = $(selection[0]);
+
+                var svg = svgToolbox.selectOrAppend(selection, 'svg')
+                    .attr('width', width)
+                    .attr('height', height);
+
+                svgToolbox.createShadowFilter(svg);
+
+                var container = svg.append('g')
+                    .attr('class', 'container')
+                    .attr('transform', 'translate(0, 0)');
+
+                var rect = container.append('rect')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .style('fill', 'none')
+                    .style('pointer-events', 'all');
+
+                var canvas = container.append('g')
+                    .attr('class', 'canvas');
+
+                svgToolbox.drawGrid(canvas, width, height, gridCellSize);
+
+                var zoom = zoomBehavior()
+                    .canvas(canvas)
+                    .canvasWidth(width)
+                    .canvasHeight(height)
+                    .viewportElement(viewportElement)
+                    .call();
+
+                container.on('mousedown', function () {
+                    d3.select(this).classed('dragging', true);
+                }).on('mouseup', function () {
+                    d3.select(this).classed('dragging', false);
+                }).call(zoom);
+
+                return canvas;
+            };
+
+            canvas.width = function(value) {
+                if (!arguments.length) return width;
+                width = value;
+                return canvas;
+            };
+
+           canvas.height = function(value) {
+                if (!arguments.length) return height;
+                height = value;
+                return canvas;
+            };
+
+           canvas.gridCellSize = function(value) {
+                if (!arguments.length) return gridCellSize;
+                gridCellSize = value;
+                return canvas;
+            };
+
+           canvas.zoomExtent = function(value) {
+                if (!arguments.length) return zoomExtent;
+                zoomExtent = value;
+                return canvas;
+            };
+
+            return canvas;
+        };
+    }
+]);
+
+angular.module('vumigo.services').factory('componentHelper', [function () {
+
+    function getById(data, componentId) {
+        for (var i = 0; i < data.conversations.length; i++) {
+            if (data.conversations[i].uuid == componentId) {
+                return {type: 'conversation', data: data.conversations[i]}
+            }
+        }
+
+        for (var i = 0; i < data.channels.length; i++) {
+            if (data.channels[i].uuid == componentId) {
+                return {type: 'channel', data: data.channels[i]}
+            }
+        }
+
+        for (var i = 0; i < data.routers.length; i++) {
+            if (data.routers[i].uuid == componentId) {
+                return {type: 'router', data: data.routers[i]}
+            }
+        }
+
+        return null;
+    };
+
+    function getByEndpointId(data, endpointId) {
+        for (var i = 0; i < data.conversations.length; i++) {
+            for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
+                if (data.conversations[i].endpoints[j].uuid == endpointId) {
+                    return {type: 'conversation', data: data.conversations[i]};
+                }
+            }
+        }
+
+        for (var i = 0; i < data.channels.length; i++) {
+            for (var j = 0; j < data.channels[i].endpoints.length; j++) {
+                if (data.channels[i].endpoints[j].uuid == endpointId) {
+                    return {type: 'channel', data: data.channels[i]};
+                }
+            }
+        }
+
+        for (var i = 0; i < data.routers.length; i++) {
+            for (var j = 0; j < data.routers[i].conversation_endpoints.length; j++) {
+                if (data.routers[i].conversation_endpoints[j].uuid == endpointId) {
+                    return {type: 'router', data: data.routers[i]};
+                }
+            }
+
+            for (var j = 0; j < data.routers[i].channel_endpoints.length; j++) {
+                if (data.routers[i].channel_endpoints[j].uuid == endpointId) {
+                    return {type: 'router', data: data.routers[i]};
+                }
+            }
+        }
+
+        return null;
+    };
+
+    function connectComponents(data, sourceId, targetId) {
+        var source = getById(data, sourceId);
+        var target = getById(data, targetId);
+
+        if (!source || !target || source.type == target.type) return;
+
+        var sourceEndpoint = null;
+        if (['conversation', 'channel'].indexOf(source.type) != -1) {
+            sourceEndpoint = source.data.endpoints[0];
+
+        } else if (source.type == 'router') {
+            if (target.type == 'conversation') {
+                sourceEndpoint = source.data.conversation_endpoints[0];
+
+            } else if (target.type == 'channel') {
+                sourceEndpoint = source.data.channel_endpoints[0];
+            }
+        }
+
+        var targetEndpoint = null;
+        if (['conversation', 'channel'].indexOf(target.type) != -1) {
+            targetEndpoint = target.data.endpoints[0];
+
+        } else if (target.type == 'router') {
+            if (source.type == 'conversation') {
+                targetEndpoint = target.data.conversation_endpoints[0];
+
+            } else if (source.type == 'channel') {
+                sourceEndpoint = target.data.channel_endpoints[0];
+            }
+        }
+
+        if (sourceEndpoint && targetEndpoint) {
+            data.routing_entries.push({
+                source: {uuid: sourceEndpoint.uuid},
+                target: {uuid: targetEndpoint.uuid},
+            });
+        }
+    }
+
+    return {
+        getById: getById,
+        getByEndpointId: getByEndpointId,
+        connectComponents: connectComponents
+    };
+
+}]);
+
+
+angular.module('vumigo.services').factory('zoomBehavior', [function () {
     return function () {
         var zoomBehavior = null;  // Zoom behavior instance
         var canvas = null;  // Canvas to get zoomed/dragged
@@ -2019,165 +2284,402 @@ services.factory('zoomBehavior', [function () {
     };
 }]);
 
-services.factory('dragBehavior', [function () {
-    return function () {
-        var canvasWidth = 0;
-        var canvasHeight = 0;
-        var gridCellSize = 0;
-
-        /**
-         * Called when the user starts dragging a component
-         */
-        function dragstarted() {
-            if (d3.event.sourceEvent) {
-                d3.event.sourceEvent.stopPropagation();
-            }
-            d3.select(this).classed('dragging', true);
-        }
-
-        /**
-         * Called while the user is dragging a component
-         */
-        function dragged(d) {
-            var x = d3.event.x;
-            var y = d3.event.y;
-
-            // If we have a grid, snap to it
-            if (gridCellSize > 0) {
-                x = Math.round(x / gridCellSize) * gridCellSize;
-                y = Math.round(y / gridCellSize) * gridCellSize;
-            }
-
-            // Make sure components don't get dragged outside the canvas
-            if (x < 0) x = 0;
-            if (canvasWidth > 0) {
-                if (x > canvasWidth) x = canvasWidth;
-            }
-
-            if (y < 0) y = 0;
-            if (canvasHeight > 0) {
-                if (y > canvasHeight) y = canvasHeight;
-            }
-
-            d.x = x;
-            d.y = y;
-
-            d3.select(this).attr('transform', 'translate(' + [x, y] + ')');
-        }
-
-        /**
-         * Called after the user drops a component
-         */
-        function dragended() {
-            d3.select(this).classed('dragging', false);
-        }
-
-        var drag = function() {
-            return d3.behavior.drag()
-                .on('dragstart', dragstarted)
-                .on('drag', dragged)
-                .on('dragend', dragended);
-        }
-
-        drag.canvasWidth = function(value) {
-            if (!arguments.length) return canvasWidth;
-            canvasWidth = value;
-            return drag;
-        };
-
-       drag.canvasHeight = function(value) {
-            if (!arguments.length) return canvasHeight;
-            canvasHeight = value;
-            return drag;
-        };
-
-       drag.gridCellSize = function(value) {
-            if (!arguments.length) return gridCellSize;
-            gridCellSize = value;
-            return drag;
-        };
-
-        return drag;
-    }
-}]);
-
-services.factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
-    function (zoomBehavior, svgToolbox) {
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
+    function ($rootScope) {
         return function () {
-            var width = 2048;  // Default canvas width
-            var height = 2048;  // Default canvas height
-            var gridCellSize = 0;  // Disable grid by default
+            var canvasWidth = 0;
+            var canvasHeight = 0;
+            var gridCellSize = 0;
+            var bboxPadding = 5;
 
-            var canvas = function(selection) {
-                var viewportElement = $(selection[0]);
+            /**
+             * Called when the user starts dragging a component
+             */
+            function dragstarted() {
+                if (d3.event.sourceEvent) {
+                    d3.event.sourceEvent.stopPropagation();
+                }
 
-                var svg = svgToolbox.selectOrAppend(selection, 'svg')
-                    .attr('width', width)
-                    .attr('height', height);
+                d3.selectAll('.component.selected')
+                    .classed('selected', false)
+                    .selectAll('.bbox')
+                        .remove();
 
-                svgToolbox.createShadowFilter(svg);
+                var selection = d3.select(this)
+                    .classed('selected', true)
+                    .classed('dragging', true);
 
-                var container = svg.append('g')
-                    .attr('class', 'container')
-                    .attr('transform', 'translate(0, 0)');
+                var bbox = selection.node().getBBox();
+                selection.append('rect')
+                    .attr('class', 'bbox')
+                    .attr('x', bbox.x - bboxPadding)
+                    .attr('y', bbox.y - bboxPadding)
+                    .attr('width', bbox.width + 2.0 * bboxPadding)
+                    .attr('height', bbox.height + 2.0 * bboxPadding);
 
-                var rect = container.append('rect')
-                    .attr('width', width)
-                    .attr('height', height)
-                    .style('fill', 'none')
-                    .style('pointer-events', 'all');
+                $rootScope.$apply(function () {
+                    var d = selection.datum();
+                    $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+                });
+            }
 
-                var canvas = container.append('g')
-                    .attr('class', 'canvas');
+            /**
+             * Called while the user is dragging a component
+             */
+            function dragged(d) {
+                var x = d3.event.x;
+                var y = d3.event.y;
 
-                svgToolbox.drawGrid(canvas, width, height, gridCellSize);
+                // If we have a grid, snap to it
+                if (gridCellSize > 0) {
+                    x = Math.round(x / gridCellSize) * gridCellSize;
+                    y = Math.round(y / gridCellSize) * gridCellSize;
+                }
 
-                var zoom = zoomBehavior()
-                    .canvas(canvas)
-                    .canvasWidth(width)
-                    .canvasHeight(height)
-                    .viewportElement(viewportElement)
-                    .call();
+                // Make sure components don't get dragged outside the canvas
+                if (x < 0) x = 0;
+                if (canvasWidth > 0) {
+                    if (x > canvasWidth) x = canvasWidth;
+                }
 
-                container.on('mousedown', function () {
-                    d3.select(this).classed('dragging', true);
-                }).on('mouseup', function () {
-                    d3.select(this).classed('dragging', false);
-                }).call(zoom);
+                if (y < 0) y = 0;
+                if (canvasHeight > 0) {
+                    if (y > canvasHeight) y = canvasHeight;
+                }
 
-                return canvas;
+                d.x = x;
+                d.y = y;
+
+                d3.select(this).attr('transform', 'translate(' + [x, y] + ')');
+
+                $rootScope.$apply(function () {
+                    $rootScope.$emit('go:campaignDesignerRepaint');
+                });
+            }
+
+            /**
+             * Called after the user drops a component
+             */
+            function dragended() {
+                d3.select(this).classed('dragging', false);
+            }
+
+            var drag = function() {
+                return d3.behavior.drag()
+                    .on('dragstart', dragstarted)
+                    .on('drag', dragged)
+                    .on('dragend', dragended);
+            }
+
+            drag.canvasWidth = function(value) {
+                if (!arguments.length) return canvasWidth;
+                canvasWidth = value;
+                return drag;
             };
 
-            canvas.width = function(value) {
-                if (!arguments.length) return width;
-                width = value;
-                return canvas;
+           drag.canvasHeight = function(value) {
+                if (!arguments.length) return canvasHeight;
+                canvasHeight = value;
+                return drag;
             };
 
-           canvas.height = function(value) {
-                if (!arguments.length) return height;
-                height = value;
-                return canvas;
-            };
-
-           canvas.gridCellSize = function(value) {
+           drag.gridCellSize = function(value) {
                 if (!arguments.length) return gridCellSize;
                 gridCellSize = value;
-                return canvas;
+                return drag;
             };
 
-           canvas.zoomExtent = function(value) {
-                if (!arguments.length) return zoomExtent;
-                zoomExtent = value;
-                return canvas;
-            };
-
-            return canvas;
-        };
+            return drag;
+        }
     }
 ]);
 
-services.factory('conversationLayout', [function () {
+
+angular.module('vumigo.services').factory('channelLayout', [function () {
+    return function() {
+        var innerRadius = 10;
+        var maxOuterRadius = 100;
+        var textOffset = 20;
+
+        function layout(data) {
+            angular.forEach(data, function (channel) {
+                var outerRadius = innerRadius
+                    + maxOuterRadius * channel.utilization;
+
+                var textX = innerRadius / 2.0 + textOffset;
+
+                channel._layout = {
+                    inner: {
+                        r: innerRadius
+                    },
+                    outer: {
+                        r: outerRadius
+                    },
+                    name: {
+                        x: textX
+                    },
+                    description: {
+                        x: textX
+                    }
+                };
+            });
+
+            return data;
+        }
+
+        return layout;
+    };
+}]);
+
+
+angular.module('vumigo.services').factory('channelComponent', [function () {
+    return function () {
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component channel');
+
+            selection.append('circle')
+                .attr('class', 'disc outer');
+
+            selection.append('circle')
+                .attr('class', 'disc inner');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('text')
+                .attr('class', 'description');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc.outer')
+                .attr('r', function (d) { return d._layout.outer.r; });
+
+            selection.selectAll('.disc.inner')
+                .attr('r', function (d) { return d._layout.inner.r; });
+
+            selection.selectAll('.name')
+                .attr('x', function (d) { return d._layout.name.x; })
+                .text(function (d) { return d.name; });
+
+            selection.selectAll('.description')
+                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('dy', function (d) {
+                    var fontSize = selection.select('.name')
+                        .style('font-size');
+
+                    return parseInt(fontSize) + 'px';
+                })
+                .text(function (d) { return d.description; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint conversation components.
+         *
+         * @param {selection} Selection containing components.
+         */
+        var channel = function(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return channel;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        channel.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return channel;
+        };
+
+        return channel;
+    };
+}]);
+
+
+angular.module('vumigo.services').factory('routerLayout', [function () {
+    return function() {
+        var minSize = 60;
+        var pinGap = 20;
+        var pinHeadRadius = 5;
+
+        function pins(router) {
+            angular.forEach(router.conversation_endpoints, function (pin, i) {
+                pin._layout = {
+                    len: router._layout.r,
+                    y: pinGap * (i - 1),
+                    r: pinHeadRadius
+                };
+            });
+        }
+
+        function layout(data) {
+            angular.forEach(data, function (router) {
+                var size = Math.max(minSize, router.conversation_endpoints.length * pinGap);
+                var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
+
+                router._layout = {
+                    r: radius
+                };
+
+                pins(router);
+            });
+
+            return data;
+        }
+
+        layout.minSize = function(value) {
+            if (!arguments.length) return minSize;
+            minSize = value;
+            return layout;
+        };
+
+        layout.pinGap = function(value) {
+            if (!arguments.length) return pinGap;
+            pinGap = value;
+            return layout;
+        };
+
+        return layout;
+    };
+}]);
+
+
+angular.module('vumigo.services').factory('routerComponent', [function () {
+    return function () {
+        var pin = pinComponent();
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component router');
+
+            selection.append('circle')
+                .attr('class', 'disc');
+
+            selection.append('text')
+                .attr('class', 'name');
+
+            selection.append('g')
+                .attr('class', 'pins');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection.attr('transform', function (d) {
+                return 'translate(' + [d.x, d.y] + ')';
+            });
+
+            selection.selectAll('.disc')
+                .attr('r', function (d) { return d._layout.r; });
+
+            selection.selectAll('.name')
+                .style('font-size', function (d) {
+                    return d._layout.r + 'px';
+                })
+                .text(function (d) { return d.name; });
+
+            selection.select('.pins')
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d._layout.r, 0] + ')';
+                })
+                .selectAll('.pin')
+                    .data(function(d) { return d.conversation_endpoints; },
+                             function(d) { return d.uuid; })
+                    .call(pin);
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint router components.
+         *
+         * @param {selection} Selection containing routers.
+         */
+        var router = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return router;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        router.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return router;
+        };
+
+        return router;
+    };
+
+    function pinComponent() {
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'pin');
+
+            selection.append('circle')
+                .attr('class', 'head');
+
+            selection.append('line')
+                .attr('class', 'line');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
+                });
+
+            selection.select('.head')
+                .attr('r', function (d) { return d._layout.r; })
+
+            selection.select('.line')
+                .attr('x2', function (d) { return d._layout.len; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        function pin(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return pin;
+        }
+
+        return pin;
+    }
+}]);
+
+
+angular.module('vumigo.services').factory('conversationLayout', [function () {
     return function() {
         var innerRadius = 10;
         var outerRadius = 30;
@@ -2210,7 +2712,8 @@ services.factory('conversationLayout', [function () {
     };
 }]);
 
-services.factory('conversationComponent', [function () {
+
+angular.module('vumigo.services').factory('conversationComponent', [function () {
     return function () {
         var dragBehavior = null;
 
@@ -2293,282 +2796,87 @@ services.factory('conversationComponent', [function () {
     };
 }]);
 
-services.factory('channelLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var maxOuterRadius = 100;
-        var textOffset = 20;
 
-        function layout(data) {
-            angular.forEach(data, function (channel) {
-                var outerRadius = innerRadius
-                    + maxOuterRadius * channel.utilization;
+angular.module('vumigo.services').factory('connectionLayout', ['componentHelper',
+    function (componentHelper) {
+        return function() {
 
-                var textX = innerRadius / 2.0 + textOffset;
-
-                channel._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
+            /**
+             * Return the X and Y coordinates of the given component's endpoint.
+             */
+            function point(component, endpointId) {
+                var x = component.data.x;
+                var y = component.data.y;
+                if (component.type == 'router' && endpointId) {
+                    var endpoint = null;
+                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                            endpoint = component.data.conversation_endpoints[i];
+                        }
                     }
-                };
-            });
+                    if (endpoint) {
+                        x = x - (component.data._layout.r + endpoint._layout.len / 2.0);
+                        y = y + endpoint._layout.y;
+                    }
+                }
+                return {x: x, y: y};
+            }
 
-            return data;
-        }
+            function layout(data) {
+                angular.forEach(data.routing_entries, function (connection) {
+                    var source = componentHelper.getByEndpointId(data, connection.source.uuid);
+                    var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
-        return layout;
-    };
-}]);
-
-services.factory('channelComponent', [function () {
-    return function () {
-        var dragBehavior = null;
-
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component channel');
-
-            selection.append('circle')
-                .attr('class', 'disc outer');
-
-            selection.append('circle')
-                .attr('class', 'disc inner');
-
-            selection.append('text')
-                .attr('class', 'name');
-
-            selection.append('text')
-                .attr('class', 'description');
-        }
-
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._layout.outer.r; });
-
-            selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._layout.inner.r; });
-
-            selection.selectAll('.name')
-                .attr('x', function (d) { return d._layout.name.x; })
-                .text(function (d) { return d.name; });
-
-            selection.selectAll('.description')
-                .attr('x', function (d) { return d._layout.description.x; })
-                .attr('dy', function (d) {
-                    var fontSize = selection.select('.name')
-                        .style('font-size');
-
-                    return parseInt(fontSize) + 'px';
-                })
-                .text(function (d) { return d.description; });
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        /**
-         * Repaint conversation components.
-         *
-         * @param {selection} Selection containing components.
-         */
-        var channel = function(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return channel;
-        };
-
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        channel.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return channel;
-        };
-
-        return channel;
-    };
-}]);
-
-services.factory('routerLayout', [function () {
-    return function() {
-        var minSize = 60;
-        var pinGap = 20;
-        var pinHeadRadius = 5;
-
-        function pins(router) {
-            angular.forEach(router.pins, function (pin, i) {
-                pin._layout = {
-                    len: router._layout.r,
-                    y: pinGap * (i - 1),
-                    r: pinHeadRadius
-                };
-            });
-        }
-
-        function layout(data) {
-            angular.forEach(data, function (router) {
-                var size = Math.max(minSize, router.pins.length * pinGap);
-                var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
-
-                router._layout = {
-                    r: radius
-                };
-
-                pins(router);
-            });
-
-            return data;
-        }
-
-        layout.minSize = function(value) {
-            if (!arguments.length) return minSize;
-            minSize = value;
-            return layout;
-        };
-
-        layout.pinGap = function(value) {
-            if (!arguments.length) return pinGap;
-            pinGap = value;
-            return layout;
-        };
-
-        return layout;
-    };
-}]);
-
-services.factory('routerComponent', [function () {
-    return function () {
-        var pin = pinComponent();
-        var dragBehavior = null;
-
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component router');
-
-            selection.append('circle')
-                .attr('class', 'disc');
-
-            selection.append('text')
-                .attr('class', 'name');
-
-            selection.append('g')
-                .attr('class', 'pins');
-        }
-
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
-
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
-
-            selection.selectAll('.disc')
-                .attr('r', function (d) { return d._layout.r; });
-
-            selection.selectAll('.name')
-                .style('font-size', function (d) {
-                    return d._layout.r + 'px';
-                })
-                .text(function (d) { return d.name; });
-
-            selection.select('.pins')
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.r, 0] + ')';
-                })
-                .selectAll('.pin')
-                    .data(function(d) { return d.pins; },
-                             function(d) { return d.name; })
-                    .call(pin);
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        /**
-         * Repaint router components.
-         *
-         * @param {selection} Selection containing routers.
-         */
-        var router = function (selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return router;
-        };
-
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        router.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return router;
-        };
-
-        return router;
-    };
-
-    function pinComponent() {
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'pin');
-
-            selection.append('circle')
-                .attr('class', 'head');
-
-            selection.append('line')
-                .attr('class', 'line');
-        }
-
-        function update(selection) {
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
+                    connection.points = [];
+                    connection.points.push(point(source, connection.source.uuid));
+                    connection.points.push(point(target, connection.target.uuid));
                 });
 
-            selection.select('.head')
-                .attr('r', function (d) { return d._layout.r; })
+                return data;
+            }
 
-            selection.select('.line')
-                .attr('x2', function (d) { return d._layout.len; });
+            return layout;
+        };
+    }
+]);
+
+
+angular.module('vumigo.services').factory('connectionComponent', [function () {
+    return function () {
+
+        function enter(selection) {
+            selection.append('path')
+                .attr('class', 'component connection');
+        }
+
+        function update(selection) {
+            var line = d3.svg.line()
+                .x(function (d) { return d.x; })
+                .y(function (d) { return d.y; })
+                .interpolate('linear');
+
+            selection
+                .attr('d', function (d) {
+                    return line(d.points);
+                });
         }
 
         function exit(selection) {
             selection.remove();
         }
 
-        function pin(selection) {
+        /**
+         * Repaint connection components.
+         *
+         * @param {selection} Selection containing connections.
+         */
+        var connection = function (selection) {
             enter(selection.enter());
             update(selection);
             exit(selection.exit());
-            return pin;
-        }
+            return connection;
+        };
 
-        return pin;
-    }
+        return connection;
+    };
 }]);
