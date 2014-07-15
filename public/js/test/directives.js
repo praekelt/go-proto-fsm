@@ -96,4 +96,85 @@ describe('goCampaignDesigner', function () {
         expect(channels).to.have.length(2);
     });
 
+    it('should allow component to be selected', function () {
+        var isolateScope = element.isolateScope();
+
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(isolateScope.componentSelected).to.equal(false);
+
+        var component = element.find('.component').eq(0);
+        var datum = component.get(0).__data__;
+
+        component.trigger('vumigo:dragstart');
+        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
+        expect(isolateScope.componentSelected).to.equal(true);
+    });
+
+    it('should allow components to be connected', function () {
+        var isolateScope = element.isolateScope();
+
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(isolateScope.componentSelected).to.equal(false);
+        expect(isolateScope.connectPressed).to.equal(false);
+        expect(element.find('path.connection')).to.have.length(1);
+
+        var conversation = element.find('.conversation').eq(0);
+        var channel = element.find('.channel').eq(0);
+
+        conversation.trigger('vumigo:dragstart');
+        element.find('.btn-connect').click();
+        expect(isolateScope.connectPressed).to.equal(true);
+        channel.trigger('vumigo:dragstart');
+
+        var datum = channel.get(0).__data__;
+        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
+        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.connectPressed).to.equal(false);
+        expect(element.find('path.connection')).to.have.length(2);
+    });
+
+    it('should not allow components to connect to themselves', function () {
+        var isolateScope = element.isolateScope();
+
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(isolateScope.componentSelected).to.equal(false);
+        expect(isolateScope.connectPressed).to.equal(false);
+        expect(element.find('path.connection')).to.have.length(1);
+
+        var conversation = element.find('.conversation').eq(0);
+        var datum = conversation.get(0).__data__;
+
+        conversation.trigger('vumigo:dragstart');
+        element.find('.btn-connect').click();
+        expect(isolateScope.connectPressed).to.equal(true);
+        conversation.trigger('vumigo:dragstart');
+
+        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
+        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.connectPressed).to.equal(true);
+        expect(element.find('path.connection')).to.have.length(1);
+    });
+
+    it('should not allow components of the same type to connect', function () {
+        var isolateScope = element.isolateScope();
+
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(isolateScope.componentSelected).to.equal(false);
+        expect(isolateScope.connectPressed).to.equal(false);
+        expect(element.find('path.connection')).to.have.length(1);
+
+        var conversation1 = element.find('.conversation').eq(0);
+        var conversation2 = element.find('.conversation').eq(1);
+        var datum = conversation2.get(0).__data__;
+
+        conversation1.trigger('vumigo:dragstart');
+        element.find('.btn-connect').click();
+        expect(isolateScope.connectPressed).to.equal(true);
+        conversation2.trigger('vumigo:dragstart');
+
+        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
+        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.connectPressed).to.equal(false);
+        expect(element.find('path.connection')).to.have.length(1);
+    });
 });
