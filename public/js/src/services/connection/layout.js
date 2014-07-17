@@ -44,7 +44,10 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     }
 
                     var start = point(connection, source, connection.source.uuid);
+                    start._layout.r = 0;
+
                     var end = point(connection, target, connection.target.uuid);
+                    end._layout.r = 0;
 
                     if (connection.points.length == 0) {
                         var controlPoint1 = {
