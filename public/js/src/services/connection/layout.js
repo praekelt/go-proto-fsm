@@ -2,11 +2,12 @@
 angular.module('vumigo.services').factory('connectionLayout', ['componentHelper',
     function (componentHelper) {
         return function() {
+            var pointRadius = 5;
 
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function point(component, endpointId) {
+            function point(connection, component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
@@ -21,7 +22,16 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         y = y + endpoint._layout.y;
                     }
                 }
-                return {x: x, y: y};
+
+                return {
+                    x: x,
+                    y: y,
+                    _layout: {
+                        r: pointRadius,
+                        sourceId: connection.source.uuid,
+                        targetId: connection.target.uuid
+                    }
+                };
             }
 
             function layout(data) {
@@ -29,9 +39,42 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
-                    connection.points = [];
-                    connection.points.push(point(source, connection.source.uuid));
-                    connection.points.push(point(target, connection.target.uuid));
+                    if (angular.isUndefined(connection.points)) {
+                        connection.points = [];
+                    }
+
+                    var start = point(connection, source, connection.source.uuid);
+                    var end = point(connection, target, connection.target.uuid);
+
+                    if (connection.points.length == 0) {
+                        var controlPoint1 = {
+                            x: start.x + (end.x - start.x) / 3.0,
+                            y: start.y + (end.y - start.y) / 3.0,
+                            _layout: {
+                                r: pointRadius,
+                                sourceId: connection.source.uuid,
+                                targetId: connection.target.uuid
+                            }
+                        };
+
+                        var controlPoint2 = {
+                            x: start.x + 2 * ((end.x - start.x) / 3.0),
+                            y: start.y + 2 * ((end.y - start.y) / 3.0),
+                            _layout: {
+                                r: pointRadius,
+                                sourceId: connection.source.uuid,
+                                targetId: connection.target.uuid
+                            }
+                        };
+
+                        connection.points.push(start);
+                        connection.points.push(controlPoint1);
+                        connection.points.push(controlPoint2);
+                        connection.points.push(end);
+                    } else {
+                        connection.points[0] = start;
+                        connection.points[connection.points.length - 1] = end;
+                    }
                 });
 
                 return data;

@@ -16,10 +16,11 @@ directives.directive('goCampaignDesigner', [
     'routerLayout',
     'channelLayout',
     'connectionLayout',
+    'controlPointComponent',
     function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout) {
+                   channelLayout, connectionLayout, controlPointComponent) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -113,6 +114,7 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
             var connection = connectionComponent();
+            var controlPoint = controlPointComponent().drag(drag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -138,6 +140,15 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.connection')
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
+
+                angular.forEach(scope.data.routing_entries, function (connection) {
+                    var selector = '.control-point.'
+                        + connection.source.uuid + '-' + connection.target.uuid;
+
+                    canvas.selectAll(selector)
+                        .data(connection.points)
+                        .call(controlPoint);
+                });
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);

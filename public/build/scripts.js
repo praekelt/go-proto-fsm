@@ -1777,10 +1777,11 @@ directives.directive('goCampaignDesigner', [
     'routerLayout',
     'channelLayout',
     'connectionLayout',
+    'controlPointComponent',
     function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout) {
+                   channelLayout, connectionLayout, controlPointComponent) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -1874,6 +1875,7 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
             var connection = connectionComponent();
+            var controlPoint = controlPointComponent().drag(drag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -1899,6 +1901,15 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.connection')
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
+
+                angular.forEach(scope.data.routing_entries, function (connection) {
+                    var selector = '.control-point.'
+                        + connection.source.uuid + '-' + connection.target.uuid;
+
+                    canvas.selectAll(selector)
+                        .data(connection.points)
+                        .call(controlPoint);
+                });
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
@@ -2800,11 +2811,12 @@ angular.module('vumigo.services').factory('conversationComponent', [function () 
 angular.module('vumigo.services').factory('connectionLayout', ['componentHelper',
     function (componentHelper) {
         return function() {
+            var pointRadius = 5;
 
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function point(component, endpointId) {
+            function point(connection, component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
@@ -2819,7 +2831,16 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         y = y + endpoint._layout.y;
                     }
                 }
-                return {x: x, y: y};
+
+                return {
+                    x: x,
+                    y: y,
+                    _layout: {
+                        r: pointRadius,
+                        sourceId: connection.source.uuid,
+                        targetId: connection.target.uuid
+                    }
+                };
             }
 
             function layout(data) {
@@ -2827,9 +2848,42 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
-                    connection.points = [];
-                    connection.points.push(point(source, connection.source.uuid));
-                    connection.points.push(point(target, connection.target.uuid));
+                    if (angular.isUndefined(connection.points)) {
+                        connection.points = [];
+                    }
+
+                    var start = point(connection, source, connection.source.uuid);
+                    var end = point(connection, target, connection.target.uuid);
+
+                    if (connection.points.length == 0) {
+                        var controlPoint1 = {
+                            x: start.x + (end.x - start.x) / 3.0,
+                            y: start.y + (end.y - start.y) / 3.0,
+                            _layout: {
+                                r: pointRadius,
+                                sourceId: connection.source.uuid,
+                                targetId: connection.target.uuid
+                            }
+                        };
+
+                        var controlPoint2 = {
+                            x: start.x + 2 * ((end.x - start.x) / 3.0),
+                            y: start.y + 2 * ((end.y - start.y) / 3.0),
+                            _layout: {
+                                r: pointRadius,
+                                sourceId: connection.source.uuid,
+                                targetId: connection.target.uuid
+                            }
+                        };
+
+                        connection.points.push(start);
+                        connection.points.push(controlPoint1);
+                        connection.points.push(controlPoint2);
+                        connection.points.push(end);
+                    } else {
+                        connection.points[0] = start;
+                        connection.points[connection.points.length - 1] = end;
+                    }
                 });
 
                 return data;
@@ -2853,7 +2907,7 @@ angular.module('vumigo.services').factory('connectionComponent', [function () {
             var line = d3.svg.line()
                 .x(function (d) { return d.x; })
                 .y(function (d) { return d.y; })
-                .interpolate('linear');
+                .interpolate('monotone');
 
             selection
                 .attr('d', function (d) {
@@ -2878,5 +2932,64 @@ angular.module('vumigo.services').factory('connectionComponent', [function () {
         };
 
         return connection;
+    };
+}]);
+
+angular.module('vumigo.services').factory('controlPointComponent', [function () {
+    return function () {
+        var dragBehavior = null;
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', function (d) {
+                    return 'component control-point '
+                        + d._layout.sourceId + '-' + d._layout.targetId;
+                });
+
+            selection.append('circle')
+                .attr('class', 'point');
+        }
+
+        function update(selection) {
+            if (dragBehavior) selection.call(dragBehavior);
+
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.selectAll('.point')
+                .attr('r', function (d) { return d._layout.r; });
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        /**
+         * Repaint control point components.
+         *
+         * @param {selection} Selection containing control points.
+         */
+        var controlPoint = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return controlPoint;
+        };
+
+       /**
+         * Get/set the drag behaviour.
+         *
+         * @param {value} The new drag behaviour; when setting.
+         * @return The current drag behaviour.
+         */
+        controlPoint.drag = function(value) {
+            if (!arguments.length) return dragBehavior;
+            dragBehavior = value;
+            return controlPoint;
+        };
+
+        return controlPoint;
     };
 }]);
