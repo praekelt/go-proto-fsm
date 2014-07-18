@@ -11,7 +11,7 @@ angular.module('vumigo.services').factory('connectionComponent', [function () {
             var line = d3.svg.line()
                 .x(function (d) { return d.x; })
                 .y(function (d) { return d.y; })
-                .interpolate('monotone');
+                .interpolate('basis');
 
             selection
                 .attr('d', function (d) {

@@ -2812,11 +2812,12 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
     function (componentHelper) {
         return function() {
             var pointRadius = 5;
+            var numberOfControlPoints = 3;
 
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function point(connection, component, endpointId) {
+            function endPoint(connection, component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
@@ -2836,11 +2837,33 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     x: x,
                     y: y,
                     _layout: {
-                        r: pointRadius,
+                        r: 0,
                         sourceId: connection.source.uuid,
                         targetId: connection.target.uuid
                     }
                 };
+            }
+
+            /**
+             * Return a list of control points.
+             */
+            function controlPoints(connection, start, end, numberOfPoints) {
+                numberOfPoints = numberOfPoints || 3;
+                var controlPoints = [];
+                var xOffset = (end.x - start.x) / (numberOfPoints + 1);
+                var yOffset = (end.y - start.y) / (numberOfPoints + 1);
+                for (var i = 1; i <= numberOfPoints; i++) {
+                    controlPoints.push({
+                        x: start.x + i * xOffset,
+                        y: start.y + i * yOffset,
+                        _layout: {
+                            r: pointRadius,
+                            sourceId: connection.source.uuid,
+                            targetId: connection.target.uuid
+                        }
+                    });
+                }
+                return controlPoints;
             }
 
             function layout(data) {
@@ -2852,36 +2875,15 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         connection.points = [];
                     }
 
-                    var start = point(connection, source, connection.source.uuid);
-                    start._layout.r = 0;
-
-                    var end = point(connection, target, connection.target.uuid);
-                    end._layout.r = 0;
+                    var start = endPoint(connection, source, connection.source.uuid);
+                    var end = endPoint(connection, target, connection.target.uuid);
 
                     if (connection.points.length == 0) {
-                        var controlPoint1 = {
-                            x: start.x + (end.x - start.x) / 3.0,
-                            y: start.y + (end.y - start.y) / 3.0,
-                            _layout: {
-                                r: pointRadius,
-                                sourceId: connection.source.uuid,
-                                targetId: connection.target.uuid
-                            }
-                        };
-
-                        var controlPoint2 = {
-                            x: start.x + 2 * ((end.x - start.x) / 3.0),
-                            y: start.y + 2 * ((end.y - start.y) / 3.0),
-                            _layout: {
-                                r: pointRadius,
-                                sourceId: connection.source.uuid,
-                                targetId: connection.target.uuid
-                            }
-                        };
-
                         connection.points.push(start);
-                        connection.points.push(controlPoint1);
-                        connection.points.push(controlPoint2);
+                        var points = controlPoints(connection, start, end, numberOfControlPoints);
+                        angular.forEach(points, function (point) {
+                            connection.points.push(point);
+                        });
                         connection.points.push(end);
                     } else {
                         connection.points[0] = start;
@@ -2910,7 +2912,7 @@ angular.module('vumigo.services').factory('connectionComponent', [function () {
             var line = d3.svg.line()
                 .x(function (d) { return d.x; })
                 .y(function (d) { return d.y; })
-                .interpolate('monotone');
+                .interpolate('basis');
 
             selection
                 .attr('d', function (d) {
