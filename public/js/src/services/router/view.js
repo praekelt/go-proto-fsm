@@ -1,7 +1,8 @@
 
 angular.module('vumigo.services').factory('routerComponent', [function () {
     return function () {
-        var pin = pinComponent();
+        var conversationPin = conversationPinComponent();
+        var channelPin = channelPinComponent();
         var dragBehavior = null;
 
         function enter(selection) {
@@ -15,7 +16,10 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
                 .attr('class', 'name');
 
             selection.append('g')
-                .attr('class', 'pins');
+                .attr('class', 'pins pins-conversation');
+
+            selection.append('g')
+                .attr('class', 'pins pins-channel')
         }
 
         function update(selection) {
@@ -34,14 +38,20 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
                 })
                 .text(function (d) { return d.name; });
 
-            selection.select('.pins')
+            selection.select('.pins-conversation')
                 .attr('transform', function (d) {
                     return 'translate(' + [-d._layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
                     .data(function(d) { return d.conversation_endpoints; },
                              function(d) { return d.uuid; })
-                    .call(pin);
+                    .call(conversationPin);
+
+            selection.select('.pins-channel')
+                .selectAll('.pin')
+                    .data(function(d) { return d.channel_endpoints; },
+                             function(d) { return d.uuid; })
+                    .call(channelPin);
         }
 
         function exit(selection) {
@@ -75,10 +85,13 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         return router;
     };
 
-    function pinComponent() {
+    /**
+     * A component to draw conversation pins.
+     */
+    function conversationPinComponent() {
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', 'pin');
+                .attr('class', 'pin pin-conversation');
 
             selection.append('circle')
                 .attr('class', 'head');
@@ -113,4 +126,41 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
 
         return pin;
     }
+
+    /**
+     * A component to draw channel pins.
+     */
+    function channelPinComponent() {
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'pin pin-channel');
+
+            selection.append('circle')
+                .attr('class', 'head');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d._layout.x, d._layout.y] + ')';
+                });
+
+            selection.select('.head')
+                .attr('r', function (d) { return d._layout.r; })
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        function pin(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return pin;
+        }
+
+        return pin;
+    }
+
 }]);

@@ -13,6 +13,14 @@ angular.module('vumigo.services').factory('routerLayout', [function () {
                     r: pinHeadRadius
                 };
             });
+
+            angular.forEach(router.channel_endpoints, function (pin) {
+                pin._layout = {
+                    x: router._layout.r,
+                    y: 0,
+                    r: pinHeadRadius
+                };
+            });
         }
 
         function layout(data) {

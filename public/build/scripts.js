@@ -2539,6 +2539,14 @@ angular.module('vumigo.services').factory('routerLayout', [function () {
                     r: pinHeadRadius
                 };
             });
+
+            angular.forEach(router.channel_endpoints, function (pin) {
+                pin._layout = {
+                    x: router._layout.r,
+                    y: 0,
+                    r: pinHeadRadius
+                };
+            });
         }
 
         function layout(data) {
@@ -2575,7 +2583,8 @@ angular.module('vumigo.services').factory('routerLayout', [function () {
 
 angular.module('vumigo.services').factory('routerComponent', [function () {
     return function () {
-        var pin = pinComponent();
+        var conversationPin = conversationPinComponent();
+        var channelPin = channelPinComponent();
         var dragBehavior = null;
 
         function enter(selection) {
@@ -2589,7 +2598,10 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
                 .attr('class', 'name');
 
             selection.append('g')
-                .attr('class', 'pins');
+                .attr('class', 'pins pins-conversation');
+
+            selection.append('g')
+                .attr('class', 'pins pins-channel')
         }
 
         function update(selection) {
@@ -2608,14 +2620,20 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
                 })
                 .text(function (d) { return d.name; });
 
-            selection.select('.pins')
+            selection.select('.pins-conversation')
                 .attr('transform', function (d) {
                     return 'translate(' + [-d._layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
                     .data(function(d) { return d.conversation_endpoints; },
                              function(d) { return d.uuid; })
-                    .call(pin);
+                    .call(conversationPin);
+
+            selection.select('.pins-channel')
+                .selectAll('.pin')
+                    .data(function(d) { return d.channel_endpoints; },
+                             function(d) { return d.uuid; })
+                    .call(channelPin);
         }
 
         function exit(selection) {
@@ -2649,10 +2667,13 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         return router;
     };
 
-    function pinComponent() {
+    /**
+     * A component to draw conversation pins.
+     */
+    function conversationPinComponent() {
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', 'pin');
+                .attr('class', 'pin pin-conversation');
 
             selection.append('circle')
                 .attr('class', 'head');
@@ -2687,6 +2708,43 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
 
         return pin;
     }
+
+    /**
+     * A component to draw channel pins.
+     */
+    function channelPinComponent() {
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'pin pin-channel');
+
+            selection.append('circle')
+                .attr('class', 'head');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d._layout.x, d._layout.y] + ')';
+                });
+
+            selection.select('.head')
+                .attr('r', function (d) { return d._layout.r; })
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        function pin(selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return pin;
+        }
+
+        return pin;
+    }
+
 }]);
 
 
@@ -2814,22 +2872,55 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             var pointRadius = 5;
             var numberOfControlPoints = 3;
 
+            function getEndpointById(component, endpointId) {
+                if (component.type == 'router') {
+                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.conversation_endpoints[i],
+                                type: 'conversation'
+                            };
+                        }
+                    }
+
+                    for (var i = 0; i < component.data.channel_endpoints.length; i++) {
+                        if (component.data.channel_endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.channel_endpoints[i],
+                                type: 'channel'
+                            };
+                        }
+                    }
+
+                } else {
+                    for (var i = 0; i < component.data.endpoints.length; i++) {
+                        if (component.data.endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.endpoints[i]
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function endPoint(connection, component, endpointId) {
+            function endpoint(connection, component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
-                    var endpoint = null;
-                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
-                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
-                            endpoint = component.data.conversation_endpoints[i];
-                        }
-                    }
+                    var endpoint = getEndpointById(component, endpointId);
                     if (endpoint) {
-                        x = x - (component.data._layout.r + endpoint._layout.len / 2.0);
-                        y = y + endpoint._layout.y;
+                        if (endpoint.type == 'conversation') {
+                            x = x - (component.data._layout.r + endpoint.data._layout.len / 2.0);
+                            y = y + endpoint.data._layout.y;
+                        } else if (endpoint.type == 'channel') {
+                            x = x + endpoint.data._layout.x;
+                            y = y + endpoint.data._layout.y;
+                        }
                     }
                 }
 
@@ -2875,8 +2966,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         connection.points = [];
                     }
 
-                    var start = endPoint(connection, source, connection.source.uuid);
-                    var end = endPoint(connection, target, connection.target.uuid);
+                    var start = endpoint(connection, source, connection.source.uuid);
+                    var end = endpoint(connection, target, connection.target.uuid);
 
                     if (connection.points.length == 0) {
                         connection.points.push(start);
@@ -2912,7 +3003,7 @@ angular.module('vumigo.services').factory('connectionComponent', [function () {
             var line = d3.svg.line()
                 .x(function (d) { return d.x; })
                 .y(function (d) { return d.y; })
-                .interpolate('basis');
+                .interpolate('cardinal');
 
             selection
                 .attr('d', function (d) {

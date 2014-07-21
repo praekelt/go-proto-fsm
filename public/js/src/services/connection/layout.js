@@ -5,22 +5,55 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             var pointRadius = 5;
             var numberOfControlPoints = 3;
 
+            function getEndpointById(component, endpointId) {
+                if (component.type == 'router') {
+                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.conversation_endpoints[i],
+                                type: 'conversation'
+                            };
+                        }
+                    }
+
+                    for (var i = 0; i < component.data.channel_endpoints.length; i++) {
+                        if (component.data.channel_endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.channel_endpoints[i],
+                                type: 'channel'
+                            };
+                        }
+                    }
+
+                } else {
+                    for (var i = 0; i < component.data.endpoints.length; i++) {
+                        if (component.data.endpoints[i].uuid == endpointId) {
+                            return {
+                                data: component.data.endpoints[i]
+                            };
+                        }
+                    }
+                }
+
+                return null;
+            }
+
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function endPoint(connection, component, endpointId) {
+            function endpoint(connection, component, endpointId) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
-                    var endpoint = null;
-                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
-                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
-                            endpoint = component.data.conversation_endpoints[i];
-                        }
-                    }
+                    var endpoint = getEndpointById(component, endpointId);
                     if (endpoint) {
-                        x = x - (component.data._layout.r + endpoint._layout.len / 2.0);
-                        y = y + endpoint._layout.y;
+                        if (endpoint.type == 'conversation') {
+                            x = x - (component.data._layout.r + endpoint.data._layout.len / 2.0);
+                            y = y + endpoint.data._layout.y;
+                        } else if (endpoint.type == 'channel') {
+                            x = x + endpoint.data._layout.x;
+                            y = y + endpoint.data._layout.y;
+                        }
                     }
                 }
 
@@ -66,8 +99,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         connection.points = [];
                     }
 
-                    var start = endPoint(connection, source, connection.source.uuid);
-                    var end = endPoint(connection, target, connection.target.uuid);
+                    var start = endpoint(connection, source, connection.source.uuid);
+                    var end = endpoint(connection, target, connection.target.uuid);
 
                     if (connection.points.length == 0) {
                         connection.points.push(start);
