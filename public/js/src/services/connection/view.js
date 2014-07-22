@@ -1,43 +1,60 @@
 
-angular.module('vumigo.services').factory('connectionComponent', [function () {
-    return function () {
+angular.module('vumigo.services').factory('connectionComponent', [
+    function () {
+        return function () {
+            var dragBehavior = null;
 
-        function enter(selection) {
-            selection.append('path')
-                .attr('class', 'component connection');
-        }
+            function enter(selection) {
+                selection.append('path')
+                    .attr('class', 'component connection');
+            }
 
-        function update(selection) {
-            var line = d3.svg.line()
-                .x(function (d) { return d.x; })
-                .y(function (d) { return d.y; })
-                .interpolate('cardinal');
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection
-                .attr('d', function (d) {
-                    return line(d.points);
-                });
-        }
+                var line = d3.svg.line()
+                    .x(function (d) { return d.x; })
+                    .y(function (d) { return d.y; })
+                    .interpolate('cardinal');
 
-        function exit(selection) {
-            selection.remove();
-        }
+                selection
+                    .attr('d', function (d) {
+                        return line(d.points);
+                    });
+            }
 
-        /**
-         * Repaint connection components.
-         *
-         * @param {selection} Selection containing connections.
-         */
-        var connection = function (selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint connection components.
+             *
+             * @param {selection} Selection containing connections.
+             */
+            var connection = function (selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return connection;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            connection.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return connection;
+            };
+
             return connection;
         };
-
-        return connection;
-    };
-}]);
+    }
+]);
 
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {

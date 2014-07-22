@@ -110,11 +110,21 @@ directives.directive('goCampaignDesigner', [
                 .gridCellSize(scope.gridCellSize)
                 .call();
 
+            var connectionDrag = dragBehavior()
+                .dragEnabled(false)
+                .drawBoundingBox(false)
+                .call()
+
+            var controlPointDrag = dragBehavior()
+                .selectEnabled(false)
+                .drawBoundingBox(false)
+                .call()
+
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
-            var connection = connectionComponent();
-            var controlPoint = controlPointComponent().drag(drag);
+            var connection = connectionComponent().drag(connectionDrag);
+            var controlPoint = controlPointComponent().drag(controlPointDrag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();

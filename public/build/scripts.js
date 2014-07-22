@@ -1752,6 +1752,7 @@ controllers.controller('CampaignMakerController', ['$scope',
                 y: 220
             }],
             routing_entries: [{
+                uuid: 'connection1',
                 source: {uuid: 'endpoint1'},
                 target: {uuid: 'endpoint6'}
             }]
@@ -1871,11 +1872,21 @@ directives.directive('goCampaignDesigner', [
                 .gridCellSize(scope.gridCellSize)
                 .call();
 
+            var connectionDrag = dragBehavior()
+                .dragEnabled(false)
+                .drawBoundingBox(false)
+                .call()
+
+            var controlPointDrag = dragBehavior()
+                .selectEnabled(false)
+                .drawBoundingBox(false)
+                .call()
+
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
-            var connection = connectionComponent();
-            var controlPoint = controlPointComponent().drag(drag);
+            var connection = connectionComponent().drag(connectionDrag);
+            var controlPoint = controlPointComponent().drag(controlPointDrag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -2017,10 +2028,24 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
         }
     }
 
+    /**
+     * Draw a bounding box around the given selection.
+     */
+    function drawBoundingBox(selection, padding) {
+        var bbox = selection.node().getBBox();
+        selection.append('rect')
+            .attr('class', 'bbox')
+            .attr('x', bbox.x - padding)
+            .attr('y', bbox.y - padding)
+            .attr('width', bbox.width + 2.0 * padding)
+            .attr('height', bbox.height + 2.0 * padding);
+    }
+
     return {
         selectOrAppend: selectOrAppend,
         createShadowFilter: createShadowFilter,
-        drawGrid: drawGrid
+        drawGrid: drawGrid,
+        drawBoundingBox: drawBoundingBox
     };
 }]);
 
@@ -2100,111 +2125,120 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
     }
 ]);
 
-angular.module('vumigo.services').factory('componentHelper', [function () {
+angular.module('vumigo.services').factory('componentHelper', ['$rootScope',
+    function ($rootScope) {
+        var bboxPadding = 5;
 
-    function getById(data, componentId) {
-        for (var i = 0; i < data.conversations.length; i++) {
-            if (data.conversations[i].uuid == componentId) {
-                return {type: 'conversation', data: data.conversations[i]}
-            }
-        }
-
-        for (var i = 0; i < data.channels.length; i++) {
-            if (data.channels[i].uuid == componentId) {
-                return {type: 'channel', data: data.channels[i]}
-            }
-        }
-
-        for (var i = 0; i < data.routers.length; i++) {
-            if (data.routers[i].uuid == componentId) {
-                return {type: 'router', data: data.routers[i]}
-            }
-        }
-
-        return null;
-    };
-
-    function getByEndpointId(data, endpointId) {
-        for (var i = 0; i < data.conversations.length; i++) {
-            for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
-                if (data.conversations[i].endpoints[j].uuid == endpointId) {
-                    return {type: 'conversation', data: data.conversations[i]};
-                }
-            }
-        }
-
-        for (var i = 0; i < data.channels.length; i++) {
-            for (var j = 0; j < data.channels[i].endpoints.length; j++) {
-                if (data.channels[i].endpoints[j].uuid == endpointId) {
-                    return {type: 'channel', data: data.channels[i]};
-                }
-            }
-        }
-
-        for (var i = 0; i < data.routers.length; i++) {
-            for (var j = 0; j < data.routers[i].conversation_endpoints.length; j++) {
-                if (data.routers[i].conversation_endpoints[j].uuid == endpointId) {
-                    return {type: 'router', data: data.routers[i]};
+        function getById(data, componentId) {
+            for (var i = 0; i < data.conversations.length; i++) {
+                if (data.conversations[i].uuid == componentId) {
+                    return {type: 'conversation', data: data.conversations[i]}
                 }
             }
 
-            for (var j = 0; j < data.routers[i].channel_endpoints.length; j++) {
-                if (data.routers[i].channel_endpoints[j].uuid == endpointId) {
-                    return {type: 'router', data: data.routers[i]};
+            for (var i = 0; i < data.channels.length; i++) {
+                if (data.channels[i].uuid == componentId) {
+                    return {type: 'channel', data: data.channels[i]}
                 }
             }
-        }
 
-        return null;
-    };
+            for (var i = 0; i < data.routers.length; i++) {
+                if (data.routers[i].uuid == componentId) {
+                    return {type: 'router', data: data.routers[i]}
+                }
+            }
 
-    function connectComponents(data, sourceId, targetId) {
-        var source = getById(data, sourceId);
-        var target = getById(data, targetId);
+            for (var i = 0; i < data.routing_entries.length; i++) {
+                if (data.routing_entries[i].uuid == componentId) {
+                    return {type: 'connection', data: data.routing_entries[i]}
+                }
+            }
 
-        if (!source || !target || source.type == target.type) return;
+            return null;
+        };
 
-        var sourceEndpoint = null;
-        if (['conversation', 'channel'].indexOf(source.type) != -1) {
-            sourceEndpoint = source.data.endpoints[0];
+        function getByEndpointId(data, endpointId) {
+            for (var i = 0; i < data.conversations.length; i++) {
+                for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
+                    if (data.conversations[i].endpoints[j].uuid == endpointId) {
+                        return {type: 'conversation', data: data.conversations[i]};
+                    }
+                }
+            }
 
-        } else if (source.type == 'router') {
-            if (target.type == 'conversation') {
-                sourceEndpoint = source.data.conversation_endpoints[0];
+            for (var i = 0; i < data.channels.length; i++) {
+                for (var j = 0; j < data.channels[i].endpoints.length; j++) {
+                    if (data.channels[i].endpoints[j].uuid == endpointId) {
+                        return {type: 'channel', data: data.channels[i]};
+                    }
+                }
+            }
 
-            } else if (target.type == 'channel') {
-                sourceEndpoint = source.data.channel_endpoints[0];
+            for (var i = 0; i < data.routers.length; i++) {
+                for (var j = 0; j < data.routers[i].conversation_endpoints.length; j++) {
+                    if (data.routers[i].conversation_endpoints[j].uuid == endpointId) {
+                        return {type: 'router', data: data.routers[i]};
+                    }
+                }
+
+                for (var j = 0; j < data.routers[i].channel_endpoints.length; j++) {
+                    if (data.routers[i].channel_endpoints[j].uuid == endpointId) {
+                        return {type: 'router', data: data.routers[i]};
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        function connectComponents(data, sourceId, targetId) {
+            var source = getById(data, sourceId);
+            var target = getById(data, targetId);
+
+            if (!source || !target || source.type == target.type) return;
+
+            var sourceEndpoint = null;
+            if (['conversation', 'channel'].indexOf(source.type) != -1) {
+                sourceEndpoint = source.data.endpoints[0];
+
+            } else if (source.type == 'router') {
+                if (target.type == 'conversation') {
+                    sourceEndpoint = source.data.conversation_endpoints[0];
+
+                } else if (target.type == 'channel') {
+                    sourceEndpoint = source.data.channel_endpoints[0];
+                }
+            }
+
+            var targetEndpoint = null;
+            if (['conversation', 'channel'].indexOf(target.type) != -1) {
+                targetEndpoint = target.data.endpoints[0];
+
+            } else if (target.type == 'router') {
+                if (source.type == 'conversation') {
+                    targetEndpoint = target.data.conversation_endpoints[0];
+
+                } else if (source.type == 'channel') {
+                    sourceEndpoint = target.data.channel_endpoints[0];
+                }
+            }
+
+            if (sourceEndpoint && targetEndpoint) {
+                data.routing_entries.push({
+                    source: {uuid: sourceEndpoint.uuid},
+                    target: {uuid: targetEndpoint.uuid},
+                });
             }
         }
 
-        var targetEndpoint = null;
-        if (['conversation', 'channel'].indexOf(target.type) != -1) {
-            targetEndpoint = target.data.endpoints[0];
+        return {
+            getById: getById,
+            getByEndpointId: getByEndpointId,
+            connectComponents: connectComponents
+        };
 
-        } else if (target.type == 'router') {
-            if (source.type == 'conversation') {
-                targetEndpoint = target.data.conversation_endpoints[0];
-
-            } else if (source.type == 'channel') {
-                sourceEndpoint = target.data.channel_endpoints[0];
-            }
-        }
-
-        if (sourceEndpoint && targetEndpoint) {
-            data.routing_entries.push({
-                source: {uuid: sourceEndpoint.uuid},
-                target: {uuid: targetEndpoint.uuid},
-            });
-        }
     }
-
-    return {
-        getById: getById,
-        getByEndpointId: getByEndpointId,
-        connectComponents: connectComponents
-    };
-
-}]);
+]);
 
 
 angular.module('vumigo.services').factory('zoomBehavior', [function () {
@@ -2295,13 +2329,16 @@ angular.module('vumigo.services').factory('zoomBehavior', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
-    function ($rootScope) {
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToolbox',
+    function ($rootScope, svgToolbox) {
         return function () {
+            var dragEnabled = true;
+            var selectEnabled = true;
+            var drawBoundingBox = true;
+            var boundingBoxPadding = 5;
             var canvasWidth = 0;
             var canvasHeight = 0;
             var gridCellSize = 0;
-            var bboxPadding = 5;
 
             /**
              * Called when the user starts dragging a component
@@ -2311,33 +2348,37 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     d3.event.sourceEvent.stopPropagation();
                 }
 
-                d3.selectAll('.component.selected')
-                    .classed('selected', false)
-                    .selectAll('.bbox')
-                        .remove();
+                var selection = d3.select(this);
 
-                var selection = d3.select(this)
-                    .classed('selected', true)
-                    .classed('dragging', true);
+                if (dragEnabled) {
+                    selection.classed('dragging', true);
+                }
 
-                var bbox = selection.node().getBBox();
-                selection.append('rect')
-                    .attr('class', 'bbox')
-                    .attr('x', bbox.x - bboxPadding)
-                    .attr('y', bbox.y - bboxPadding)
-                    .attr('width', bbox.width + 2.0 * bboxPadding)
-                    .attr('height', bbox.height + 2.0 * bboxPadding);
+                if (selectEnabled) {
+                    d3.selectAll('.component.selected')
+                        .classed('selected', false)
+                        .selectAll('.bbox')
+                            .remove();
 
-                $rootScope.$apply(function () {
-                    var d = selection.datum();
-                    $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
-                });
+                    selection.classed('selected', true);
+
+                    if (drawBoundingBox) {
+                        svgToolbox.drawBoundingBox(selection, boundingBoxPadding);
+                    }
+
+                    $rootScope.$apply(function () {
+                        var d = selection.datum();
+                        $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+                    });
+                }
             }
 
             /**
              * Called while the user is dragging a component
              */
             function dragged(d) {
+                if (!dragEnabled) return;
+
                 var x = d3.event.x;
                 var y = d3.event.y;
 
@@ -2372,7 +2413,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
              * Called after the user drops a component
              */
             function dragended() {
-                d3.select(this).classed('dragging', false);
+                if (dragEnabled) {
+                    d3.select(this).classed('dragging', false);
+                }
             }
 
             var drag = function() {
@@ -2381,6 +2424,24 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     .on('drag', dragged)
                     .on('dragend', dragended);
             }
+
+            drag.dragEnabled = function(value) {
+                if (!arguments.length) return dragEnabled;
+                dragEnabled = value;
+                return drag;
+            };
+
+            drag.selectEnabled = function(value) {
+                if (!arguments.length) return selectEnabled;
+                selectEnabled = value;
+                return drag;
+            };
+
+            drag.drawBoundingBox = function(value) {
+                if (!arguments.length) return drawBoundingBox;
+                drawBoundingBox = value;
+                return drag;
+            };
 
             drag.canvasWidth = function(value) {
                 if (!arguments.length) return canvasWidth;
@@ -2991,45 +3052,62 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 ]);
 
 
-angular.module('vumigo.services').factory('connectionComponent', [function () {
-    return function () {
+angular.module('vumigo.services').factory('connectionComponent', [
+    function () {
+        return function () {
+            var dragBehavior = null;
 
-        function enter(selection) {
-            selection.append('path')
-                .attr('class', 'component connection');
-        }
+            function enter(selection) {
+                selection.append('path')
+                    .attr('class', 'component connection');
+            }
 
-        function update(selection) {
-            var line = d3.svg.line()
-                .x(function (d) { return d.x; })
-                .y(function (d) { return d.y; })
-                .interpolate('cardinal');
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection
-                .attr('d', function (d) {
-                    return line(d.points);
-                });
-        }
+                var line = d3.svg.line()
+                    .x(function (d) { return d.x; })
+                    .y(function (d) { return d.y; })
+                    .interpolate('cardinal');
 
-        function exit(selection) {
-            selection.remove();
-        }
+                selection
+                    .attr('d', function (d) {
+                        return line(d.points);
+                    });
+            }
 
-        /**
-         * Repaint connection components.
-         *
-         * @param {selection} Selection containing connections.
-         */
-        var connection = function (selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint connection components.
+             *
+             * @param {selection} Selection containing connections.
+             */
+            var connection = function (selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return connection;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            connection.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return connection;
+            };
+
             return connection;
         };
-
-        return connection;
-    };
-}]);
+    }
+]);
 
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {
