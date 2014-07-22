@@ -1673,7 +1673,16 @@ g[c]:r.defaults[c];a.isDefined(f)&&null!==f?(p=encodeURIComponent(f).replace(/%4
 e){r.urlParams[e]||(c.params=c.params||{},c.params[e]=a)})}};return t}])})(window,window.angular);
 //# sourceMappingURL=angular-resource.min.js.map
 
+/*
+ * @license
+ * angular-uuid-service v0.0.1
+ * (c) 2014 Daniel Lamb http://daniellmb.com
+ * License: MIT
+ */
+angular.module("uuid",[]).factory("rfc4122",function(){return{v4:function(){var a=(new Date).getTime();return"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,function(c){var b=(a+16*Math.random())%16|0;a=Math.floor(a/16);return("x"==c?b:b&7|8).toString(16)})}}});
+
 var app = angular.module('vumigo', [
+    'uuid',
     'ngRoute',
     'vumigo.services',
     'vumigo.controllers',
@@ -1823,6 +1832,28 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.$watch('selectedComponentId', function (newValue, oldValue) {
+                // If the newly selected component is a connection activate its control points
+                // TODO: Find a better place for this
+                if (newValue != oldValue) {
+                    d3.selectAll('.control-point')
+                        .classed('active', false);
+
+                    if (newValue) {
+                        var component = componentHelper.getById($scope.data, newValue);
+                        if (component && component.type == 'connection') {
+                            var selector = '.control-point.'
+                                + component.data.source.uuid
+                                + '-'
+                                + component.data.target.uuid;
+
+                            console.log(selector);
+
+                            d3.selectAll(selector)
+                                .classed('active', true);
+                        }
+                    }
+                }
+
                 if (newValue) {
                     $scope.componentSelected = true;
 
@@ -1875,11 +1906,17 @@ directives.directive('goCampaignDesigner', [
             var connectionDrag = dragBehavior()
                 .dragEnabled(false)
                 .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
                 .call();
 
             var controlPointDrag = dragBehavior()
                 .selectEnabled(false)
                 .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
                 .call();
 
             var conversation = conversationComponent().drag(drag);
@@ -2125,8 +2162,8 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
     }
 ]);
 
-angular.module('vumigo.services').factory('componentHelper', ['$rootScope',
-    function ($rootScope) {
+angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc4122',
+    function ($rootScope, rfc4122) {
         var bboxPadding = 5;
 
         function getById(data, componentId) {
@@ -2225,6 +2262,7 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope',
 
             if (sourceEndpoint && targetEndpoint) {
                 data.routing_entries.push({
+                    uuid: rfc4122.v4(),
                     source: {uuid: sourceEndpoint.uuid},
                     target: {uuid: targetEndpoint.uuid},
                 });
@@ -3084,7 +3122,7 @@ angular.module('vumigo.services').factory('connectionComponent', [
                 var line = d3.svg.line()
                     .x(function (d) { return d.x; })
                     .y(function (d) { return d.y; })
-                    .interpolate('cardinal');
+                    .interpolate('linear');
 
                 selection
                     .attr('d', function (d) {

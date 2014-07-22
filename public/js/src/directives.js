@@ -61,6 +61,28 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.$watch('selectedComponentId', function (newValue, oldValue) {
+                // If the newly selected component is a connection activate its control points
+                // TODO: Find a better place for this
+                if (newValue != oldValue) {
+                    d3.selectAll('.control-point')
+                        .classed('active', false);
+
+                    if (newValue) {
+                        var component = componentHelper.getById($scope.data, newValue);
+                        if (component && component.type == 'connection') {
+                            var selector = '.control-point.'
+                                + component.data.source.uuid
+                                + '-'
+                                + component.data.target.uuid;
+
+                            console.log(selector);
+
+                            d3.selectAll(selector)
+                                .classed('active', true);
+                        }
+                    }
+                }
+
                 if (newValue) {
                     $scope.componentSelected = true;
 
@@ -113,11 +135,17 @@ directives.directive('goCampaignDesigner', [
             var connectionDrag = dragBehavior()
                 .dragEnabled(false)
                 .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
                 .call();
 
             var controlPointDrag = dragBehavior()
                 .selectEnabled(false)
                 .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
                 .call();
 
             var conversation = conversationComponent().drag(drag);

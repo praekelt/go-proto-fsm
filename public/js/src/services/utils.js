@@ -179,8 +179,8 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
     }
 ]);
 
-angular.module('vumigo.services').factory('componentHelper', ['$rootScope',
-    function ($rootScope) {
+angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc4122',
+    function ($rootScope, rfc4122) {
         var bboxPadding = 5;
 
         function getById(data, componentId) {
@@ -279,6 +279,7 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope',
 
             if (sourceEndpoint && targetEndpoint) {
                 data.routing_entries.push({
+                    uuid: rfc4122.v4(),
                     source: {uuid: sourceEndpoint.uuid},
                     target: {uuid: targetEndpoint.uuid},
                 });

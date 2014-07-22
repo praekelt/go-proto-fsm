@@ -145,6 +145,11 @@
 
     .control-point {
         @point-bg: blue;
+        visibility: hidden;  // hide control points by default
+
+        &.active {
+            visibility: visible;
+        }
 
         .point {
             fill: @point-bg;
