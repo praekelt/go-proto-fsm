@@ -92,25 +92,41 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
             function layout(data) {
                 angular.forEach(data.routing_entries, function (connection) {
+                    connection._layout = {};
+
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
+
+                    // Set connection colour to match conversation colour
+                    if (source.type == 'conversation') {
+                        connection._layout.colour = source.data.colour;
+                    }
+
+                    // Fix the start and end point to the source and target components
+                    var start = endpoint(connection, source, connection.source.uuid);
+                    var end = endpoint(connection, target, connection.target.uuid);
 
                     if (angular.isUndefined(connection.points)) {
                         connection.points = [];
                     }
 
-                    var start = endpoint(connection, source, connection.source.uuid);
-                    var end = endpoint(connection, target, connection.target.uuid);
-
-                    if (connection.points.length == 0) {
+                    if (connection.points.length == 0) { // Initialise points
                         connection.points.push(start);
                         var points = controlPoints(connection, start, end, numberOfControlPoints);
                         angular.forEach(points, function (point) {
                             connection.points.push(point);
                         });
                         connection.points.push(end);
-                    } else {
+
+                    } else {  // Update points
                         connection.points[0] = start;
+                        for (var i = 1; i < connection.points.length - 1; i++) {
+                            connection.points[i]._layout = {
+                                r: pointRadius,
+                                sourceId: connection.source.uuid,
+                                targetId: connection.target.uuid
+                            }
+                        }
                         connection.points[connection.points.length - 1] = end;
                     }
                 });

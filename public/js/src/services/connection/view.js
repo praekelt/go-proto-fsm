@@ -20,7 +20,8 @@ angular.module('vumigo.services').factory('connectionComponent', [
                 selection
                     .attr('d', function (d) {
                         return line(d.points);
-                    });
+                    })
+                    .style('stroke', function (d) { return d._layout.colour });
             }
 
             function exit(selection) {

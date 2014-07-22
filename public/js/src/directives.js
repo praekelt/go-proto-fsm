@@ -113,12 +113,12 @@ directives.directive('goCampaignDesigner', [
             var connectionDrag = dragBehavior()
                 .dragEnabled(false)
                 .drawBoundingBox(false)
-                .call()
+                .call();
 
             var controlPointDrag = dragBehavior()
                 .selectEnabled(false)
                 .drawBoundingBox(false)
-                .call()
+                .call();
 
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
