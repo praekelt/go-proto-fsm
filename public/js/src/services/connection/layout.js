@@ -100,6 +100,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     // Set connection colour to match conversation colour
                     if (source.type == 'conversation') {
                         connection._layout.colour = source.data.colour;
+                    } else if (target.type == 'conversation') {
+                        connection._layout.colour = target.data.colour;
                     }
 
                     // Fix the start and end point to the source and target components
