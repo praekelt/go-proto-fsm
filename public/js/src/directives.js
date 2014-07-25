@@ -61,34 +61,21 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.$watch('selectedComponentId', function (newValue, oldValue) {
-                // If the newly selected component is a connection activate its control points
-                // TODO: Find a better place for this
-                if (newValue != oldValue) {
-                    d3.selectAll('.control-point')
-                        .classed('active', false);
+                if (newValue == oldValue) return;
 
-                    if (newValue) {
-                        var component = componentHelper.getById($scope.data, newValue);
-                        if (component && component.type == 'connection') {
-                            var selector = '.control-point.'
-                                + component.data.source.uuid
-                                + '-'
-                                + component.data.target.uuid;
-
-                            console.log(selector);
-
-                            d3.selectAll(selector)
-                                .classed('active', true);
-                        }
-                    }
+                if (oldValue) {
+                    var component = componentHelper.getById($scope.data, oldValue);
+                    component.data._selected = false;
                 }
 
                 if (newValue) {
+                    var component = componentHelper.getById($scope.data, newValue);
+                    component.data._selected = true;
+
                     $scope.componentSelected = true;
 
-                    if (oldValue && newValue != oldValue && $scope.connectPressed) {
+                    if (oldValue && $scope.connectPressed) {
                         componentHelper.connectComponents($scope.data, oldValue, newValue);
-                        $scope.refresh();
                     }
 
                 } else {
@@ -96,6 +83,7 @@ directives.directive('goCampaignDesigner', [
                 }
 
                 $scope.connectPressed = false;
+                $scope.refresh();
             });
 
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
@@ -152,7 +140,6 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
             var connection = connectionComponent().drag(connectionDrag);
-            var controlPoint = controlPointComponent().drag(controlPointDrag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -180,8 +167,12 @@ directives.directive('goCampaignDesigner', [
                     .call(connection);
 
                 angular.forEach(scope.data.routing_entries, function (connection) {
-                    var selector = '.control-point.'
-                        + connection.source.uuid + '-' + connection.target.uuid;
+                    var controlPoint = controlPointComponent()
+                        .drag(controlPointDrag)
+                        .connectionId(connection.uuid);
+
+                    var selector = '.control-point[data-connection-uuid="'
+                        + connection.uuid + '"]';
 
                     canvas.selectAll(selector)
                         .data(connection.points)

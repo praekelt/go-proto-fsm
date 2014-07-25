@@ -286,10 +286,44 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             }
         }
 
+        function getEndpointById(component, endpointId) {
+            if (component.type == 'router') {
+                for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                    if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.conversation_endpoints[i],
+                            type: 'conversation'
+                        };
+                    }
+                }
+
+                for (var i = 0; i < component.data.channel_endpoints.length; i++) {
+                    if (component.data.channel_endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.channel_endpoints[i],
+                            type: 'channel'
+                        };
+                    }
+                }
+
+            } else {
+                for (var i = 0; i < component.data.endpoints.length; i++) {
+                    if (component.data.endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.endpoints[i]
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
         return {
             getById: getById,
             getByEndpointId: getByEndpointId,
-            connectComponents: connectComponents
+            connectComponents: connectComponents,
+            getEndpointById: getEndpointById
         };
 
     }

@@ -60,13 +60,12 @@ angular.module('vumigo.services').factory('connectionComponent', [
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {
         var dragBehavior = null;
+        var connectionId = null;
 
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', function (d) {
-                    return 'component control-point '
-                        + d._layout.sourceId + '-' + d._layout.targetId;
-                });
+                .attr('class', 'component control-point')
+                .attr('data-connection-uuid', connectionId);
 
             selection.append('circle')
                 .attr('class', 'point');
@@ -78,6 +77,9 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
             selection
                 .attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
+                })
+                .classed('active', function (d) {
+                    return d._layout.visible;
                 });
 
             selection.selectAll('.point')
@@ -109,6 +111,18 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         controlPoint.drag = function(value) {
             if (!arguments.length) return dragBehavior;
             dragBehavior = value;
+            return controlPoint;
+        };
+
+       /**
+         * Get/set the connection UUID.
+         *
+         * @param {value} The new connection UUID; when setting.
+         * @return The current connection UUID.
+         */
+        controlPoint.connectionId = function(value) {
+            if (!arguments.length) return connectionId;
+            connectionId = value;
             return controlPoint;
         };
 

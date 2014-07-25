@@ -1832,34 +1832,21 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.$watch('selectedComponentId', function (newValue, oldValue) {
-                // If the newly selected component is a connection activate its control points
-                // TODO: Find a better place for this
-                if (newValue != oldValue) {
-                    d3.selectAll('.control-point')
-                        .classed('active', false);
+                if (newValue == oldValue) return;
 
-                    if (newValue) {
-                        var component = componentHelper.getById($scope.data, newValue);
-                        if (component && component.type == 'connection') {
-                            var selector = '.control-point.'
-                                + component.data.source.uuid
-                                + '-'
-                                + component.data.target.uuid;
-
-                            console.log(selector);
-
-                            d3.selectAll(selector)
-                                .classed('active', true);
-                        }
-                    }
+                if (oldValue) {
+                    var component = componentHelper.getById($scope.data, oldValue);
+                    component.data._selected = false;
                 }
 
                 if (newValue) {
+                    var component = componentHelper.getById($scope.data, newValue);
+                    component.data._selected = true;
+
                     $scope.componentSelected = true;
 
-                    if (oldValue && newValue != oldValue && $scope.connectPressed) {
+                    if (oldValue && $scope.connectPressed) {
                         componentHelper.connectComponents($scope.data, oldValue, newValue);
-                        $scope.refresh();
                     }
 
                 } else {
@@ -1867,6 +1854,7 @@ directives.directive('goCampaignDesigner', [
                 }
 
                 $scope.connectPressed = false;
+                $scope.refresh();
             });
 
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
@@ -1923,7 +1911,6 @@ directives.directive('goCampaignDesigner', [
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
             var connection = connectionComponent().drag(connectionDrag);
-            var controlPoint = controlPointComponent().drag(controlPointDrag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -1951,8 +1938,12 @@ directives.directive('goCampaignDesigner', [
                     .call(connection);
 
                 angular.forEach(scope.data.routing_entries, function (connection) {
-                    var selector = '.control-point.'
-                        + connection.source.uuid + '-' + connection.target.uuid;
+                    var controlPoint = controlPointComponent()
+                        .drag(controlPointDrag)
+                        .connectionId(connection.uuid);
+
+                    var selector = '.control-point[data-connection-uuid="'
+                        + connection.uuid + '"]';
 
                     canvas.selectAll(selector)
                         .data(connection.points)
@@ -2269,10 +2260,44 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             }
         }
 
+        function getEndpointById(component, endpointId) {
+            if (component.type == 'router') {
+                for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
+                    if (component.data.conversation_endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.conversation_endpoints[i],
+                            type: 'conversation'
+                        };
+                    }
+                }
+
+                for (var i = 0; i < component.data.channel_endpoints.length; i++) {
+                    if (component.data.channel_endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.channel_endpoints[i],
+                            type: 'channel'
+                        };
+                    }
+                }
+
+            } else {
+                for (var i = 0; i < component.data.endpoints.length; i++) {
+                    if (component.data.endpoints[i].uuid == endpointId) {
+                        return {
+                            data: component.data.endpoints[i]
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+
         return {
             getById: getById,
             getByEndpointId: getByEndpointId,
-            connectComponents: connectComponents
+            connectComponents: connectComponents,
+            getEndpointById: getEndpointById
         };
 
     }
@@ -2971,47 +2996,14 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             var pointRadius = 5;
             var numberOfControlPoints = 3;
 
-            function getEndpointById(component, endpointId) {
-                if (component.type == 'router') {
-                    for (var i = 0; i < component.data.conversation_endpoints.length; i++) {
-                        if (component.data.conversation_endpoints[i].uuid == endpointId) {
-                            return {
-                                data: component.data.conversation_endpoints[i],
-                                type: 'conversation'
-                            };
-                        }
-                    }
-
-                    for (var i = 0; i < component.data.channel_endpoints.length; i++) {
-                        if (component.data.channel_endpoints[i].uuid == endpointId) {
-                            return {
-                                data: component.data.channel_endpoints[i],
-                                type: 'channel'
-                            };
-                        }
-                    }
-
-                } else {
-                    for (var i = 0; i < component.data.endpoints.length; i++) {
-                        if (component.data.endpoints[i].uuid == endpointId) {
-                            return {
-                                data: component.data.endpoints[i]
-                            };
-                        }
-                    }
-                }
-
-                return null;
-            }
-
             /**
              * Return the X and Y coordinates of the given component's endpoint.
              */
-            function endpoint(connection, component, endpointId) {
+            function endpoint(connection, component, endpointId, visible) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
-                    var endpoint = getEndpointById(component, endpointId);
+                    var endpoint = componentHelper.getEndpointById(component, endpointId);
                     if (endpoint) {
                         if (endpoint.type == 'conversation') {
                             x = x - (component.data._layout.r + endpoint.data._layout.len / 2.0);
@@ -3029,7 +3021,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     _layout: {
                         r: 0,
                         sourceId: connection.source.uuid,
-                        targetId: connection.target.uuid
+                        targetId: connection.target.uuid,
+                        visible: visible
                     }
                 };
             }
@@ -3037,7 +3030,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             /**
              * Return a list of control points.
              */
-            function controlPoints(connection, start, end, numberOfPoints) {
+            function controlPoints(connection, start, end, numberOfPoints, visible) {
                 numberOfPoints = numberOfPoints || 3;
                 var controlPoints = [];
                 var xOffset = (end.x - start.x) / (numberOfPoints + 1);
@@ -3049,7 +3042,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         _layout: {
                             r: pointRadius,
                             sourceId: connection.source.uuid,
-                            targetId: connection.target.uuid
+                            targetId: connection.target.uuid,
+                            visible: visible
                         }
                     });
                 }
@@ -3070,9 +3064,15 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         connection._layout.colour = target.data.colour;
                     }
 
+                    // Determine whether the control points should be displayed
+                    var visible = false;
+                    if (connection._selected || source.data._selected || target.data._selected) {
+                        visible = true;
+                    }
+
                     // Fix the start and end point to the source and target components
-                    var start = endpoint(connection, source, connection.source.uuid);
-                    var end = endpoint(connection, target, connection.target.uuid);
+                    var start = endpoint(connection, source, connection.source.uuid, visible);
+                    var end = endpoint(connection, target, connection.target.uuid, visible);
 
                     if (angular.isUndefined(connection.points)) {
                         connection.points = [];
@@ -3080,7 +3080,9 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
                     if (connection.points.length == 0) { // Initialise points
                         connection.points.push(start);
-                        var points = controlPoints(connection, start, end, numberOfControlPoints);
+                        var points = controlPoints(
+                            connection, start, end, numberOfControlPoints, visible);
+
                         angular.forEach(points, function (point) {
                             connection.points.push(point);
                         });
@@ -3092,8 +3094,9 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                             connection.points[i]._layout = {
                                 r: pointRadius,
                                 sourceId: connection.source.uuid,
-                                targetId: connection.target.uuid
-                            }
+                                targetId: connection.target.uuid,
+                                visible: visible
+                            };
                         }
                         connection.points[connection.points.length - 1] = end;
                     }
@@ -3169,13 +3172,12 @@ angular.module('vumigo.services').factory('connectionComponent', [
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {
         var dragBehavior = null;
+        var connectionId = null;
 
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', function (d) {
-                    return 'component control-point '
-                        + d._layout.sourceId + '-' + d._layout.targetId;
-                });
+                .attr('class', 'component control-point')
+                .attr('data-connection-uuid', connectionId);
 
             selection.append('circle')
                 .attr('class', 'point');
@@ -3187,6 +3189,9 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
             selection
                 .attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
+                })
+                .classed('active', function (d) {
+                    return d._layout.visible;
                 });
 
             selection.selectAll('.point')
@@ -3218,6 +3223,18 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         controlPoint.drag = function(value) {
             if (!arguments.length) return dragBehavior;
             dragBehavior = value;
+            return controlPoint;
+        };
+
+       /**
+         * Get/set the connection UUID.
+         *
+         * @param {value} The new connection UUID; when setting.
+         * @return The current connection UUID.
+         */
+        controlPoint.connectionId = function(value) {
+            if (!arguments.length) return connectionId;
+            connectionId = value;
             return controlPoint;
         };
 
