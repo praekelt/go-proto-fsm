@@ -87,7 +87,7 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
      */
     function drawBoundingBox(selection, padding) {
         var bbox = selection.node().getBBox();
-        selection.append('rect')
+        selection.insert('rect', ':first-child')
             .attr('class', 'bbox')
             .attr('x', bbox.x - padding)
             .attr('y', bbox.y - padding)

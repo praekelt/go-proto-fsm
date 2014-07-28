@@ -1756,6 +1756,12 @@ controllers.controller('CampaignMakerController', ['$scope',
                 }, {
                     uuid: 'endpoint7',
                     name: 'default'
+                }, {
+                    uuid: 'endpoint8',
+                    name: 'default'
+                }, {
+                    uuid: 'endpoint9',
+                    name: 'default'
                 }],
                 x: 500,
                 y: 220
@@ -2061,7 +2067,7 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
      */
     function drawBoundingBox(selection, padding) {
         var bbox = selection.node().getBBox();
-        selection.append('rect')
+        selection.insert('rect', ':first-child')
             .attr('class', 'bbox')
             .attr('x', bbox.x - padding)
             .attr('y', bbox.y - padding)

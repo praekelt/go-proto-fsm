@@ -49,6 +49,12 @@ controllers.controller('CampaignMakerController', ['$scope',
                 }, {
                     uuid: 'endpoint7',
                     name: 'default'
+                }, {
+                    uuid: 'endpoint8',
+                    name: 'default'
+                }, {
+                    uuid: 'endpoint9',
+                    name: 'default'
                 }],
                 x: 500,
                 y: 220
