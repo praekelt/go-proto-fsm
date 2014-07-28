@@ -1756,12 +1756,6 @@ controllers.controller('CampaignMakerController', ['$scope',
                 }, {
                     uuid: 'endpoint7',
                     name: 'default'
-                }, {
-                    uuid: 'endpoint8',
-                    name: 'default'
-                }, {
-                    uuid: 'endpoint9',
-                    name: 'default'
                 }],
                 x: 500,
                 y: 220
@@ -2659,7 +2653,7 @@ angular.module('vumigo.services').factory('routerLayout', [function () {
     return function() {
         var minSize = 60;
         var pinGap = 20;
-        var pinHeadRadius = 5;
+        var pinHeadRadius = 8;
 
         function pins(router) {
             angular.forEach(router.conversation_endpoints, function (pin, i) {
