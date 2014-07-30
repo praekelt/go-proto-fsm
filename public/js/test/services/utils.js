@@ -182,4 +182,34 @@ describe('componentHelper', function () {
         expect(data.routing_entries).to.deep.equal([]);
     }));
 
+    it('should find endpoint by id', inject(function (componentHelper) {
+        var component = {
+            data: data.conversations[0],
+            type: 'conversation'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint1');
+        expect(endpoint.data.uuid).to.equal('endpoint1');
+
+        var component = {
+            data: data.channels[0],
+            type: 'channel'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint2');
+        expect(endpoint.data.uuid).to.equal('endpoint2');
+
+        var component = {
+            data: data.routers[0],
+            type: 'router'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint3');
+        expect(endpoint.data.uuid).to.equal('endpoint3');
+        expect(endpoint.type).to.equal('conversation');
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint4');
+        expect(endpoint.data.uuid).to.equal('endpoint4');
+        expect(endpoint.type).to.equal('channel');
+    }));
 });
