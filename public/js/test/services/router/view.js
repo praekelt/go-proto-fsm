@@ -59,7 +59,7 @@ describe('routerComponent', function () {
         var y = data[0].conversation_endpoints[0]._layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
         expect(pin.find('.head')).to.have.length(1);
-        expect(pin.find('.head').eq(0).attr('r')).to.equal('5');
+        expect(pin.find('.head').eq(0).attr('r')).to.equal('8');
         expect(pin.find('.line')).to.have.length(1);
         expect(pin.find('.line').eq(0).attr('x2')).to.equal(String(len));
 

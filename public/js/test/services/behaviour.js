@@ -184,7 +184,10 @@ describe('dragBehavior', function () {
 
         component.trigger('vumigo:dragstart');
 
-        expect(component.attr('class')).to.equal('component selected dragging');
+        var classes = component.attr('class').split(' ');
+        expect(classes.indexOf('component')).not.to.equal(-1);
+        expect(classes.indexOf('dragging')).not.to.equal(-1);
+        expect(classes.indexOf('selected')).not.to.equal(-1);
         expect(component.find('rect.bbox')).to.have.length(1);
         expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component1')).to.be.true;
     }));

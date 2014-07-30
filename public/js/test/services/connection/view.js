@@ -1,6 +1,7 @@
 describe('channelComponent', function () {
     var element, layout, connection, data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(inject(function (channelComponent, channelLayout, conversationComponent, conversationLayout, connectionComponent, connectionLayout, dragBehavior) {
@@ -68,7 +69,7 @@ describe('channelComponent', function () {
         var connections = element.find('.connection');
         expect(connections).to.have.length(1);
 
-        expect(connections.eq(0).attr('d')).to.equal('M100,100L200,200');
+        expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L200,200');
 
         data.channels[0].x = 300;
         data.channels[0].y = 300;
@@ -78,7 +79,7 @@ describe('channelComponent', function () {
             .call(connection);
 
         expect(connections).to.have.length(1);
-        expect(connections.eq(0).attr('d')).to.equal('M100,100L300,300');
+        expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L300,300');
     }));
 
 });

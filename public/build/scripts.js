@@ -2997,9 +2997,9 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             var numberOfControlPoints = 3;
 
             /**
-             * Return the X and Y coordinates of the given component's endpoint.
+             * Compute a new point for the given `component` and `endpointId`.
              */
-            function endpoint(connection, component, endpointId, visible) {
+            function point(connection, component, endpointId, visible) {
                 var x = component.data.x;
                 var y = component.data.y;
                 if (component.type == 'router' && endpointId) {
@@ -3028,15 +3028,16 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             }
 
             /**
-             * Return a list of control points.
+             * Interpolate a `numberOfPoints` points between the given `start`
+             * and `end` points.
              */
-            function controlPoints(connection, start, end, numberOfPoints, visible) {
+            function interpolatePoints(connection, start, end, numberOfPoints, visible) {
                 numberOfPoints = numberOfPoints || 3;
-                var controlPoints = [];
+                var points = [];
                 var xOffset = (end.x - start.x) / (numberOfPoints + 1);
                 var yOffset = (end.y - start.y) / (numberOfPoints + 1);
                 for (var i = 1; i <= numberOfPoints; i++) {
-                    controlPoints.push({
+                    points.push({
                         x: start.x + i * xOffset,
                         y: start.y + i * yOffset,
                         _layout: {
@@ -3047,7 +3048,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         }
                     });
                 }
-                return controlPoints;
+                return points;
             }
 
             function layout(data) {
@@ -3071,8 +3072,8 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     }
 
                     // Fix the start and end point to the source and target components
-                    var start = endpoint(connection, source, connection.source.uuid, visible);
-                    var end = endpoint(connection, target, connection.target.uuid, visible);
+                    var start = point(connection, source, connection.source.uuid, visible);
+                    var end = point(connection, target, connection.target.uuid, visible);
 
                     if (angular.isUndefined(connection.points)) {
                         connection.points = [];
@@ -3080,7 +3081,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
                     if (connection.points.length == 0) { // Initialise points
                         connection.points.push(start);
-                        var points = controlPoints(
+                        var points = interpolatePoints(
                             connection, start, end, numberOfControlPoints, visible);
 
                         angular.forEach(points, function (point) {

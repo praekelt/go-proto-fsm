@@ -94,6 +94,7 @@ describe('canvasBuilder', function () {
 describe('componentHelper', function () {
     var data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(function () {
@@ -157,14 +158,20 @@ describe('componentHelper', function () {
         expect(router.data.uuid).to.equal('router1');
     }));
 
-    it('should connect components', inject(function (componentHelper) {
+    it('should connect components', inject(function (rfc4122, componentHelper) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('connection1');
+        stub.onCall(1).returns('connection2');
+
         componentHelper.connectComponents(data, 'conversation1', 'router1');
         componentHelper.connectComponents(data, 'router1', 'channel1');
 
-        expect(data.routing_entries).to.deep.equal([
-            {source: {uuid: 'endpoint1'}, target: {uuid: 'endpoint3'}},
-            {source: {uuid: 'endpoint4'}, target: {uuid: 'endpoint2'}},
-        ]);
+        var expected = [
+            {uuid: 'connection1', source: {uuid: 'endpoint1'}, target: {uuid: 'endpoint3'}},
+            {uuid: 'connection2', source: {uuid: 'endpoint4'}, target: {uuid: 'endpoint2'}},
+        ];
+
+        expect(data.routing_entries).to.deep.equal(expected);
     }));
 
     it('should not connect components to themselves', inject(function (componentHelper) {
