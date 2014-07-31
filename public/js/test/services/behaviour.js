@@ -83,7 +83,7 @@ describe('zoomBehavior', function () {
 });
 
 describe('dragBehavior', function () {
-    var element, scope;
+    var element, scope, canvas;
 
     beforeEach(module('vumigo.services'));
 
@@ -101,7 +101,7 @@ describe('dragBehavior', function () {
             .attr('class', 'container')
             .attr('transform', 'translate(0, 0)');
 
-        var canvas = container.append('g')
+        canvas = container.append('g')
             .attr('class', 'canvas');
 
         var drag = dragBehavior()
@@ -190,6 +190,91 @@ describe('dragBehavior', function () {
         expect(classes.indexOf('selected')).not.to.equal(-1);
         expect(component.find('rect.bbox')).to.have.length(1);
         expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component1')).to.be.true;
+    }));
+
+    it('should not allow component to be draggable', inject(function (dragBehavior) {
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .dragEnabled(false)
+            .call();
+
+        canvas.selectAll('.component.non-draggable')
+            .data([{uuid: 'component2', x: 0, y: 0}])
+            .enter().append('g')
+                .attr('class', 'component non-draggable')
+                .attr('transform', 'translate(0,0)')
+                .call(drag);
+
+        var components = element.find('.component.non-draggable');
+        components.eq(0)
+            .trigger('vumigo:dragstart')
+            .trigger('vumigo:drag', {
+                x: 70,
+                y: 70
+            })
+            .trigger('vumigo:dragend');
+
+        expect(components.eq(0).attr('transform')).to.equal('translate(0,0)');
+    }));
+
+    it('should not select component', inject(function (dragBehavior) {
+        sinon.stub(scope, '$emit');
+
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .selectEnabled(false)
+            .call();
+
+        canvas.selectAll('.component.non-selectable')
+            .data([{uuid: 'component2', x: 0, y: 0}])
+            .enter().append('g')
+                .attr('class', 'component non-selectable')
+                .attr('transform', 'translate(0,0)')
+                .call(drag);
+
+        var component = element.find('.component.non-selectable').eq(0);
+
+        component.trigger('vumigo:dragstart');
+
+        var classes = component.attr('class').split(' ');
+        expect(classes.indexOf('component')).not.to.equal(-1);
+        expect(classes.indexOf('dragging')).not.to.equal(-1);
+        expect(classes.indexOf('selected')).to.equal(-1);
+        expect(component.find('rect.bbox')).to.have.length(0);
+        expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component2')).to.be.false;
+    }));
+
+    it('should not draw bounding box', inject(function (dragBehavior) {
+        sinon.stub(scope, '$emit');
+
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .drawBoundingBox(false)
+            .call();
+
+        canvas.selectAll('.component.no-bbox')
+            .data([{uuid: 'component2', x: 0, y: 0}])
+            .enter().append('g')
+                .attr('class', 'component no-bbox')
+                .attr('transform', 'translate(0,0)')
+                .call(drag);
+
+        var component = element.find('.component.no-bbox').eq(0);
+
+        component.trigger('vumigo:dragstart');
+
+        var classes = component.attr('class').split(' ');
+        expect(classes.indexOf('component')).not.to.equal(-1);
+        expect(classes.indexOf('dragging')).not.to.equal(-1);
+        expect(classes.indexOf('selected')).not.to.equal(-1);
+        expect(component.find('rect.bbox')).to.have.length(0);
+        expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component2')).to.be.true;
     }));
 
 });
