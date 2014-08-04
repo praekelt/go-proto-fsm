@@ -15,25 +15,30 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     var endpoint = componentHelper.getEndpointById(component, endpointId);
                     if (endpoint) {
                         if (endpoint.type == 'conversation') {
-                            x = x - (component.data._layout.r + endpoint.data._layout.len / 2.0);
-                            y = y + endpoint.data._layout.y;
+                            x = x - (component.data._meta.layout.r + endpoint.data._meta.layout.len / 2.0);
+                            y = y + endpoint.data._meta.layout.y;
+
                         } else if (endpoint.type == 'channel') {
-                            x = x + endpoint.data._layout.x;
-                            y = y + endpoint.data._layout.y;
+                            x = x + endpoint.data._meta.layout.x;
+                            y = y + endpoint.data._meta.layout.y;
                         }
                     }
                 }
 
-                return {
+                var point = {
                     x: x,
-                    y: y,
-                    _layout: {
-                        r: 0,
-                        sourceId: connection.source.uuid,
-                        targetId: connection.target.uuid,
-                        visible: visible
-                    }
+                    y: y
                 };
+
+                var meta = componentHelper.getMetadata(point);
+                meta.layout = {
+                    r: 0,
+                    sourceId: connection.source.uuid,
+                    targetId: connection.target.uuid,
+                    visible: visible
+                };
+
+                return point;
             }
 
             /**
@@ -46,32 +51,38 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 var xOffset = (end.x - start.x) / (numberOfPoints + 1);
                 var yOffset = (end.y - start.y) / (numberOfPoints + 1);
                 for (var i = 1; i <= numberOfPoints; i++) {
-                    points.push({
+                    var point = {
                         x: start.x + i * xOffset,
-                        y: start.y + i * yOffset,
-                        _layout: {
-                            r: pointRadius,
-                            sourceId: connection.source.uuid,
-                            targetId: connection.target.uuid,
-                            visible: visible
-                        }
-                    });
+                        y: start.y + i * yOffset
+                    };
+
+                    var meta = componentHelper.getMetadata(point);
+                    meta.layout = {
+                        r: pointRadius,
+                        sourceId: connection.source.uuid,
+                        targetId: connection.target.uuid,
+                        visible: visible
+                    };
+
+                    points.push(point);
                 }
                 return points;
             }
 
             function layout(data) {
                 angular.forEach(data.routing_entries, function (connection) {
-                    connection._layout = {};
+                    var metadata = componentHelper.getMetadata(connection);
+
+                    metadata.layout = {};
 
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
                     // Set connection colour to match conversation colour
                     if (source.type == 'conversation') {
-                        connection._layout.colour = source.data.colour;
+                        metadata.layout.colour = source.data.colour;
                     } else if (target.type == 'conversation') {
-                        connection._layout.colour = target.data.colour;
+                        metadata.layout.colour = target.data.colour;
                     }
 
                     // Determine whether the control points should be displayed
@@ -100,14 +111,17 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
                     } else {  // Update points
                         connection.points[0] = start;
+
                         for (var i = 1; i < connection.points.length - 1; i++) {
-                            connection.points[i]._layout = {
+                            var meta = componentHelper.getMetadata(connection.points[i]);
+                            meta.layout = {
                                 r: pointRadius,
                                 sourceId: connection.source.uuid,
                                 targetId: connection.target.uuid,
                                 visible: visible
                             };
                         }
+
                         connection.points[connection.points.length - 1] = end;
                     }
                 });

@@ -21,7 +21,7 @@ angular.module('vumigo.services').factory('connectionComponent', [
                     .attr('d', function (d) {
                         return line(d.points);
                     })
-                    .style('stroke', function (d) { return d._layout.colour });
+                    .style('stroke', function (d) { return d._meta.layout.colour });
             }
 
             function exit(selection) {
@@ -79,11 +79,11 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
                     return 'translate(' + [d.x, d.y] + ')';
                 })
                 .classed('active', function (d) {
-                    return d._layout.visible;
+                    return d._meta.layout.visible;
                 });
 
             selection.selectAll('.point')
-                .attr('r', function (d) { return d._layout.r; });
+                .attr('r', function (d) { return d._meta.layout.r; });
         }
 
         function exit(selection) {

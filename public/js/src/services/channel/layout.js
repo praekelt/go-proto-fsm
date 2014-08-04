@@ -1,36 +1,40 @@
 
-angular.module('vumigo.services').factory('channelLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var maxOuterRadius = 100;
-        var textOffset = 20;
+angular.module('vumigo.services').factory('channelLayout', [
+    'componentHelper', function (componentHelper) {
+        return function () {
+            var innerRadius = 10;
+            var maxOuterRadius = 100;
+            var textOffset = 20;
 
-        function layout(data) {
-            angular.forEach(data, function (channel) {
-                var outerRadius = innerRadius
-                    + maxOuterRadius * channel.utilization;
+            function layout(data) {
+                angular.forEach(data, function (channel) {
+                    var metadata = componentHelper.getMetadata(channel);
 
-                var textX = innerRadius / 2.0 + textOffset;
+                    var outerRadius = innerRadius
+                        + maxOuterRadius * channel.utilization;
 
-                channel._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
-                    }
-                };
-            });
+                    var textX = innerRadius / 2.0 + textOffset;
 
-            return data;
-        }
+                    metadata.layout = {
+                        inner: {
+                            r: innerRadius
+                        },
+                        outer: {
+                            r: outerRadius
+                        },
+                        name: {
+                            x: textX
+                        },
+                        description: {
+                            x: textX
+                        }
+                    };
+                });
 
-        return layout;
-    };
-}]);
+                return data;
+            }
+
+            return layout;
+        };
+    }
+]);

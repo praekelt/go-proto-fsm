@@ -1,33 +1,37 @@
 
-angular.module('vumigo.services').factory('conversationLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var outerRadius = 30;
-        var textMargin = 20;
+angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
+    function (componentHelper) {
+        return function() {
+            var innerRadius = 10;
+            var outerRadius = 30;
+            var textMargin = 20;
 
-        function layout(data) {
-            angular.forEach(data, function (conversation) {
-                var textX = -(outerRadius / 2.0 + textMargin);
+            function layout(data) {
+                angular.forEach(data, function (conversation) {
+                    var metadata = componentHelper.getMetadata(conversation);
 
-                conversation._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
+                    var textX = -(outerRadius / 2.0 + textMargin);
+
+                    metadata.layout = {
+                        inner: {
+                            r: innerRadius
+                        },
+                        outer: {
+                            r: outerRadius
+                        },
+                        name: {
+                            x: textX
+                        },
+                        description: {
+                            x: textX
+                        }
                     }
-                }
-            });
+                });
 
-            return data;
-        }
+                return data;
+            }
 
-        return layout;
-    };
-}]);
+            return layout;
+        };
+    }
+]);
