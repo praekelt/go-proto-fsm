@@ -39,6 +39,7 @@ module.exports = function (grunt) {
                     'public/bower_components/angular/angular.min.js',
                     'public/bower_components/angular-route/angular-route.min.js',
                     'public/bower_components/angular-resource/angular-resource.min.js',
+                    'public/bower_components/angular-uuid-service/uuid-svc.min.js',
                     'public/js/src/app.js',
                     'public/js/src/controllers.js',
                     'public/js/src/directives.js',

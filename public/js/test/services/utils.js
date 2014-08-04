@@ -94,6 +94,7 @@ describe('canvasBuilder', function () {
 describe('componentHelper', function () {
     var data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(function () {
@@ -157,14 +158,20 @@ describe('componentHelper', function () {
         expect(router.data.uuid).to.equal('router1');
     }));
 
-    it('should connect components', inject(function (componentHelper) {
+    it('should connect components', inject(function (rfc4122, componentHelper) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('connection1');
+        stub.onCall(1).returns('connection2');
+
         componentHelper.connectComponents(data, 'conversation1', 'router1');
         componentHelper.connectComponents(data, 'router1', 'channel1');
 
-        expect(data.routing_entries).to.deep.equal([
-            {source: {uuid: 'endpoint1'}, target: {uuid: 'endpoint3'}},
-            {source: {uuid: 'endpoint4'}, target: {uuid: 'endpoint2'}},
-        ]);
+        var expected = [
+            {uuid: 'connection1', source: {uuid: 'endpoint1'}, target: {uuid: 'endpoint3'}},
+            {uuid: 'connection2', source: {uuid: 'endpoint4'}, target: {uuid: 'endpoint2'}},
+        ];
+
+        expect(data.routing_entries).to.deep.equal(expected);
     }));
 
     it('should not connect components to themselves', inject(function (componentHelper) {
@@ -175,4 +182,34 @@ describe('componentHelper', function () {
         expect(data.routing_entries).to.deep.equal([]);
     }));
 
+    it('should find endpoint by id', inject(function (componentHelper) {
+        var component = {
+            data: data.conversations[0],
+            type: 'conversation'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint1');
+        expect(endpoint.data.uuid).to.equal('endpoint1');
+
+        var component = {
+            data: data.channels[0],
+            type: 'channel'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint2');
+        expect(endpoint.data.uuid).to.equal('endpoint2');
+
+        var component = {
+            data: data.routers[0],
+            type: 'router'
+        };
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint3');
+        expect(endpoint.data.uuid).to.equal('endpoint3');
+        expect(endpoint.type).to.equal('conversation');
+
+        var endpoint = componentHelper.getEndpointById(component, 'endpoint4');
+        expect(endpoint.data.uuid).to.equal('endpoint4');
+        expect(endpoint.type).to.equal('channel');
+    }));
 });

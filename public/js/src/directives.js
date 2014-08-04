@@ -16,10 +16,11 @@ directives.directive('goCampaignDesigner', [
     'routerLayout',
     'channelLayout',
     'connectionLayout',
+    'controlPointComponent',
     function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout) {
+                   channelLayout, connectionLayout, controlPointComponent) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -60,12 +61,21 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.$watch('selectedComponentId', function (newValue, oldValue) {
+                if (newValue == oldValue) return;
+
+                if (oldValue) {
+                    var component = componentHelper.getById($scope.data, oldValue);
+                    component.data._selected = false;
+                }
+
                 if (newValue) {
+                    var component = componentHelper.getById($scope.data, newValue);
+                    component.data._selected = true;
+
                     $scope.componentSelected = true;
 
-                    if (oldValue && newValue != oldValue && $scope.connectPressed) {
+                    if (oldValue && $scope.connectPressed) {
                         componentHelper.connectComponents($scope.data, oldValue, newValue);
-                        $scope.refresh();
                     }
 
                 } else {
@@ -73,6 +83,7 @@ directives.directive('goCampaignDesigner', [
                 }
 
                 $scope.connectPressed = false;
+                $scope.refresh();
             });
 
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
@@ -109,10 +120,26 @@ directives.directive('goCampaignDesigner', [
                 .gridCellSize(scope.gridCellSize)
                 .call();
 
+            var connectionDrag = dragBehavior()
+                .dragEnabled(false)
+                .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
+                .call();
+
+            var controlPointDrag = dragBehavior()
+                .selectEnabled(false)
+                .drawBoundingBox(false)
+                .canvasWidth(width)
+                .canvasHeight(height)
+                .gridCellSize(scope.gridCellSize)
+                .call();
+
             var conversation = conversationComponent().drag(drag);
             var channel = channelComponent().drag(drag);
             var router = routerComponent().drag(drag);
-            var connection = connectionComponent();
+            var connection = connectionComponent().drag(connectionDrag);
 
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -138,6 +165,19 @@ directives.directive('goCampaignDesigner', [
                 canvas.selectAll('.connection')
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
+
+                angular.forEach(scope.data.routing_entries, function (connection) {
+                    var controlPoint = controlPointComponent()
+                        .drag(controlPointDrag)
+                        .connectionId(connection.uuid);
+
+                    var selector = '.control-point[data-connection-uuid="'
+                        + connection.uuid + '"]';
+
+                    canvas.selectAll(selector)
+                        .data(connection.points)
+                        .call(controlPoint);
+                });
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);

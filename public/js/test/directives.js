@@ -1,6 +1,7 @@
 describe('goCampaignDesigner', function () {
     var element, scope;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
     beforeEach(module('vumigo.directives'));
     beforeEach(module('vumigo.templates'));

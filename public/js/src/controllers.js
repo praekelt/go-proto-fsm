@@ -54,6 +54,7 @@ controllers.controller('CampaignMakerController', ['$scope',
                 y: 220
             }],
             routing_entries: [{
+                uuid: 'connection1',
                 source: {uuid: 'endpoint1'},
                 target: {uuid: 'endpoint6'}
             }]

@@ -87,13 +87,16 @@ angular.module('vumigo.services').factory('zoomBehavior', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
-    function ($rootScope) {
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToolbox',
+    function ($rootScope, svgToolbox) {
         return function () {
+            var dragEnabled = true;
+            var selectEnabled = true;
+            var drawBoundingBox = true;
+            var boundingBoxPadding = 5;
             var canvasWidth = 0;
             var canvasHeight = 0;
             var gridCellSize = 0;
-            var bboxPadding = 5;
 
             /**
              * Called when the user starts dragging a component
@@ -103,33 +106,37 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     d3.event.sourceEvent.stopPropagation();
                 }
 
-                d3.selectAll('.component.selected')
-                    .classed('selected', false)
-                    .selectAll('.bbox')
-                        .remove();
+                var selection = d3.select(this);
 
-                var selection = d3.select(this)
-                    .classed('selected', true)
-                    .classed('dragging', true);
+                if (dragEnabled) {
+                    selection.classed('dragging', true);
+                }
 
-                var bbox = selection.node().getBBox();
-                selection.append('rect')
-                    .attr('class', 'bbox')
-                    .attr('x', bbox.x - bboxPadding)
-                    .attr('y', bbox.y - bboxPadding)
-                    .attr('width', bbox.width + 2.0 * bboxPadding)
-                    .attr('height', bbox.height + 2.0 * bboxPadding);
+                if (selectEnabled) {
+                    d3.selectAll('.component.selected')
+                        .classed('selected', false)
+                        .selectAll('.bbox')
+                            .remove();
 
-                $rootScope.$apply(function () {
-                    var d = selection.datum();
-                    $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
-                });
+                    selection.classed('selected', true);
+
+                    if (drawBoundingBox) {
+                        svgToolbox.drawBoundingBox(selection, boundingBoxPadding);
+                    }
+
+                    $rootScope.$apply(function () {
+                        var d = selection.datum();
+                        $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+                    });
+                }
             }
 
             /**
              * Called while the user is dragging a component
              */
             function dragged(d) {
+                if (!dragEnabled) return;
+
                 var x = d3.event.x;
                 var y = d3.event.y;
 
@@ -164,7 +171,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
              * Called after the user drops a component
              */
             function dragended() {
-                d3.select(this).classed('dragging', false);
+                if (dragEnabled) {
+                    d3.select(this).classed('dragging', false);
+                }
             }
 
             var drag = function() {
@@ -173,6 +182,24 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     .on('drag', dragged)
                     .on('dragend', dragended);
             }
+
+            drag.dragEnabled = function(value) {
+                if (!arguments.length) return dragEnabled;
+                dragEnabled = value;
+                return drag;
+            };
+
+            drag.selectEnabled = function(value) {
+                if (!arguments.length) return selectEnabled;
+                selectEnabled = value;
+                return drag;
+            };
+
+            drag.drawBoundingBox = function(value) {
+                if (!arguments.length) return drawBoundingBox;
+                drawBoundingBox = value;
+                return drag;
+            };
 
             drag.canvasWidth = function(value) {
                 if (!arguments.length) return canvasWidth;

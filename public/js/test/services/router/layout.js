@@ -29,11 +29,15 @@ describe('routerLayout', function () {
             uuid: "router1",
             name: "A",
             description: "Keyword",
-            channel_endpoints: [{uuid: 'endpoint1', name: 'default'}],
+            channel_endpoints: [{
+                uuid: 'endpoint1',
+                name: 'default',
+                _layout: { x: radius, y: 0, r: 8 }
+            }],
             conversation_endpoints: [{
                 uuid: 'endpoint2',
                 name: 'default',
-                _layout: { len: radius, y: -20, r: 5 }
+                _layout: { len: radius, y: -20, r: 8 }
             }],
             x: 100,
             y: 100,
