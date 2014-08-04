@@ -82,19 +82,34 @@ describe('goCampaignDesigner', function () {
         expect(svg.eq(0).attr('height')).to.equal('2060');
     });
 
+    it('should have drawn layers', function () {
+        var svg = element.find('svg');
+        expect(element.find('g.layer.connections')).to.have.length(1);
+        expect(element.find('g.layer.components')).to.have.length(1);
+    });
+
+
     it('should have drawn conversations', function () {
-        var conversations = element.find('g.conversation');
+        var conversations = element.find('g.layer.components g.conversation');
         expect(conversations).to.have.length(2);
     });
 
     it('should have drawn router', function () {
-        var routers = element.find('g.router');
+        var routers = element.find('g.layer.components g.router');
         expect(routers).to.have.length(1);
     });
 
     it('should have drawn channels', function () {
-        var channels = element.find('g.channel');
+        var channels = element.find('g.layer.components g.channel');
         expect(channels).to.have.length(2);
+    });
+
+    it('should have drawn connections and control points', function () {
+        var connections = element.find('g.layer.connections path.connection');
+        expect(connections).to.have.length(1);
+
+        var controlPoints = element.find('g.layer.connections g.control-point');
+        expect(controlPoints).to.have.length(5);
     });
 
     it('should allow component to be selected', function () {
@@ -103,7 +118,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.selectedComponentId).to.equal(null);
         expect(isolateScope.componentSelected).to.equal(false);
 
-        var component = element.find('.component').eq(0);
+        var component = element.find('.component.conversation').eq(0);
         var datum = component.get(0).__data__;
 
         component.trigger('vumigo:dragstart');
