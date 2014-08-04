@@ -1879,12 +1879,21 @@ directives.directive('goCampaignDesigner', [
                 height = Math.ceil(height / scope.gridCellSize) * scope.gridCellSize;
             }
 
+            // Create our canvas
             var canvas = canvasBuilder()
                 .width(width)
                 .height(height)
                 .gridCellSize(scope.gridCellSize)
                 .apply(null, [d3.selectAll(element.toArray())]);
 
+            // Add the layers to our canvas
+            var connectionLayer = canvas.append('g')
+                .attr('class', 'layer connections');
+
+            var componentLayer = canvas.append('g')
+                .attr('class', 'layer components');
+
+            // Construct behaviors
             var drag = dragBehavior()
                 .canvasWidth(width)
                 .canvasHeight(height)
@@ -1907,11 +1916,20 @@ directives.directive('goCampaignDesigner', [
                 .gridCellSize(scope.gridCellSize)
                 .call();
 
-            var conversation = conversationComponent().drag(drag);
-            var channel = channelComponent().drag(drag);
-            var router = routerComponent().drag(drag);
-            var connection = connectionComponent().drag(connectionDrag);
+            // Create and configure our components
+            var conversation = conversationComponent()
+                .drag(drag);
 
+            var channel = channelComponent()
+                .drag(drag);
+
+            var router = routerComponent()
+                .drag(drag);
+
+            var connection = connectionComponent()
+                .drag(connectionDrag);
+
+            // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
@@ -1921,19 +1939,21 @@ directives.directive('goCampaignDesigner', [
 
             /** Repaint the canvas **/
             function repaint() {
-                canvas.selectAll('.conversation')
+                // Draw components
+                componentLayer.selectAll('.conversation')
                     .data(layoutConversations(scope.data.conversations))
                     .call(conversation);
 
-                canvas.selectAll('.channel')
+                componentLayer.selectAll('.channel')
                     .data(layoutChannels(scope.data.channels))
                     .call(channel);
 
-                canvas.selectAll('.router')
+                componentLayer.selectAll('.router')
                     .data(layoutRouters(scope.data.routers))
                     .call(router);
 
-                canvas.selectAll('.connection')
+                // Draw connections and control points
+                connectionLayer.selectAll('.connection')
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
 
@@ -1945,7 +1965,7 @@ directives.directive('goCampaignDesigner', [
                     var selector = '.control-point[data-connection-uuid="'
                         + connection.uuid + '"]';
 
-                    canvas.selectAll(selector)
+                    connectionLayer.selectAll(selector)
                         .data(connection.points)
                         .call(controlPoint);
                 });

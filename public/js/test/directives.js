@@ -103,7 +103,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.selectedComponentId).to.equal(null);
         expect(isolateScope.componentSelected).to.equal(false);
 
-        var component = element.find('.component').eq(0);
+        var component = element.find('.component.conversation').eq(0);
         var datum = component.get(0).__data__;
 
         component.trigger('vumigo:dragstart');

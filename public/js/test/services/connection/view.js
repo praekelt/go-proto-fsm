@@ -50,27 +50,33 @@ describe('channelComponent', function () {
 
         var svg = d3.selectAll(element.find('svg').toArray());
 
+        var connectionLayer = svg.append('g')
+            .attr('class', 'layer connections');
+
+        var componentLayer = svg.append('g')
+            .attr('class', 'layer components');
+
         var channel = channelComponent().drag(drag);
 
-        svg.selectAll('.channel')
+        componentLayer.selectAll('.channel')
             .data(channelLayout()(data))
             .call(channel);
 
         var conversation = conversationComponent().drag(drag);
 
-        svg.selectAll('.conversation')
+        componentLayer.selectAll('.conversation')
             .data(conversationLayout()(data))
             .call(conversation);
 
         connection = connectionComponent();
 
-        svg.selectAll('.connection')
+        connectionLayer.selectAll('.connection')
             .data(layout(data).routing_entries)
             .call(connection);
     }));
 
     it('should have drawn the connection', inject(function () {
-        var connections = element.find('.connection');
+        var connections = element.find('.layer.connections .connection');
         expect(connections).to.have.length(1);
 
         expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L200,200');
