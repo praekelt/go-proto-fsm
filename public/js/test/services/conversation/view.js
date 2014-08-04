@@ -1,6 +1,7 @@
 describe('conversationComponent', function () {
     var element, conversation, layout, data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(inject(function (conversationComponent, conversationLayout, dragBehavior) {
@@ -41,21 +42,21 @@ describe('conversationComponent', function () {
         expect(conversation.attr('transform')).to.equal('translate(50,50)');
 
         var disc = conversation.find('.disc.outer').eq(0);
-        var r = data[0]._layout.outer.r;
+        var r = data[0]._meta.layout.outer.r;
         expect(disc.attr('r')).to.equal(String(r));
         expect(disc.css('fill')).to.equal('rgb(204, 204, 204)');
 
-        r = data[0]._layout.inner.r;
+        r = data[0]._meta.layout.inner.r;
         expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
 
         var name = conversation.find('.name').eq(0);
         expect(name.text()).to.equal('Conversation 1');
-        var x = data[0]._layout.name.x;
+        var x = data[0]._meta.layout.name.x;
         expect(name.attr('x')).to.equal(String(x));
 
         var description = conversation.find('.description').eq(0);
         expect(description.text()).to.equal('Test conversation');
-        x = data[0]._layout.description.x;
+        x = data[0]._meta.layout.description.x;
         expect(description.attr('x')).to.equal(String(x));
     }));
 
