@@ -213,3 +213,39 @@ describe('componentHelper', function () {
         expect(endpoint.type).to.equal('channel');
     }));
 });
+
+describe('boundingBox', function () {
+    var element;
+
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (boundingBox) {
+        element = angular.element(
+            '<div id="viewport" style="width: 20px; height: 20px">' +
+                '<svg width="100" height="100"></svg>' +
+            '</div>');
+
+        var data = [{
+            _meta: {
+                selected: true
+            }
+        }];
+
+        var selection = d3.selectAll(element.find('svg').toArray())
+            .selectAll('.component')
+                .data(data).enter().append('g')
+                .attr('class', 'component')
+                .attr('transform', 'translate(50,50)');
+
+        selection.call(boundingBox());
+
+        selection.append('circle')
+            .attr('r', '20');
+    }));
+
+    it('should have drawn a bounding box', inject(function () {
+        var component = element.find('.component').eq(0);
+        expect(component.find('.bbox')).to.have.length(1);
+    }));
+
+});
