@@ -30,17 +30,17 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
             });
 
             selection.selectAll('.disc')
-                .attr('r', function (d) { return d._layout.r; });
+                .attr('r', function (d) { return d._meta.layout.r; });
 
             selection.selectAll('.name')
                 .style('font-size', function (d) {
-                    return d._layout.r + 'px';
+                    return d._meta.layout.r + 'px';
                 })
                 .text(function (d) { return d.name; });
 
             selection.select('.pins-conversation')
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.r, 0] + ')';
+                    return 'translate(' + [-d._meta.layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
                     .data(function(d) { return d.conversation_endpoints; },
@@ -103,14 +103,14 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
+                    return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
                 });
 
             selection.select('.head')
-                .attr('r', function (d) { return d._layout.r; })
+                .attr('r', function (d) { return d._meta.layout.r; })
 
             selection.select('.line')
-                .attr('x2', function (d) { return d._layout.len; });
+                .attr('x2', function (d) { return d._meta.layout.len; });
         }
 
         function exit(selection) {
@@ -142,11 +142,11 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [d._layout.x, d._layout.y] + ')';
+                    return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
                 });
 
             selection.select('.head')
-                .attr('r', function (d) { return d._layout.r; })
+                .attr('r', function (d) { return d._meta.layout.r; })
         }
 
         function exit(selection) {

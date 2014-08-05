@@ -1,6 +1,7 @@
 describe('routerComponent', function () {
     var element, router, layout, data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(inject(function (routerComponent, routerLayout, dragBehavior) {
@@ -45,7 +46,7 @@ describe('routerComponent', function () {
 
         var router = routers.eq(0);
         expect(router.attr('transform')).to.equal('translate(100,100)');
-        expect(router.find('.disc').eq(0).attr('r')).to.equal(String(data[0]._layout.r));
+        expect(router.find('.disc').eq(0).attr('r')).to.equal(String(data[0]._meta.layout.r));
 
         var name = router.find('.name').eq(0);
         expect(name.text()).to.equal('Router 1');
@@ -54,9 +55,9 @@ describe('routerComponent', function () {
         expect(pins.find('.pin')).to.have.length(2);
 
         var pin = pins.find('.pin').eq(0);
-        var len = data[0].conversation_endpoints[0]._layout.len;
+        var len = data[0].conversation_endpoints[0]._meta.layout.len;
         var x = -(len / 2.0);
-        var y = data[0].conversation_endpoints[0]._layout.y;
+        var y = data[0].conversation_endpoints[0]._meta.layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
         expect(pin.find('.head')).to.have.length(1);
         expect(pin.find('.head').eq(0).attr('r')).to.equal('8');
@@ -64,9 +65,9 @@ describe('routerComponent', function () {
         expect(pin.find('.line').eq(0).attr('x2')).to.equal(String(len));
 
         pin = pins.find('.pin').eq(1);
-        len = data[0].conversation_endpoints[1]._layout.len;
+        len = data[0].conversation_endpoints[1]._meta.layout.len;
         x = -(len / 2.0);
-        y = data[0].conversation_endpoints[1]._layout.y;
+        y = data[0].conversation_endpoints[1]._meta.layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
     }));
 

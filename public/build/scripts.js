@@ -1836,12 +1836,14 @@ directives.directive('goCampaignDesigner', [
 
                 if (oldValue) {
                     var component = componentHelper.getById($scope.data, oldValue);
-                    component.data._selected = false;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = false;
                 }
 
                 if (newValue) {
                     var component = componentHelper.getById($scope.data, newValue);
-                    component.data._selected = true;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = true;
 
                     $scope.componentSelected = true;
 
@@ -2313,13 +2315,20 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return null;
         }
 
+        function getMetadata(component) {
+            if (!angular.isDefined(component._meta)) {
+                component._meta = {};
+            }
+            return component._meta;
+        }
+
         return {
             getById: getById,
             getByEndpointId: getByEndpointId,
             connectComponents: connectComponents,
-            getEndpointById: getEndpointById
+            getEndpointById: getEndpointById,
+            getMetadata: getMetadata
         };
-
     }
 ]);
 
@@ -2550,41 +2559,45 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToo
 ]);
 
 
-angular.module('vumigo.services').factory('channelLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var maxOuterRadius = 100;
-        var textOffset = 20;
+angular.module('vumigo.services').factory('channelLayout', [
+    'componentHelper', function (componentHelper) {
+        return function () {
+            var innerRadius = 10;
+            var maxOuterRadius = 100;
+            var textOffset = 20;
 
-        function layout(data) {
-            angular.forEach(data, function (channel) {
-                var outerRadius = innerRadius
-                    + maxOuterRadius * channel.utilization;
+            function layout(data) {
+                angular.forEach(data, function (channel) {
+                    var metadata = componentHelper.getMetadata(channel);
 
-                var textX = innerRadius / 2.0 + textOffset;
+                    var outerRadius = innerRadius
+                        + maxOuterRadius * channel.utilization;
 
-                channel._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
-                    }
-                };
-            });
+                    var textX = innerRadius / 2.0 + textOffset;
 
-            return data;
-        }
+                    metadata.layout = {
+                        inner: {
+                            r: innerRadius
+                        },
+                        outer: {
+                            r: outerRadius
+                        },
+                        name: {
+                            x: textX
+                        },
+                        description: {
+                            x: textX
+                        }
+                    };
+                });
 
-        return layout;
-    };
-}]);
+                return data;
+            }
+
+            return layout;
+        };
+    }
+]);
 
 
 angular.module('vumigo.services').factory('channelComponent', [function () {
@@ -2616,17 +2629,17 @@ angular.module('vumigo.services').factory('channelComponent', [function () {
             });
 
             selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._layout.outer.r; });
+                .attr('r', function (d) { return d._meta.layout.outer.r; });
 
             selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._layout.inner.r; });
+                .attr('r', function (d) { return d._meta.layout.inner.r; });
 
             selection.selectAll('.name')
-                .attr('x', function (d) { return d._layout.name.x; })
+                .attr('x', function (d) { return d._meta.layout.name.x; })
                 .text(function (d) { return d.name; });
 
             selection.selectAll('.description')
-                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('x', function (d) { return d._meta.layout.description.x; })
                 .attr('dy', function (d) {
                     var fontSize = selection.select('.name')
                         .style('font-size');
@@ -2669,60 +2682,65 @@ angular.module('vumigo.services').factory('channelComponent', [function () {
 }]);
 
 
-angular.module('vumigo.services').factory('routerLayout', [function () {
-    return function() {
-        var minSize = 60;
-        var pinGap = 20;
-        var pinHeadRadius = 8;
+angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
+    function (componentHelper) {
+        return function() {
+            var minSize = 60;
+            var pinGap = 20;
+            var pinHeadRadius = 8;
 
-        function pins(router) {
-            angular.forEach(router.conversation_endpoints, function (pin, i) {
-                pin._layout = {
-                    len: router._layout.r,
-                    y: pinGap * (i - 1),
-                    r: pinHeadRadius
-                };
-            });
+            function pins(router) {
+                angular.forEach(router.conversation_endpoints, function (pin, i) {
+                    var metadata = componentHelper.getMetadata(pin);
+                    metadata.layout = {
+                        len: router._meta.layout.r,
+                        y: pinGap * (i - 1),
+                        r: pinHeadRadius
+                    };
+                });
 
-            angular.forEach(router.channel_endpoints, function (pin) {
-                pin._layout = {
-                    x: router._layout.r,
-                    y: 0,
-                    r: pinHeadRadius
-                };
-            });
-        }
+                angular.forEach(router.channel_endpoints, function (pin) {
+                    var metadata = componentHelper.getMetadata(pin);
+                    metadata.layout = {
+                        x: router._meta.layout.r,
+                        y: 0,
+                        r: pinHeadRadius
+                    };
+                });
+            }
 
-        function layout(data) {
-            angular.forEach(data, function (router) {
-                var size = Math.max(minSize, router.conversation_endpoints.length * pinGap);
-                var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
+            function layout(data) {
+                angular.forEach(data, function (router) {
+                    var metadata = componentHelper.getMetadata(router);
+                    var size = Math.max(minSize, router.conversation_endpoints.length * pinGap);
+                    var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
-                router._layout = {
-                    r: radius
-                };
+                    metadata.layout = {
+                        r: radius
+                    };
 
-                pins(router);
-            });
+                    pins(router);
+                });
 
-            return data;
-        }
+                return data;
+            }
 
-        layout.minSize = function(value) {
-            if (!arguments.length) return minSize;
-            minSize = value;
+            layout.minSize = function(value) {
+                if (!arguments.length) return minSize;
+                minSize = value;
+                return layout;
+            };
+
+            layout.pinGap = function(value) {
+                if (!arguments.length) return pinGap;
+                pinGap = value;
+                return layout;
+            };
+
             return layout;
         };
-
-        layout.pinGap = function(value) {
-            if (!arguments.length) return pinGap;
-            pinGap = value;
-            return layout;
-        };
-
-        return layout;
-    };
-}]);
+    }
+]);
 
 
 angular.module('vumigo.services').factory('routerComponent', [function () {
@@ -2756,17 +2774,17 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
             });
 
             selection.selectAll('.disc')
-                .attr('r', function (d) { return d._layout.r; });
+                .attr('r', function (d) { return d._meta.layout.r; });
 
             selection.selectAll('.name')
                 .style('font-size', function (d) {
-                    return d._layout.r + 'px';
+                    return d._meta.layout.r + 'px';
                 })
                 .text(function (d) { return d.name; });
 
             selection.select('.pins-conversation')
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.r, 0] + ')';
+                    return 'translate(' + [-d._meta.layout.r, 0] + ')';
                 })
                 .selectAll('.pin')
                     .data(function(d) { return d.conversation_endpoints; },
@@ -2829,14 +2847,14 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [-d._layout.len / 2.0, d._layout.y] + ')';
+                    return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
                 });
 
             selection.select('.head')
-                .attr('r', function (d) { return d._layout.r; })
+                .attr('r', function (d) { return d._meta.layout.r; })
 
             selection.select('.line')
-                .attr('x2', function (d) { return d._layout.len; });
+                .attr('x2', function (d) { return d._meta.layout.len; });
         }
 
         function exit(selection) {
@@ -2868,11 +2886,11 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [d._layout.x, d._layout.y] + ')';
+                    return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
                 });
 
             selection.select('.head')
-                .attr('r', function (d) { return d._layout.r; })
+                .attr('r', function (d) { return d._meta.layout.r; })
         }
 
         function exit(selection) {
@@ -2892,38 +2910,42 @@ angular.module('vumigo.services').factory('routerComponent', [function () {
 }]);
 
 
-angular.module('vumigo.services').factory('conversationLayout', [function () {
-    return function() {
-        var innerRadius = 10;
-        var outerRadius = 30;
-        var textMargin = 20;
+angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
+    function (componentHelper) {
+        return function() {
+            var innerRadius = 10;
+            var outerRadius = 30;
+            var textMargin = 20;
 
-        function layout(data) {
-            angular.forEach(data, function (conversation) {
-                var textX = -(outerRadius / 2.0 + textMargin);
+            function layout(data) {
+                angular.forEach(data, function (conversation) {
+                    var metadata = componentHelper.getMetadata(conversation);
 
-                conversation._layout = {
-                    inner: {
-                        r: innerRadius
-                    },
-                    outer: {
-                        r: outerRadius
-                    },
-                    name: {
-                        x: textX
-                    },
-                    description: {
-                        x: textX
+                    var textX = -(outerRadius / 2.0 + textMargin);
+
+                    metadata.layout = {
+                        inner: {
+                            r: innerRadius
+                        },
+                        outer: {
+                            r: outerRadius
+                        },
+                        name: {
+                            x: textX
+                        },
+                        description: {
+                            x: textX
+                        }
                     }
-                }
-            });
+                });
 
-            return data;
-        }
+                return data;
+            }
 
-        return layout;
-    };
-}]);
+            return layout;
+        };
+    }
+]);
 
 
 angular.module('vumigo.services').factory('conversationComponent', [function () {
@@ -2956,18 +2978,18 @@ angular.module('vumigo.services').factory('conversationComponent', [function () 
                 });
 
             selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._layout.outer.r; })
+                .attr('r', function (d) { return d._meta.layout.outer.r; })
                 .style('fill', function (d) { return d.colour; });
 
             selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._layout.inner.r; });
+                .attr('r', function (d) { return d._meta.layout.inner.r; });
 
             selection.selectAll('.name')
-                .attr('x', function (d) { return d._layout.name.x })
+                .attr('x', function (d) { return d._meta.layout.name.x })
                 .text(function (d) { return d.name; });
 
             selection.selectAll('.description')
-                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('x', function (d) { return d._meta.layout.description.x; })
                 .attr('dy', function (d) {
                     var fontSize = selection.select('.name')
                         .style('font-size');
@@ -3026,25 +3048,32 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     var endpoint = componentHelper.getEndpointById(component, endpointId);
                     if (endpoint) {
                         if (endpoint.type == 'conversation') {
-                            x = x - (component.data._layout.r + endpoint.data._layout.len / 2.0);
-                            y = y + endpoint.data._layout.y;
+                            x = x - (component.data._meta.layout.r + endpoint.data._meta.layout.len / 2.0);
+                            y = y + endpoint.data._meta.layout.y;
+
                         } else if (endpoint.type == 'channel') {
-                            x = x + endpoint.data._layout.x;
-                            y = y + endpoint.data._layout.y;
+                            x = x + endpoint.data._meta.layout.x;
+                            y = y + endpoint.data._meta.layout.y;
                         }
                     }
                 }
 
-                return {
+                var point = {
                     x: x,
-                    y: y,
-                    _layout: {
-                        r: 0,
-                        sourceId: connection.source.uuid,
-                        targetId: connection.target.uuid,
-                        visible: visible
-                    }
+                    y: y
                 };
+
+                var meta = componentHelper.getMetadata(point);
+
+                meta.layout = {
+                    r: 0,
+                    sourceId: connection.source.uuid,
+                    targetId: connection.target.uuid
+                };
+
+                meta.visible = visible;
+
+                return point;
             }
 
             /**
@@ -3057,37 +3086,44 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 var xOffset = (end.x - start.x) / (numberOfPoints + 1);
                 var yOffset = (end.y - start.y) / (numberOfPoints + 1);
                 for (var i = 1; i <= numberOfPoints; i++) {
-                    points.push({
+                    var point = {
                         x: start.x + i * xOffset,
-                        y: start.y + i * yOffset,
-                        _layout: {
-                            r: pointRadius,
-                            sourceId: connection.source.uuid,
-                            targetId: connection.target.uuid,
-                            visible: visible
-                        }
-                    });
+                        y: start.y + i * yOffset
+                    };
+
+                    var meta = componentHelper.getMetadata(point);
+
+                    meta.layout = {
+                        r: pointRadius,
+                        sourceId: connection.source.uuid,
+                        targetId: connection.target.uuid
+                    };
+
+                    meta.visible = visible;
+
+                    points.push(point);
                 }
                 return points;
             }
 
             function layout(data) {
                 angular.forEach(data.routing_entries, function (connection) {
-                    connection._layout = {};
-
+                    var metadata = componentHelper.getMetadata(connection);
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
                     // Set connection colour to match conversation colour
                     if (source.type == 'conversation') {
-                        connection._layout.colour = source.data.colour;
+                        metadata.colour = source.data.colour;
                     } else if (target.type == 'conversation') {
-                        connection._layout.colour = target.data.colour;
+                        metadata.colour = target.data.colour;
                     }
 
                     // Determine whether the control points should be displayed
                     var visible = false;
-                    if (connection._selected || source.data._selected || target.data._selected) {
+                    if (componentHelper.getMetadata(connection).selected
+                            || componentHelper.getMetadata(source.data).selected
+                            || componentHelper.getMetadata(target.data).selected) {
                         visible = true;
                     }
 
@@ -3111,14 +3147,19 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
                     } else {  // Update points
                         connection.points[0] = start;
+
                         for (var i = 1; i < connection.points.length - 1; i++) {
-                            connection.points[i]._layout = {
+                            var meta = componentHelper.getMetadata(connection.points[i]);
+
+                            meta.layout = {
                                 r: pointRadius,
                                 sourceId: connection.source.uuid,
                                 targetId: connection.target.uuid,
-                                visible: visible
                             };
+
+                            meta.visible = visible;
                         }
+
                         connection.points[connection.points.length - 1] = end;
                     }
                 });
@@ -3154,7 +3195,7 @@ angular.module('vumigo.services').factory('connectionComponent', [
                     .attr('d', function (d) {
                         return line(d.points);
                     })
-                    .style('stroke', function (d) { return d._layout.colour });
+                    .style('stroke', function (d) { return d._meta.colour });
             }
 
             function exit(selection) {
@@ -3212,11 +3253,11 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
                     return 'translate(' + [d.x, d.y] + ')';
                 })
                 .classed('active', function (d) {
-                    return d._layout.visible;
+                    return d._meta.visible;
                 });
 
             selection.selectAll('.point')
-                .attr('r', function (d) { return d._layout.r; });
+                .attr('r', function (d) { return d._meta.layout.r; });
         }
 
         function exit(selection) {

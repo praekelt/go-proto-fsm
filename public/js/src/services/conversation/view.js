@@ -29,18 +29,18 @@ angular.module('vumigo.services').factory('conversationComponent', [function () 
                 });
 
             selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._layout.outer.r; })
+                .attr('r', function (d) { return d._meta.layout.outer.r; })
                 .style('fill', function (d) { return d.colour; });
 
             selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._layout.inner.r; });
+                .attr('r', function (d) { return d._meta.layout.inner.r; });
 
             selection.selectAll('.name')
-                .attr('x', function (d) { return d._layout.name.x })
+                .attr('x', function (d) { return d._meta.layout.name.x })
                 .text(function (d) { return d.name; });
 
             selection.selectAll('.description')
-                .attr('x', function (d) { return d._layout.description.x; })
+                .attr('x', function (d) { return d._meta.layout.description.x; })
                 .attr('dy', function (d) {
                     var fontSize = selection.select('.name')
                         .style('font-size');

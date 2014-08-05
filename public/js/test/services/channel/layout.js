@@ -1,6 +1,7 @@
 describe('channelLayout', function () {
     var layout;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(inject(function (channelLayout, dragBehavior) {
@@ -28,11 +29,13 @@ describe('channelLayout', function () {
             utilization: 0.5,
             x: 100,
             y: 100,
-            _layout: {
-                inner: { r: 10 },
-                outer: { r: 60 },
-                name: { x: 25 },
-                description: { x: 25 }
+            _meta: {
+                layout: {
+                    inner: { r: 10 },
+                    outer: { r: 60 },
+                    name: { x: 25 },
+                    description: { x: 25 }
+                }
             }
         }];
 

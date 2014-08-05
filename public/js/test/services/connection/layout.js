@@ -59,21 +59,24 @@ describe('connectionLayout', function () {
             source: {uuid: 'endpoint1'},
             target: {uuid: 'endpoint4'},
             points: [],
-            _layout: {colour: '#red'}
+            _meta: {
+                colour: '#red'
+            }
         }, {
             uuid: 'connection2',
             source: {uuid: 'endpoint1'},
             target: {uuid: 'endpoint2'},
             points: [],
-            _layout: {colour: '#red'}
+            _meta: {
+                colour: '#red'
+            }
         }];
 
-        var _layout = function (r, connection, visible) {
+        var mklayout = function (r, connection) {
             return {
                 r: r,
                 sourceId: connection.source.uuid,
-                targetId: connection.target.uuid,
-                visible: visible ? true : false
+                targetId: connection.target.uuid
             };
         };
 
@@ -84,19 +87,25 @@ describe('connectionLayout', function () {
         var start = {
             x: 100,
             y: 100,
-            _layout: _layout(0, expected[0])
+            _meta: {
+                layout: mklayout(0, expected[0]),
+                visible: false
+            }
         };
 
         var end = {
-            _layout: _layout(0, expected[0])
+            _meta: {
+                layout: mklayout(0, expected[0]),
+                visible: false
+            }
         };
 
         end.x = data.routers[0].x
-            - (data.routers[0]._layout.r
-               + data.routers[0].conversation_endpoints[0]._layout.len / 2.0);
+            - (data.routers[0]._meta.layout.r
+               + data.routers[0].conversation_endpoints[0]._meta.layout.len / 2.0);
 
         end.y = data.routers[0].y
-            + data.routers[0].conversation_endpoints[0]._layout.y;
+            + data.routers[0].conversation_endpoints[0]._meta.layout.y;
 
         expected[0].points.push(start);
 
@@ -106,7 +115,10 @@ describe('connectionLayout', function () {
             expected[0].points.push({
                 x: start.x + i * xOffset,
                 y: start.y + i * yOffset,
-                _layout: _layout(pointRadius, expected[0])
+                _meta: {
+                    layout: mklayout(pointRadius, expected[0]),
+                    visible: false
+                }
             });
         }
 
@@ -116,13 +128,19 @@ describe('connectionLayout', function () {
         start = {
             x: 100,
             y: 100,
-            _layout: _layout(0, expected[1])
+            _meta: {
+                layout: mklayout(0, expected[1]),
+                visible: false
+            }
         };
 
         end = {
             x: 200,
             y: 200,
-            _layout: _layout(0, expected[1])
+            _meta: {
+                layout: mklayout(0, expected[1]),
+                visible: false
+            }
         };
 
         expected[1].points.push(start);
@@ -133,7 +151,10 @@ describe('connectionLayout', function () {
             expected[1].points.push({
                 x: start.x + i * xOffset,
                 y: start.y + i * yOffset,
-                _layout: _layout(pointRadius, expected[1])
+                _meta: {
+                    layout: mklayout(pointRadius, expected[1]),
+                    visible: false
+                }
             });
         }
 

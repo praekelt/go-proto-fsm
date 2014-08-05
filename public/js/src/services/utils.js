@@ -319,12 +319,19 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return null;
         }
 
+        function getMetadata(component) {
+            if (!angular.isDefined(component._meta)) {
+                component._meta = {};
+            }
+            return component._meta;
+        }
+
         return {
             getById: getById,
             getByEndpointId: getByEndpointId,
             connectComponents: connectComponents,
-            getEndpointById: getEndpointById
+            getEndpointById: getEndpointById,
+            getMetadata: getMetadata
         };
-
     }
 ]);

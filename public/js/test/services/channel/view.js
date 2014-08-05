@@ -1,6 +1,7 @@
 describe('channelComponent', function () {
     var element, channel, layout, data;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
     beforeEach(inject(function (channelComponent, channelLayout, dragBehavior) {
@@ -39,19 +40,19 @@ describe('channelComponent', function () {
 
         var channel = channels.eq(0);
         expect(channel.attr('transform')).to.equal('translate(100,100)');
-        var r = data[0]._layout.outer.r;
+        var r = data[0]._meta.layout.outer.r;
         expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal(String(r));
-        r = data[0]._layout.inner.r;
+        r = data[0]._meta.layout.inner.r;
         expect(channel.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
 
         var name = channel.find('.name').eq(0);
         expect(name.text()).to.equal('Channel 1');
-        var x = data[0]._layout.name.x;
+        var x = data[0]._meta.layout.name.x;
         expect(name.attr('x')).to.equal(String(x));
 
         var description = channel.find('.description').eq(0);
         expect(description.text()).to.equal('Test channel');
-        x = data[0]._layout.description.x;
+        x = data[0]._meta.layout.description.x;
         expect(description.attr('x')).to.equal(String(x));
     }));
 

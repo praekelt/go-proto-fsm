@@ -2,6 +2,7 @@ describe('routerLayout', function () {
     var layout;
 
     beforeEach(module('vumigo.services'));
+    beforeEach(module('uuid'));
 
     beforeEach(inject(function (routerLayout, dragBehavior) {
         layout = routerLayout();
@@ -32,16 +33,22 @@ describe('routerLayout', function () {
             channel_endpoints: [{
                 uuid: 'endpoint1',
                 name: 'default',
-                _layout: { x: radius, y: 0, r: 8 }
+                _meta: {
+                    layout: { x: radius, y: 0, r: 8 }
+                }
             }],
             conversation_endpoints: [{
                 uuid: 'endpoint2',
                 name: 'default',
-                _layout: { len: radius, y: -20, r: 8 }
+                _meta: {
+                    layout: { len: radius, y: -20, r: 8 }
+                }
             }],
             x: 100,
             y: 100,
-            _layout: { r: radius }
+            _meta: {
+                layout: { r: radius }
+            }
         }];
 
         expect(data).to.deep.equal(expected);
