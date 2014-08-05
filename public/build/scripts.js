@@ -1836,12 +1836,14 @@ directives.directive('goCampaignDesigner', [
 
                 if (oldValue) {
                     var component = componentHelper.getById($scope.data, oldValue);
-                    component.data._selected = false;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = false;
                 }
 
                 if (newValue) {
                     var component = componentHelper.getById($scope.data, newValue);
-                    component.data._selected = true;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = true;
 
                     $scope.componentSelected = true;
 
@@ -3062,12 +3064,14 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 };
 
                 var meta = componentHelper.getMetadata(point);
+
                 meta.layout = {
                     r: 0,
                     sourceId: connection.source.uuid,
-                    targetId: connection.target.uuid,
-                    visible: visible
+                    targetId: connection.target.uuid
                 };
+
+                meta.visible = visible;
 
                 return point;
             }
@@ -3088,12 +3092,14 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     };
 
                     var meta = componentHelper.getMetadata(point);
+
                     meta.layout = {
                         r: pointRadius,
                         sourceId: connection.source.uuid,
-                        targetId: connection.target.uuid,
-                        visible: visible
+                        targetId: connection.target.uuid
                     };
+
+                    meta.visible = visible;
 
                     points.push(point);
                 }
@@ -3103,22 +3109,21 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
             function layout(data) {
                 angular.forEach(data.routing_entries, function (connection) {
                     var metadata = componentHelper.getMetadata(connection);
-
-                    metadata.layout = {};
-
                     var source = componentHelper.getByEndpointId(data, connection.source.uuid);
                     var target = componentHelper.getByEndpointId(data, connection.target.uuid);
 
                     // Set connection colour to match conversation colour
                     if (source.type == 'conversation') {
-                        metadata.layout.colour = source.data.colour;
+                        metadata.colour = source.data.colour;
                     } else if (target.type == 'conversation') {
-                        metadata.layout.colour = target.data.colour;
+                        metadata.colour = target.data.colour;
                     }
 
                     // Determine whether the control points should be displayed
                     var visible = false;
-                    if (connection._selected || source.data._selected || target.data._selected) {
+                    if (componentHelper.getMetadata(connection).selected
+                            || componentHelper.getMetadata(source.data).selected
+                            || componentHelper.getMetadata(target.data).selected) {
                         visible = true;
                     }
 
@@ -3145,12 +3150,14 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
 
                         for (var i = 1; i < connection.points.length - 1; i++) {
                             var meta = componentHelper.getMetadata(connection.points[i]);
+
                             meta.layout = {
                                 r: pointRadius,
                                 sourceId: connection.source.uuid,
                                 targetId: connection.target.uuid,
-                                visible: visible
                             };
+
+                            meta.visible = visible;
                         }
 
                         connection.points[connection.points.length - 1] = end;
@@ -3188,7 +3195,7 @@ angular.module('vumigo.services').factory('connectionComponent', [
                     .attr('d', function (d) {
                         return line(d.points);
                     })
-                    .style('stroke', function (d) { return d._meta.layout.colour });
+                    .style('stroke', function (d) { return d._meta.colour });
             }
 
             function exit(selection) {
@@ -3246,7 +3253,7 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
                     return 'translate(' + [d.x, d.y] + ')';
                 })
                 .classed('active', function (d) {
-                    return d._meta.layout.visible;
+                    return d._meta.visible;
                 });
 
             selection.selectAll('.point')

@@ -65,12 +65,14 @@ directives.directive('goCampaignDesigner', [
 
                 if (oldValue) {
                     var component = componentHelper.getById($scope.data, oldValue);
-                    component.data._selected = false;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = false;
                 }
 
                 if (newValue) {
                     var component = componentHelper.getById($scope.data, newValue);
-                    component.data._selected = true;
+                    var metadata = componentHelper.getMetadata(component.data);
+                    metadata.selected = true;
 
                     $scope.componentSelected = true;
 

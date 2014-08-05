@@ -60,7 +60,7 @@ describe('connectionLayout', function () {
             target: {uuid: 'endpoint4'},
             points: [],
             _meta: {
-                layout: {colour: '#red'}
+                colour: '#red'
             }
         }, {
             uuid: 'connection2',
@@ -68,16 +68,15 @@ describe('connectionLayout', function () {
             target: {uuid: 'endpoint2'},
             points: [],
             _meta: {
-                layout: {colour: '#red'}
+                colour: '#red'
             }
         }];
 
-        var mklayout = function (r, connection, visible) {
+        var mklayout = function (r, connection) {
             return {
                 r: r,
                 sourceId: connection.source.uuid,
-                targetId: connection.target.uuid,
-                visible: visible ? true : false
+                targetId: connection.target.uuid
             };
         };
 
@@ -89,13 +88,15 @@ describe('connectionLayout', function () {
             x: 100,
             y: 100,
             _meta: {
-                layout: mklayout(0, expected[0])
+                layout: mklayout(0, expected[0]),
+                visible: false
             }
         };
 
         var end = {
             _meta: {
-                layout: mklayout(0, expected[0])
+                layout: mklayout(0, expected[0]),
+                visible: false
             }
         };
 
@@ -115,7 +116,8 @@ describe('connectionLayout', function () {
                 x: start.x + i * xOffset,
                 y: start.y + i * yOffset,
                 _meta: {
-                    layout: mklayout(pointRadius, expected[0])
+                    layout: mklayout(pointRadius, expected[0]),
+                    visible: false
                 }
             });
         }
@@ -127,7 +129,8 @@ describe('connectionLayout', function () {
             x: 100,
             y: 100,
             _meta: {
-                layout: mklayout(0, expected[1])
+                layout: mklayout(0, expected[1]),
+                visible: false
             }
         };
 
@@ -135,7 +138,8 @@ describe('connectionLayout', function () {
             x: 200,
             y: 200,
             _meta: {
-                layout: mklayout(0, expected[1])
+                layout: mklayout(0, expected[1]),
+                visible: false
             }
         };
 
@@ -148,7 +152,8 @@ describe('connectionLayout', function () {
                 x: start.x + i * xOffset,
                 y: start.y + i * yOffset,
                 _meta: {
-                    layout: mklayout(pointRadius, expected[1])
+                    layout: mklayout(pointRadius, expected[1]),
+                    visible: false
                 }
             });
         }
