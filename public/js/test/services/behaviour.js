@@ -188,7 +188,6 @@ describe('dragBehavior', function () {
         expect(classes.indexOf('component')).not.to.equal(-1);
         expect(classes.indexOf('dragging')).not.to.equal(-1);
         expect(classes.indexOf('selected')).not.to.equal(-1);
-        expect(component.find('rect.bbox')).to.have.length(1);
         expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component1')).to.be.true;
     }));
 
@@ -244,37 +243,7 @@ describe('dragBehavior', function () {
         expect(classes.indexOf('component')).not.to.equal(-1);
         expect(classes.indexOf('dragging')).not.to.equal(-1);
         expect(classes.indexOf('selected')).to.equal(-1);
-        expect(component.find('rect.bbox')).to.have.length(0);
         expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component2')).to.be.false;
-    }));
-
-    it('should not draw bounding box', inject(function (dragBehavior) {
-        sinon.stub(scope, '$emit');
-
-        var drag = dragBehavior()
-            .canvasWidth(100)
-            .canvasHeight(100)
-            .gridCellSize(10)
-            .drawBoundingBox(false)
-            .call();
-
-        canvas.selectAll('.component.no-bbox')
-            .data([{uuid: 'component2', x: 0, y: 0}])
-            .enter().append('g')
-                .attr('class', 'component no-bbox')
-                .attr('transform', 'translate(0,0)')
-                .call(drag);
-
-        var component = element.find('.component.no-bbox').eq(0);
-
-        component.trigger('vumigo:dragstart');
-
-        var classes = component.attr('class').split(' ');
-        expect(classes.indexOf('component')).not.to.equal(-1);
-        expect(classes.indexOf('dragging')).not.to.equal(-1);
-        expect(classes.indexOf('selected')).not.to.equal(-1);
-        expect(component.find('rect.bbox')).to.have.length(0);
-        expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component2')).to.be.true;
     }));
 
 });

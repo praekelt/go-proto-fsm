@@ -133,7 +133,6 @@ directives.directive('goCampaignDesigner', [
 
             var connectionDrag = dragBehavior()
                 .dragEnabled(false)
-                .drawBoundingBox(false)
                 .canvasWidth(width)
                 .canvasHeight(height)
                 .gridCellSize(scope.gridCellSize)
@@ -141,7 +140,6 @@ directives.directive('goCampaignDesigner', [
 
             var controlPointDrag = dragBehavior()
                 .selectEnabled(false)
-                .drawBoundingBox(false)
                 .canvasWidth(width)
                 .canvasHeight(height)
                 .gridCellSize(scope.gridCellSize)
