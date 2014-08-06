@@ -36,7 +36,7 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
 
                 selection.selectAll('.name')
                     .style('font-size', function (d) {
-                        return d._meta.layout.r + 'px';
+                        return d._meta.layout.r;
                     })
                     .text(function (d) { return d.name; });
 

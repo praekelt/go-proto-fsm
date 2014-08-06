@@ -45,7 +45,7 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
                         var fontSize = selection.select('.name')
                             .style('font-size');
 
-                        return parseInt(fontSize) + 'px';
+                        return parseInt(fontSize);
                     })
                     .text(function (d) { return d.description; });
 

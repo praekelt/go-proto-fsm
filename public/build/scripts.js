@@ -2648,7 +2648,7 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
                         var fontSize = selection.select('.name')
                             .style('font-size');
 
-                        return parseInt(fontSize) + 'px';
+                        return parseInt(fontSize);
                     })
                     .text(function (d) { return d.description; });
 
@@ -2787,7 +2787,7 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
 
                 selection.selectAll('.name')
                     .style('font-size', function (d) {
-                        return d._meta.layout.r + 'px';
+                        return d._meta.layout.r;
                     })
                     .text(function (d) { return d.name; });
 
@@ -3008,7 +3008,7 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
                         var fontSize = selection.select('.name')
                             .style('font-size');
 
-                        return parseInt(fontSize) + 'px';
+                        return parseInt(fontSize);
                     })
                     .text(function (d) { return d.description; });
 
