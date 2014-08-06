@@ -25,8 +25,6 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.call(bBox);
-
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d.x, d.y] + ')';
@@ -52,6 +50,8 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
                         return parseInt(fontSize) + 'px';
                     })
                     .text(function (d) { return d.description; });
+
+                selection.call(bBox);
             }
 
             function exit(selection) {

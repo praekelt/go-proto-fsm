@@ -2628,8 +2628,6 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.call(bBox);
-
                 selection.attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
                 });
@@ -2653,6 +2651,8 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
                         return parseInt(fontSize) + 'px';
                     })
                     .text(function (d) { return d.description; });
+
+                selection.call(bBox);
             }
 
             function exit(selection) {
@@ -2778,8 +2778,6 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.call(bBox);
-
                 selection.attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
                 });
@@ -2807,6 +2805,8 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
                         .data(function(d) { return d.channel_endpoints; },
                                  function(d) { return d.uuid; })
                         .call(channelPin);
+
+                selection.call(bBox);
             }
 
             function exit(selection) {
@@ -2986,8 +2986,6 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.call(bBox);
-
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d.x, d.y] + ')';
@@ -3013,6 +3011,8 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
                         return parseInt(fontSize) + 'px';
                     })
                     .text(function (d) { return d.description; });
+
+                selection.call(bBox);
             }
 
             function exit(selection) {

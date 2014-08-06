@@ -225,6 +225,8 @@ describe('boundingBox', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
+        angular.element(document.body).append(element);
+
         var data = [{
             _meta: {
                 selected: true
@@ -237,15 +239,21 @@ describe('boundingBox', function () {
                 .attr('class', 'component')
                 .attr('transform', 'translate(50,50)');
 
-        selection.call(boundingBox());
-
         selection.append('circle')
             .attr('r', '20');
+
+        selection.call(boundingBox());
     }));
 
     it('should have drawn a bounding box', inject(function () {
         var component = element.find('.component').eq(0);
         expect(component.find('.bbox')).to.have.length(1);
+
+        var bbox = component.find('.bbox').eq(0);
+        expect(bbox.attr('x')).to.equal('-25');
+        expect(bbox.attr('y')).to.equal('-25');
+        expect(bbox.attr('width')).to.equal('50');
+        expect(bbox.attr('height')).to.equal('50');
     }));
 
 });

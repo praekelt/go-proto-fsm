@@ -27,8 +27,6 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.call(bBox);
-
                 selection.attr('transform', function (d) {
                     return 'translate(' + [d.x, d.y] + ')';
                 });
@@ -56,6 +54,8 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
                         .data(function(d) { return d.channel_endpoints; },
                                  function(d) { return d.uuid; })
                         .call(channelPin);
+
+                selection.call(bBox);
             }
 
             function exit(selection) {
