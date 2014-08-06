@@ -1,166 +1,171 @@
 
-angular.module('vumigo.services').factory('routerComponent', [function () {
-    return function () {
-        var conversationPin = conversationPinComponent();
-        var channelPin = channelPinComponent();
-        var dragBehavior = null;
+angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
+    function (boundingBox) {
+        return function () {
+            var conversationPin = conversationPinComponent();
+            var channelPin = channelPinComponent();
+            var dragBehavior = null;
+            var bBox = boundingBox();
 
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component router');
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'component router');
 
-            selection.append('circle')
-                .attr('class', 'disc');
+                selection.append('circle')
+                    .attr('class', 'disc');
 
-            selection.append('text')
-                .attr('class', 'name');
+                selection.append('text')
+                    .attr('class', 'name');
 
-            selection.append('g')
-                .attr('class', 'pins pins-conversation');
+                selection.append('g')
+                    .attr('class', 'pins pins-conversation');
 
-            selection.append('g')
-                .attr('class', 'pins pins-channel')
-        }
+                selection.append('g')
+                    .attr('class', 'pins pins-channel')
+            }
 
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
+                selection.attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
 
-            selection.selectAll('.disc')
-                .attr('r', function (d) { return d._meta.layout.r; });
+                selection.selectAll('.disc')
+                    .attr('r', function (d) { return d._meta.layout.r; });
 
-            selection.selectAll('.name')
-                .style('font-size', function (d) {
-                    return d._meta.layout.r + 'px';
-                })
-                .text(function (d) { return d.name; });
+                selection.selectAll('.name')
+                    .style('font-size', function (d) {
+                        return d._meta.layout.r;
+                    })
+                    .text(function (d) { return d.name; });
 
-            selection.select('.pins-conversation')
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._meta.layout.r, 0] + ')';
-                })
-                .selectAll('.pin')
-                    .data(function(d) { return d.conversation_endpoints; },
-                             function(d) { return d.uuid; })
-                    .call(conversationPin);
+                selection.select('.pins-conversation')
+                    .attr('transform', function (d) {
+                        return 'translate(' + [-d._meta.layout.r, 0] + ')';
+                    })
+                    .selectAll('.pin')
+                        .data(function(d) { return d.conversation_endpoints; },
+                                 function(d) { return d.uuid; })
+                        .call(conversationPin);
 
-            selection.select('.pins-channel')
-                .selectAll('.pin')
-                    .data(function(d) { return d.channel_endpoints; },
-                             function(d) { return d.uuid; })
-                    .call(channelPin);
-        }
+                selection.select('.pins-channel')
+                    .selectAll('.pin')
+                        .data(function(d) { return d.channel_endpoints; },
+                                 function(d) { return d.uuid; })
+                        .call(channelPin);
 
-        function exit(selection) {
-            selection.remove();
+                selection.call(bBox);
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint router components.
+             *
+             * @param {selection} Selection containing routers.
+             */
+            var router = function (selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return router;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            router.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return router;
+            };
+
+            return router;
+        };
+
+        /**
+         * A component to draw conversation pins.
+         */
+        function conversationPinComponent() {
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'pin pin-conversation');
+
+                selection.append('circle')
+                    .attr('class', 'head');
+
+                selection.append('line')
+                    .attr('class', 'line');
+            }
+
+            function update(selection) {
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
+                    });
+
+                selection.select('.head')
+                    .attr('r', function (d) { return d._meta.layout.r; })
+
+                selection.select('.line')
+                    .attr('x2', function (d) { return d._meta.layout.len; });
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            function pin(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return pin;
+            }
+
+            return pin;
         }
 
         /**
-         * Repaint router components.
-         *
-         * @param {selection} Selection containing routers.
+         * A component to draw channel pins.
          */
-        var router = function (selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return router;
-        };
+        function channelPinComponent() {
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'pin pin-channel');
 
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        router.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return router;
-        };
+                selection.append('circle')
+                    .attr('class', 'head');
+            }
 
-        return router;
-    };
+            function update(selection) {
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
+                    });
 
-    /**
-     * A component to draw conversation pins.
-     */
-    function conversationPinComponent() {
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'pin pin-conversation');
+                selection.select('.head')
+                    .attr('r', function (d) { return d._meta.layout.r; })
+            }
 
-            selection.append('circle')
-                .attr('class', 'head');
+            function exit(selection) {
+                selection.remove();
+            }
 
-            selection.append('line')
-                .attr('class', 'line');
-        }
+            function pin(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return pin;
+            }
 
-        function update(selection) {
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
-                });
-
-            selection.select('.head')
-                .attr('r', function (d) { return d._meta.layout.r; })
-
-            selection.select('.line')
-                .attr('x2', function (d) { return d._meta.layout.len; });
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        function pin(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
             return pin;
         }
 
-        return pin;
     }
-
-    /**
-     * A component to draw channel pins.
-     */
-    function channelPinComponent() {
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'pin pin-channel');
-
-            selection.append('circle')
-                .attr('class', 'head');
-        }
-
-        function update(selection) {
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
-                });
-
-            selection.select('.head')
-                .attr('r', function (d) { return d._meta.layout.r; })
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        function pin(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return pin;
-        }
-
-        return pin;
-    }
-
-}]);
+]);

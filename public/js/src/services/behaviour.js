@@ -87,13 +87,11 @@ angular.module('vumigo.services').factory('zoomBehavior', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToolbox',
-    function ($rootScope, svgToolbox) {
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
+    function ($rootScope) {
         return function () {
             var dragEnabled = true;
             var selectEnabled = true;
-            var drawBoundingBox = true;
-            var boundingBoxPadding = 5;
             var canvasWidth = 0;
             var canvasHeight = 0;
             var gridCellSize = 0;
@@ -114,15 +112,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToo
 
                 if (selectEnabled) {
                     d3.selectAll('.component.selected')
-                        .classed('selected', false)
-                        .selectAll('.bbox')
-                            .remove();
+                        .classed('selected', false);
 
                     selection.classed('selected', true);
-
-                    if (drawBoundingBox) {
-                        svgToolbox.drawBoundingBox(selection, boundingBoxPadding);
-                    }
 
                     $rootScope.$apply(function () {
                         var d = selection.datum();
@@ -192,12 +184,6 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToo
             drag.selectEnabled = function(value) {
                 if (!arguments.length) return selectEnabled;
                 selectEnabled = value;
-                return drag;
-            };
-
-            drag.drawBoundingBox = function(value) {
-                if (!arguments.length) return drawBoundingBox;
-                drawBoundingBox = value;
                 return drag;
             };
 

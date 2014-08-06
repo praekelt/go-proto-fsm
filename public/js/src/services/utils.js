@@ -82,24 +82,10 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
         }
     }
 
-    /**
-     * Draw a bounding box around the given selection.
-     */
-    function drawBoundingBox(selection, padding) {
-        var bbox = selection.node().getBBox();
-        selection.insert('rect', ':first-child')
-            .attr('class', 'bbox')
-            .attr('x', bbox.x - padding)
-            .attr('y', bbox.y - padding)
-            .attr('width', bbox.width + 2.0 * padding)
-            .attr('height', bbox.height + 2.0 * padding);
-    }
-
     return {
         selectOrAppend: selectOrAppend,
         createShadowFilter: createShadowFilter,
-        drawGrid: drawGrid,
-        drawBoundingBox: drawBoundingBox
+        drawGrid: drawGrid
     };
 }]);
 
@@ -335,3 +321,35 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
         };
     }
 ]);
+
+angular.module('vumigo.services').factory('boundingBox', [function () {
+    return function () {
+        var padding = 5;
+
+        var boundingBox = function (selection) {
+            selection.each(function (d) {
+                var selection = d3.select(this);
+                selection.selectAll('.bbox').remove();
+                if (d._meta.selected) {
+                    var bbox = selection.node().getBBox();
+                    selection.insert('rect', ':first-child')
+                        .attr('class', 'bbox')
+                        .attr('x', bbox.x - padding)
+                        .attr('y', bbox.y - padding)
+                        .attr('width', bbox.width + 2.0 * padding)
+                        .attr('height', bbox.height + 2.0 * padding);
+                }
+            });
+
+            return boundingBox;
+        };
+
+        boundingBox.padding = function(value) {
+            if (!arguments.length) return padding;
+            padding = value;
+            return boundingBox;
+        };
+
+        return boundingBox;
+    };
+}]);

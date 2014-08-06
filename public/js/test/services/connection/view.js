@@ -145,7 +145,6 @@ describe('controlPointComponent', function () {
 
         var connectionDrag = dragBehavior()
             .dragEnabled(false)
-            .drawBoundingBox(false)
             .canvasWidth(100)
             .canvasHeight(100)
             .gridCellSize(10)
@@ -153,7 +152,6 @@ describe('controlPointComponent', function () {
 
         var controlPointDrag = dragBehavior()
             .selectEnabled(false)
-            .drawBoundingBox(false)
             .canvasWidth(100)
             .canvasHeight(100)
             .gridCellSize(10)

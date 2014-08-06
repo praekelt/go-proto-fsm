@@ -1904,7 +1904,6 @@ directives.directive('goCampaignDesigner', [
 
             var connectionDrag = dragBehavior()
                 .dragEnabled(false)
-                .drawBoundingBox(false)
                 .canvasWidth(width)
                 .canvasHeight(height)
                 .gridCellSize(scope.gridCellSize)
@@ -1912,7 +1911,6 @@ directives.directive('goCampaignDesigner', [
 
             var controlPointDrag = dragBehavior()
                 .selectEnabled(false)
-                .drawBoundingBox(false)
                 .canvasWidth(width)
                 .canvasHeight(height)
                 .gridCellSize(scope.gridCellSize)
@@ -2078,24 +2076,10 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
         }
     }
 
-    /**
-     * Draw a bounding box around the given selection.
-     */
-    function drawBoundingBox(selection, padding) {
-        var bbox = selection.node().getBBox();
-        selection.insert('rect', ':first-child')
-            .attr('class', 'bbox')
-            .attr('x', bbox.x - padding)
-            .attr('y', bbox.y - padding)
-            .attr('width', bbox.width + 2.0 * padding)
-            .attr('height', bbox.height + 2.0 * padding);
-    }
-
     return {
         selectOrAppend: selectOrAppend,
         createShadowFilter: createShadowFilter,
-        drawGrid: drawGrid,
-        drawBoundingBox: drawBoundingBox
+        drawGrid: drawGrid
     };
 }]);
 
@@ -2332,6 +2316,38 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
     }
 ]);
 
+angular.module('vumigo.services').factory('boundingBox', [function () {
+    return function () {
+        var padding = 5;
+
+        var boundingBox = function (selection) {
+            selection.each(function (d) {
+                var selection = d3.select(this);
+                selection.selectAll('.bbox').remove();
+                if (d._meta.selected) {
+                    var bbox = selection.node().getBBox();
+                    selection.insert('rect', ':first-child')
+                        .attr('class', 'bbox')
+                        .attr('x', bbox.x - padding)
+                        .attr('y', bbox.y - padding)
+                        .attr('width', bbox.width + 2.0 * padding)
+                        .attr('height', bbox.height + 2.0 * padding);
+                }
+            });
+
+            return boundingBox;
+        };
+
+        boundingBox.padding = function(value) {
+            if (!arguments.length) return padding;
+            padding = value;
+            return boundingBox;
+        };
+
+        return boundingBox;
+    };
+}]);
+
 
 angular.module('vumigo.services').factory('zoomBehavior', [function () {
     return function () {
@@ -2421,13 +2437,11 @@ angular.module('vumigo.services').factory('zoomBehavior', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToolbox',
-    function ($rootScope, svgToolbox) {
+angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
+    function ($rootScope) {
         return function () {
             var dragEnabled = true;
             var selectEnabled = true;
-            var drawBoundingBox = true;
-            var boundingBoxPadding = 5;
             var canvasWidth = 0;
             var canvasHeight = 0;
             var gridCellSize = 0;
@@ -2448,15 +2462,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToo
 
                 if (selectEnabled) {
                     d3.selectAll('.component.selected')
-                        .classed('selected', false)
-                        .selectAll('.bbox')
-                            .remove();
+                        .classed('selected', false);
 
                     selection.classed('selected', true);
-
-                    if (drawBoundingBox) {
-                        svgToolbox.drawBoundingBox(selection, boundingBoxPadding);
-                    }
 
                     $rootScope.$apply(function () {
                         var d = selection.datum();
@@ -2529,12 +2537,6 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope', 'svgToo
                 return drag;
             };
 
-            drag.drawBoundingBox = function(value) {
-                if (!arguments.length) return drawBoundingBox;
-                drawBoundingBox = value;
-                return drag;
-            };
-
             drag.canvasWidth = function(value) {
                 if (!arguments.length) return canvasWidth;
                 canvasWidth = value;
@@ -2600,86 +2602,91 @@ angular.module('vumigo.services').factory('channelLayout', [
 ]);
 
 
-angular.module('vumigo.services').factory('channelComponent', [function () {
-    return function () {
-        var dragBehavior = null;
+angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
+    function (boundingBox) {
+        return function () {
+            var dragBehavior = null;
+            var bBox = boundingBox();
 
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component channel');
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'component channel');
 
-            selection.append('circle')
-                .attr('class', 'disc outer');
+                selection.append('circle')
+                    .attr('class', 'disc outer');
 
-            selection.append('circle')
-                .attr('class', 'disc inner');
+                selection.append('circle')
+                    .attr('class', 'disc inner');
 
-            selection.append('text')
-                .attr('class', 'name');
+                selection.append('text')
+                    .attr('class', 'name');
 
-            selection.append('text')
-                .attr('class', 'description');
-        }
+                selection.append('text')
+                    .attr('class', 'description');
+            }
 
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
+                selection.attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
 
-            selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._meta.layout.outer.r; });
+                selection.selectAll('.disc.outer')
+                    .attr('r', function (d) { return d._meta.layout.outer.r; });
 
-            selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._meta.layout.inner.r; });
+                selection.selectAll('.disc.inner')
+                    .attr('r', function (d) { return d._meta.layout.inner.r; });
 
-            selection.selectAll('.name')
-                .attr('x', function (d) { return d._meta.layout.name.x; })
-                .text(function (d) { return d.name; });
+                selection.selectAll('.name')
+                    .attr('x', function (d) { return d._meta.layout.name.x; })
+                    .text(function (d) { return d.name; });
 
-            selection.selectAll('.description')
-                .attr('x', function (d) { return d._meta.layout.description.x; })
-                .attr('dy', function (d) {
-                    var fontSize = selection.select('.name')
-                        .style('font-size');
+                selection.selectAll('.description')
+                    .attr('x', function (d) { return d._meta.layout.description.x; })
+                    .attr('dy', function (d) {
+                        var fontSize = selection.select('.name')
+                            .style('font-size');
 
-                    return parseInt(fontSize) + 'px';
-                })
-                .text(function (d) { return d.description; });
-        }
+                        return parseInt(fontSize);
+                    })
+                    .text(function (d) { return d.description; });
 
-        function exit(selection) {
-            selection.remove();
-        }
+                selection.call(bBox);
+            }
 
-        /**
-         * Repaint conversation components.
-         *
-         * @param {selection} Selection containing components.
-         */
-        var channel = function(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint conversation components.
+             *
+             * @param {selection} Selection containing components.
+             */
+            var channel = function(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return channel;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            channel.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return channel;
+            };
+
             return channel;
         };
-
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        channel.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return channel;
-        };
-
-        return channel;
-    };
-}]);
+    }
+]);
 
 
 angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
@@ -2743,171 +2750,176 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
 ]);
 
 
-angular.module('vumigo.services').factory('routerComponent', [function () {
-    return function () {
-        var conversationPin = conversationPinComponent();
-        var channelPin = channelPinComponent();
-        var dragBehavior = null;
+angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
+    function (boundingBox) {
+        return function () {
+            var conversationPin = conversationPinComponent();
+            var channelPin = channelPinComponent();
+            var dragBehavior = null;
+            var bBox = boundingBox();
 
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component router');
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'component router');
 
-            selection.append('circle')
-                .attr('class', 'disc');
+                selection.append('circle')
+                    .attr('class', 'disc');
 
-            selection.append('text')
-                .attr('class', 'name');
+                selection.append('text')
+                    .attr('class', 'name');
 
-            selection.append('g')
-                .attr('class', 'pins pins-conversation');
+                selection.append('g')
+                    .attr('class', 'pins pins-conversation');
 
-            selection.append('g')
-                .attr('class', 'pins pins-channel')
-        }
+                selection.append('g')
+                    .attr('class', 'pins pins-channel')
+            }
 
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection.attr('transform', function (d) {
-                return 'translate(' + [d.x, d.y] + ')';
-            });
+                selection.attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
 
-            selection.selectAll('.disc')
-                .attr('r', function (d) { return d._meta.layout.r; });
+                selection.selectAll('.disc')
+                    .attr('r', function (d) { return d._meta.layout.r; });
 
-            selection.selectAll('.name')
-                .style('font-size', function (d) {
-                    return d._meta.layout.r + 'px';
-                })
-                .text(function (d) { return d.name; });
+                selection.selectAll('.name')
+                    .style('font-size', function (d) {
+                        return d._meta.layout.r;
+                    })
+                    .text(function (d) { return d.name; });
 
-            selection.select('.pins-conversation')
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._meta.layout.r, 0] + ')';
-                })
-                .selectAll('.pin')
-                    .data(function(d) { return d.conversation_endpoints; },
-                             function(d) { return d.uuid; })
-                    .call(conversationPin);
+                selection.select('.pins-conversation')
+                    .attr('transform', function (d) {
+                        return 'translate(' + [-d._meta.layout.r, 0] + ')';
+                    })
+                    .selectAll('.pin')
+                        .data(function(d) { return d.conversation_endpoints; },
+                                 function(d) { return d.uuid; })
+                        .call(conversationPin);
 
-            selection.select('.pins-channel')
-                .selectAll('.pin')
-                    .data(function(d) { return d.channel_endpoints; },
-                             function(d) { return d.uuid; })
-                    .call(channelPin);
-        }
+                selection.select('.pins-channel')
+                    .selectAll('.pin')
+                        .data(function(d) { return d.channel_endpoints; },
+                                 function(d) { return d.uuid; })
+                        .call(channelPin);
 
-        function exit(selection) {
-            selection.remove();
+                selection.call(bBox);
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint router components.
+             *
+             * @param {selection} Selection containing routers.
+             */
+            var router = function (selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return router;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            router.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return router;
+            };
+
+            return router;
+        };
+
+        /**
+         * A component to draw conversation pins.
+         */
+        function conversationPinComponent() {
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'pin pin-conversation');
+
+                selection.append('circle')
+                    .attr('class', 'head');
+
+                selection.append('line')
+                    .attr('class', 'line');
+            }
+
+            function update(selection) {
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
+                    });
+
+                selection.select('.head')
+                    .attr('r', function (d) { return d._meta.layout.r; })
+
+                selection.select('.line')
+                    .attr('x2', function (d) { return d._meta.layout.len; });
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            function pin(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return pin;
+            }
+
+            return pin;
         }
 
         /**
-         * Repaint router components.
-         *
-         * @param {selection} Selection containing routers.
+         * A component to draw channel pins.
          */
-        var router = function (selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return router;
-        };
+        function channelPinComponent() {
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'pin pin-channel');
 
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        router.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return router;
-        };
+                selection.append('circle')
+                    .attr('class', 'head');
+            }
 
-        return router;
-    };
+            function update(selection) {
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
+                    });
 
-    /**
-     * A component to draw conversation pins.
-     */
-    function conversationPinComponent() {
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'pin pin-conversation');
+                selection.select('.head')
+                    .attr('r', function (d) { return d._meta.layout.r; })
+            }
 
-            selection.append('circle')
-                .attr('class', 'head');
+            function exit(selection) {
+                selection.remove();
+            }
 
-            selection.append('line')
-                .attr('class', 'line');
-        }
+            function pin(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return pin;
+            }
 
-        function update(selection) {
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
-                });
-
-            selection.select('.head')
-                .attr('r', function (d) { return d._meta.layout.r; })
-
-            selection.select('.line')
-                .attr('x2', function (d) { return d._meta.layout.len; });
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        function pin(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
             return pin;
         }
 
-        return pin;
     }
-
-    /**
-     * A component to draw channel pins.
-     */
-    function channelPinComponent() {
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'pin pin-channel');
-
-            selection.append('circle')
-                .attr('class', 'head');
-        }
-
-        function update(selection) {
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
-                });
-
-            selection.select('.head')
-                .attr('r', function (d) { return d._meta.layout.r; })
-        }
-
-        function exit(selection) {
-            selection.remove();
-        }
-
-        function pin(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
-            return pin;
-        }
-
-        return pin;
-    }
-
-}]);
+]);
 
 
 angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
@@ -2948,88 +2960,93 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
 ]);
 
 
-angular.module('vumigo.services').factory('conversationComponent', [function () {
-    return function () {
-        var dragBehavior = null;
+angular.module('vumigo.services').factory('conversationComponent', ['boundingBox',
+    function (boundingBox) {
+        return function () {
+            var dragBehavior = null;
+            var bBox = boundingBox();
 
-        function enter(selection) {
-            selection = selection.append('g')
-                .attr('class', 'component conversation');
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'component conversation');
 
-            selection.append('circle')
-                .attr('class', 'disc outer');
+                selection.append('circle')
+                    .attr('class', 'disc outer');
 
-            selection.append('circle')
-                .attr('class', 'disc inner');
+                selection.append('circle')
+                    .attr('class', 'disc inner');
 
-            selection.append('text')
-                .attr('class', 'name');
+                selection.append('text')
+                    .attr('class', 'name');
 
-            selection.append('text')
-                .attr('class', 'description');
-        }
+                selection.append('text')
+                    .attr('class', 'description');
+            }
 
-        function update(selection) {
-            if (dragBehavior) selection.call(dragBehavior);
+            function update(selection) {
+                if (dragBehavior) selection.call(dragBehavior);
 
-            selection
-                .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    });
 
-            selection.selectAll('.disc.outer')
-                .attr('r', function (d) { return d._meta.layout.outer.r; })
-                .style('fill', function (d) { return d.colour; });
+                selection.selectAll('.disc.outer')
+                    .attr('r', function (d) { return d._meta.layout.outer.r; })
+                    .style('fill', function (d) { return d.colour; });
 
-            selection.selectAll('.disc.inner')
-                .attr('r', function (d) { return d._meta.layout.inner.r; });
+                selection.selectAll('.disc.inner')
+                    .attr('r', function (d) { return d._meta.layout.inner.r; });
 
-            selection.selectAll('.name')
-                .attr('x', function (d) { return d._meta.layout.name.x })
-                .text(function (d) { return d.name; });
+                selection.selectAll('.name')
+                    .attr('x', function (d) { return d._meta.layout.name.x })
+                    .text(function (d) { return d.name; });
 
-            selection.selectAll('.description')
-                .attr('x', function (d) { return d._meta.layout.description.x; })
-                .attr('dy', function (d) {
-                    var fontSize = selection.select('.name')
-                        .style('font-size');
+                selection.selectAll('.description')
+                    .attr('x', function (d) { return d._meta.layout.description.x; })
+                    .attr('dy', function (d) {
+                        var fontSize = selection.select('.name')
+                            .style('font-size');
 
-                    return parseInt(fontSize) + 'px';
-                })
-                .text(function (d) { return d.description; });
-        }
+                        return parseInt(fontSize);
+                    })
+                    .text(function (d) { return d.description; });
 
-        function exit(selection) {
-            selection.remove();
-        }
+                selection.call(bBox);
+            }
 
-        /**
-         * Repaint conversation components.
-         *
-         * @param {selection} Selection containing components.
-         */
-        var conversation = function(selection) {
-            enter(selection.enter());
-            update(selection);
-            exit(selection.exit());
+            function exit(selection) {
+                selection.remove();
+            }
+
+            /**
+             * Repaint conversation components.
+             *
+             * @param {selection} Selection containing components.
+             */
+            var conversation = function(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return conversation;
+            };
+
+           /**
+             * Get/set the drag behaviour.
+             *
+             * @param {value} The new drag behaviour; when setting.
+             * @return The current drag behaviour.
+             */
+            conversation.drag = function(value) {
+                if (!arguments.length) return dragBehavior;
+                dragBehavior = value;
+                return conversation;
+            };
+
             return conversation;
         };
-
-       /**
-         * Get/set the drag behaviour.
-         *
-         * @param {value} The new drag behaviour; when setting.
-         * @return The current drag behaviour.
-         */
-        conversation.drag = function(value) {
-            if (!arguments.length) return dragBehavior;
-            dragBehavior = value;
-            return conversation;
-        };
-
-        return conversation;
-    };
-}]);
+    }
+]);
 
 
 angular.module('vumigo.services').factory('connectionLayout', ['componentHelper',
