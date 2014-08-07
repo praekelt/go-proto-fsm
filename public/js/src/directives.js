@@ -72,15 +72,18 @@ directives.directive('goCampaignDesigner', [
                 newValue = angular.fromJson(newValue);
                 oldValue = angular.fromJson(oldValue);
 
+                // The very first time $watch fires this function oldValue will be the same as newValue
                 if (newValue.id == oldValue.id &&
                         newValue.endpointId == oldValue.endpointId)
                     return;
 
+                // If there was a component selected, unselect it.
                 if (oldValue.id) {
                     var component = componentHelper.getById($scope.data, oldValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = false;
 
+                    // If the selected component had a selected endpoint, unselect it
                     if (oldValue.endpointId) {
                         var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
                         metadata = componentHelper.getMetadata(endpoint.data);
@@ -88,6 +91,7 @@ directives.directive('goCampaignDesigner', [
                     }
                 }
 
+                // If a new component has been selected update its metadata
                 if (newValue.id) {
                     var component = componentHelper.getById($scope.data, newValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
@@ -95,12 +99,15 @@ directives.directive('goCampaignDesigner', [
 
                     $scope.componentSelected = true;
 
+                    // If the user selected a specific endpoint update it metadata
                     if (newValue.endpointId) {
                         var endpoint = componentHelper.getEndpointById(component, newValue.endpointId);
                         metadata = componentHelper.getMetadata(endpoint.data);
                         metadata.selected = true;
                     }
 
+                    // If the connect button was pressed and there was a previously selected component,
+                    // connect the components
                     if (oldValue.id && $scope.connectPressed) {
                         componentHelper.connectComponents(
                             $scope.data, oldValue.id, oldValue.endpointId,
@@ -112,7 +119,7 @@ directives.directive('goCampaignDesigner', [
                 }
 
                 $scope.connectPressed = false;
-                $scope.refresh();
+                $scope.refresh();  // Repaint the canvas
             });
 
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
