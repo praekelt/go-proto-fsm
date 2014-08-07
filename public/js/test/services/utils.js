@@ -163,8 +163,8 @@ describe('componentHelper', function () {
         stub.onCall(0).returns('connection1');
         stub.onCall(1).returns('connection2');
 
-        componentHelper.connectComponents(data, 'conversation1', 'router1');
-        componentHelper.connectComponents(data, 'router1', 'channel1');
+        componentHelper.connectComponents(data, 'conversation1', null, 'router1', 'endpoint3');
+        componentHelper.connectComponents(data, 'router1', null, 'channel1', null);
 
         var expected = [
             {uuid: 'connection1', source: {uuid: 'endpoint1'}, target: {uuid: 'endpoint3'}},
