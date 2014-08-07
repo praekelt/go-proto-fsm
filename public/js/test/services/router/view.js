@@ -32,7 +32,10 @@ describe('routerComponent', function () {
                 name: 'default'
             }],
             x: 100,
-            y: 100
+            y: 100,
+            _meta: {
+                selected: true
+            }
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.router')
@@ -46,6 +49,7 @@ describe('routerComponent', function () {
 
         var router = routers.eq(0);
         expect(router.attr('transform')).to.equal('translate(100,100)');
+        expect(router.attr('class').indexOf('selected')).not.to.equal(-1);
         expect(router.find('.disc').eq(0).attr('r')).to.equal(String(data[0]._meta.layout.r));
 
         var name = router.find('.name').eq(0);

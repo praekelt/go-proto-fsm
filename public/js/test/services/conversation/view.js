@@ -26,7 +26,10 @@ describe('conversationComponent', function () {
             endpoints: [{uuid: 'endpoint1', name: 'default'}],
             colour: '#cccccc',
             x: 50,
-            y: 50
+            y: 50,
+            _meta: {
+                selected: true
+            }
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
@@ -40,6 +43,7 @@ describe('conversationComponent', function () {
 
         var conversation = conversations.eq(0);
         expect(conversation.attr('transform')).to.equal('translate(50,50)');
+        expect(conversation.attr('class').indexOf('selected')).not.to.equal(-1);
 
         var disc = conversation.find('.disc.outer').eq(0);
         var r = data[0]._meta.layout.outer.r;
