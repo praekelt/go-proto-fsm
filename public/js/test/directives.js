@@ -88,7 +88,6 @@ describe('goCampaignDesigner', function () {
         expect(element.find('g.layer.components')).to.have.length(1);
     });
 
-
     it('should have drawn conversations', function () {
         var conversations = element.find('g.layer.components g.conversation');
         expect(conversations).to.have.length(2);
@@ -115,15 +114,17 @@ describe('goCampaignDesigner', function () {
     it('should allow component to be selected', function () {
         var isolateScope = element.isolateScope();
 
-        expect(isolateScope.selectedComponentId).to.equal(null);
-        expect(isolateScope.componentSelected).to.equal(false);
-
         var component = element.find('.component.conversation').eq(0);
         var datum = component.get(0).__data__;
+
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(isolateScope.componentSelected).to.equal(false);
+        expect(datum._meta.selected).to.be.undefined;
 
         component.trigger('vumigo:dragstart');
         expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
         expect(isolateScope.componentSelected).to.equal(true);
+        expect(datum._meta.selected).to.equal(true);
     });
 
     it('should allow components to be connected', function () {

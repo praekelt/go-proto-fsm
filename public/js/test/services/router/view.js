@@ -32,7 +32,10 @@ describe('routerComponent', function () {
                 name: 'default'
             }],
             x: 100,
-            y: 100
+            y: 100,
+            _meta: {
+                selected: true
+            }
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.router')
@@ -46,6 +49,7 @@ describe('routerComponent', function () {
 
         var router = routers.eq(0);
         expect(router.attr('transform')).to.equal('translate(100,100)');
+        expect(router.attr('class').indexOf('selected')).not.to.equal(-1);
         expect(router.find('.disc').eq(0).attr('r')).to.equal(String(data[0]._meta.layout.r));
 
         var name = router.find('.name').eq(0);
@@ -124,6 +128,16 @@ describe('routerComponent', function () {
             .trigger('vumigo:dragend');
 
         expect(routers.eq(0).attr('transform')).to.equal('translate(70,70)');
+    }));
+
+    it.skip('router pin should be selectable', inject(function ($rootScope) {
+        sinon.stub($rootScope, '$emit');
+
+        var router = element.find('.router').eq(0);
+        var pin = router.find('.pin.pin-channel').eq(0);
+        pin.eq(0).trigger('mousedown');
+
+        expect($rootScope.$emit.calledWith('go:campaignDesignerSelect', 'router1', 'endpoint4')).to.be.true;
     }));
 
 });

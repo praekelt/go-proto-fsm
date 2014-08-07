@@ -38,7 +38,10 @@ describe('channelComponent', function () {
             routers: [],
             routing_entries: [{
                 source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint2'}
+                target: {uuid: 'endpoint2'},
+                _meta: {
+                    selected: true
+                }
             }]
         };
 
@@ -80,6 +83,7 @@ describe('channelComponent', function () {
         expect(connections).to.have.length(1);
 
         expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L200,200');
+        expect(connections.eq(0).attr('class').indexOf('selected')).not.to.equal(-1);
 
         data.channels[0].x = 300;
         data.channels[0].y = 300;

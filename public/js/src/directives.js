@@ -49,6 +49,7 @@ directives.directive('goCampaignDesigner', [
             }
 
             $scope.selectedComponentId = null;
+            $scope.selectedEndpointId = null;
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
@@ -60,24 +61,57 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            $scope.$watch('selectedComponentId', function (newValue, oldValue) {
-                if (newValue == oldValue) return;
+            // TODO: With the new release of AngularJS (1.3.x) use `$scope.$watchGroup`
+            $scope.$watch(function () {
+                return angular.toJson({
+                    id: $scope.selectedComponentId,
+                    endpointId: $scope.selectedEndpointId
+                });
 
-                if (oldValue) {
-                    var component = componentHelper.getById($scope.data, oldValue);
+            }, function (newValue, oldValue) {
+                newValue = angular.fromJson(newValue);
+                oldValue = angular.fromJson(oldValue);
+
+                // The very first time $watch fires this function oldValue will be the same as newValue
+                if (newValue.id == oldValue.id &&
+                        newValue.endpointId == oldValue.endpointId)
+                    return;
+
+                // If there was a component selected, unselect it.
+                if (oldValue.id) {
+                    var component = componentHelper.getById($scope.data, oldValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = false;
+
+                    // If the selected component had a selected endpoint, unselect it
+                    if (oldValue.endpointId) {
+                        var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
+                        metadata = componentHelper.getMetadata(endpoint.data);
+                        metadata.selected = false;
+                    }
                 }
 
-                if (newValue) {
-                    var component = componentHelper.getById($scope.data, newValue);
+                // If a new component has been selected update its metadata
+                if (newValue.id) {
+                    var component = componentHelper.getById($scope.data, newValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = true;
 
                     $scope.componentSelected = true;
 
-                    if (oldValue && $scope.connectPressed) {
-                        componentHelper.connectComponents($scope.data, oldValue, newValue);
+                    // If the user selected a specific endpoint update it metadata
+                    if (newValue.endpointId) {
+                        var endpoint = componentHelper.getEndpointById(component, newValue.endpointId);
+                        metadata = componentHelper.getMetadata(endpoint.data);
+                        metadata.selected = true;
+                    }
+
+                    // If the connect button was pressed and there was a previously selected component,
+                    // connect the components
+                    if (oldValue.id && $scope.connectPressed) {
+                        componentHelper.connectComponents(
+                            $scope.data, oldValue.id, oldValue.endpointId,
+                            newValue.id, newValue.endpointId);
                     }
 
                 } else {
@@ -85,11 +119,12 @@ directives.directive('goCampaignDesigner', [
                 }
 
                 $scope.connectPressed = false;
-                $scope.refresh();
+                $scope.refresh();  // Repaint the canvas
             });
 
-            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
-                $scope.selectedComponentId = componentId;
+            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
+                $scope.selectedComponentId = componentId || null;
+                $scope.selectedEndpointId = endpointId || null;
             });
         }
 

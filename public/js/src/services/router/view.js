@@ -1,6 +1,6 @@
 
-angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
-    function (boundingBox) {
+angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'boundingBox',
+    function ($rootScope, boundingBox) {
         return function () {
             var conversationPin = conversationPinComponent();
             var channelPin = channelPinComponent();
@@ -27,9 +27,13 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    });
 
                 selection.selectAll('.disc')
                     .attr('r', function (d) { return d._meta.layout.r; });
@@ -97,17 +101,29 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
                 selection = selection.append('g')
                     .attr('class', 'pin pin-conversation');
 
-                selection.append('circle')
-                    .attr('class', 'head');
-
                 selection.append('line')
                     .attr('class', 'line');
+
+                selection.append('circle')
+                    .attr('class', 'head');
             }
 
             function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                    });
+                });
+
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.select('.head')
@@ -144,9 +160,21 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             }
 
             function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                    });
+                });
+
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.select('.head')

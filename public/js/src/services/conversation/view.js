@@ -28,6 +28,9 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.selectAll('.disc.outer')

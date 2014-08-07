@@ -51,6 +51,14 @@ describe('routerLayout', function () {
             }
         }];
 
+        for (var i = 0; i < expected[0].channel_endpoints.length; i++) {
+            expected[0].channel_endpoints[i]._meta.parent = expected[0];
+        }
+
+        for (var i = 0; i < expected[0].conversation_endpoints.length; i++) {
+            expected[0].conversation_endpoints[i]._meta.parent = expected[0];
+        }
+
         expect(data).to.deep.equal(expected);
     }));
 

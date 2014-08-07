@@ -26,7 +26,10 @@ describe('channelComponent', function () {
             endpoints: [{uuid: 'endpoint1', name: 'default'}],
             utilization: 0.4,
             x: 100,
-            y: 100
+            y: 100,
+            _meta: {
+                selected: true
+            }
         }];
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
@@ -40,6 +43,7 @@ describe('channelComponent', function () {
 
         var channel = channels.eq(0);
         expect(channel.attr('transform')).to.equal('translate(100,100)');
+        expect(channel.attr('class').indexOf('selected')).not.to.equal(-1);
         var r = data[0]._meta.layout.outer.r;
         expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal(String(r));
         r = data[0]._meta.layout.inner.r;
