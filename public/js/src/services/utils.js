@@ -231,43 +231,51 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return null;
         };
 
-        function connectComponents(data, sourceId, targetId) {
-            var source = getById(data, sourceId);
-            var target = getById(data, targetId);
+        function connectComponents(data, sourceComponentId, sourceEndpointId,
+                                                        targetComponentId, targetEndpointId) {
+
+            var source = getById(data, sourceComponentId);
+            var target = getById(data, targetComponentId);
 
             if (!source || !target || source.type == target.type) return;
 
-            var sourceEndpoint = null;
-            if (['conversation', 'channel'].indexOf(source.type) != -1) {
-                sourceEndpoint = source.data.endpoints[0];
+            if (!sourceEndpointId) {
+                if (['conversation', 'channel'].indexOf(source.type) != -1) {
+                    sourceEndpointId = source.data.endpoints[0].uuid;
 
-            } else if (source.type == 'router') {
-                if (target.type == 'conversation') {
-                    sourceEndpoint = source.data.conversation_endpoints[0];
+                } else if (source.type == 'router') {
+                    if (target.type == 'conversation') {
+                        sourceEndpointId = source.data.conversation_endpoints[0].uuid;
 
-                } else if (target.type == 'channel') {
-                    sourceEndpoint = source.data.channel_endpoints[0];
+                    } else if (target.type == 'channel') {
+                        sourceEndpointId = source.data.channel_endpoints[0].uuid;
+                    }
                 }
             }
 
-            var targetEndpoint = null;
-            if (['conversation', 'channel'].indexOf(target.type) != -1) {
-                targetEndpoint = target.data.endpoints[0];
+            if (!targetEndpointId) {
+                if (['conversation', 'channel'].indexOf(target.type) != -1) {
+                    targetEndpointId = target.data.endpoints[0].uuid;
 
-            } else if (target.type == 'router') {
-                if (source.type == 'conversation') {
-                    targetEndpoint = target.data.conversation_endpoints[0];
+                } else if (target.type == 'router') {
+                    if (source.type == 'conversation') {
+                        targetEndpointId = target.data.conversation_endpoints[0].uuid;
 
-                } else if (source.type == 'channel') {
-                    sourceEndpoint = target.data.channel_endpoints[0];
+                    } else if (source.type == 'channel') {
+                        targetEndpointId = target.data.channel_endpoints[0].uuid;
+                    }
                 }
             }
 
-            if (sourceEndpoint && targetEndpoint) {
+            if (sourceEndpointId && targetEndpointId) {
                 data.routing_entries.push({
                     uuid: rfc4122.v4(),
-                    source: {uuid: sourceEndpoint.uuid},
-                    target: {uuid: targetEndpoint.uuid},
+                    source: {
+                        uuid: sourceEndpointId
+                    },
+                    target: {
+                        uuid: targetEndpointId
+                    }
                 });
             }
         }

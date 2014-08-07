@@ -49,6 +49,7 @@ directives.directive('goCampaignDesigner', [
             }
 
             $scope.selectedComponentId = null;
+            $scope.selectedEndpointId = null;
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
@@ -60,24 +61,38 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            $scope.$watch('selectedComponentId', function (newValue, oldValue) {
-                if (newValue == oldValue) return;
+            // TODO: With the new release of AngularJS (1.3.x) use `$scope.$watchGroup`
+            $scope.$watch(function () {
+                return angular.toJson({
+                    id: $scope.selectedComponentId,
+                    endpointId: $scope.selectedEndpointId
+                });
 
-                if (oldValue) {
-                    var component = componentHelper.getById($scope.data, oldValue);
+            }, function (newValue, oldValue) {
+                newValue = angular.fromJson(newValue);
+                oldValue = angular.fromJson(oldValue);
+
+                if (newValue.id == oldValue.id &&
+                        newValue.endpointId == oldValue.endpointId)
+                    return;
+
+                if (oldValue.id) {
+                    var component = componentHelper.getById($scope.data, oldValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = false;
                 }
 
-                if (newValue) {
-                    var component = componentHelper.getById($scope.data, newValue);
+                if (newValue.id) {
+                    var component = componentHelper.getById($scope.data, newValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = true;
 
                     $scope.componentSelected = true;
 
-                    if (oldValue && $scope.connectPressed) {
-                        componentHelper.connectComponents($scope.data, oldValue, newValue);
+                    if (oldValue.id && $scope.connectPressed) {
+                        componentHelper.connectComponents(
+                            $scope.data, oldValue.id, oldValue.endpointId,
+                            newValue.id, newValue.endpointId);
                     }
 
                 } else {
@@ -88,8 +103,9 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();
             });
 
-            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
-                $scope.selectedComponentId = componentId;
+            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
+                $scope.selectedComponentId = componentId || null;
+                $scope.selectedEndpointId = endpointId || null;
             });
         }
 

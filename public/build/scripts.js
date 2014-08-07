@@ -1820,6 +1820,7 @@ directives.directive('goCampaignDesigner', [
             }
 
             $scope.selectedComponentId = null;
+            $scope.selectedEndpointId = null;
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
@@ -1831,24 +1832,38 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            $scope.$watch('selectedComponentId', function (newValue, oldValue) {
-                if (newValue == oldValue) return;
+            // TODO: With the new release of AngularJS (1.3.x) use `$scope.$watchGroup`
+            $scope.$watch(function () {
+                return angular.toJson({
+                    id: $scope.selectedComponentId,
+                    endpointId: $scope.selectedEndpointId
+                });
 
-                if (oldValue) {
-                    var component = componentHelper.getById($scope.data, oldValue);
+            }, function (newValue, oldValue) {
+                newValue = angular.fromJson(newValue);
+                oldValue = angular.fromJson(oldValue);
+
+                if (newValue.id == oldValue.id &&
+                        newValue.endpointId == oldValue.endpointId)
+                    return;
+
+                if (oldValue.id) {
+                    var component = componentHelper.getById($scope.data, oldValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = false;
                 }
 
-                if (newValue) {
-                    var component = componentHelper.getById($scope.data, newValue);
+                if (newValue.id) {
+                    var component = componentHelper.getById($scope.data, newValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = true;
 
                     $scope.componentSelected = true;
 
-                    if (oldValue && $scope.connectPressed) {
-                        componentHelper.connectComponents($scope.data, oldValue, newValue);
+                    if (oldValue.id && $scope.connectPressed) {
+                        componentHelper.connectComponents(
+                            $scope.data, oldValue.id, oldValue.endpointId,
+                            newValue.id, newValue.endpointId);
                     }
 
                 } else {
@@ -1859,8 +1874,9 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();
             });
 
-            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId) {
-                $scope.selectedComponentId = componentId;
+            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
+                $scope.selectedComponentId = componentId || null;
+                $scope.selectedEndpointId = endpointId || null;
             });
         }
 
@@ -2225,43 +2241,51 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return null;
         };
 
-        function connectComponents(data, sourceId, targetId) {
-            var source = getById(data, sourceId);
-            var target = getById(data, targetId);
+        function connectComponents(data, sourceComponentId, sourceEndpointId,
+                                                        targetComponentId, targetEndpointId) {
+
+            var source = getById(data, sourceComponentId);
+            var target = getById(data, targetComponentId);
 
             if (!source || !target || source.type == target.type) return;
 
-            var sourceEndpoint = null;
-            if (['conversation', 'channel'].indexOf(source.type) != -1) {
-                sourceEndpoint = source.data.endpoints[0];
+            if (!sourceEndpointId) {
+                if (['conversation', 'channel'].indexOf(source.type) != -1) {
+                    sourceEndpointId = source.data.endpoints[0].uuid;
 
-            } else if (source.type == 'router') {
-                if (target.type == 'conversation') {
-                    sourceEndpoint = source.data.conversation_endpoints[0];
+                } else if (source.type == 'router') {
+                    if (target.type == 'conversation') {
+                        sourceEndpointId = source.data.conversation_endpoints[0].uuid;
 
-                } else if (target.type == 'channel') {
-                    sourceEndpoint = source.data.channel_endpoints[0];
+                    } else if (target.type == 'channel') {
+                        sourceEndpointId = source.data.channel_endpoints[0].uuid;
+                    }
                 }
             }
 
-            var targetEndpoint = null;
-            if (['conversation', 'channel'].indexOf(target.type) != -1) {
-                targetEndpoint = target.data.endpoints[0];
+            if (!targetEndpointId) {
+                if (['conversation', 'channel'].indexOf(target.type) != -1) {
+                    targetEndpointId = target.data.endpoints[0].uuid;
 
-            } else if (target.type == 'router') {
-                if (source.type == 'conversation') {
-                    targetEndpoint = target.data.conversation_endpoints[0];
+                } else if (target.type == 'router') {
+                    if (source.type == 'conversation') {
+                        targetEndpointId = target.data.conversation_endpoints[0].uuid;
 
-                } else if (source.type == 'channel') {
-                    sourceEndpoint = target.data.channel_endpoints[0];
+                    } else if (source.type == 'channel') {
+                        targetEndpointId = target.data.channel_endpoints[0].uuid;
+                    }
                 }
             }
 
-            if (sourceEndpoint && targetEndpoint) {
+            if (sourceEndpointId && targetEndpointId) {
                 data.routing_entries.push({
                     uuid: rfc4122.v4(),
-                    source: {uuid: sourceEndpoint.uuid},
-                    target: {uuid: targetEndpoint.uuid},
+                    source: {
+                        uuid: sourceEndpointId
+                    },
+                    target: {
+                        uuid: targetEndpointId
+                    }
                 });
             }
         }
@@ -2461,11 +2485,6 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                 }
 
                 if (selectEnabled) {
-                    d3.selectAll('.component.selected')
-                        .classed('selected', false);
-
-                    selection.classed('selected', true);
-
                     $rootScope.$apply(function () {
                         var d = selection.datum();
                         $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
@@ -2628,9 +2647,13 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    });
 
                 selection.selectAll('.disc.outer')
                     .attr('r', function (d) { return d._meta.layout.outer.r; });
@@ -2699,6 +2722,7 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
             function pins(router) {
                 angular.forEach(router.conversation_endpoints, function (pin, i) {
                     var metadata = componentHelper.getMetadata(pin);
+                    metadata.parent = router;
                     metadata.layout = {
                         len: router._meta.layout.r,
                         y: pinGap * (i - 1),
@@ -2708,6 +2732,7 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
 
                 angular.forEach(router.channel_endpoints, function (pin) {
                     var metadata = componentHelper.getMetadata(pin);
+                    metadata.parent = router;
                     metadata.layout = {
                         x: router._meta.layout.r,
                         y: 0,
@@ -2750,8 +2775,8 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
 ]);
 
 
-angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
-    function (boundingBox) {
+angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'boundingBox',
+    function ($rootScope, boundingBox) {
         return function () {
             var conversationPin = conversationPinComponent();
             var channelPin = channelPinComponent();
@@ -2778,9 +2803,13 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    });
 
                 selection.selectAll('.disc')
                     .attr('r', function (d) { return d._meta.layout.r; });
@@ -2856,6 +2885,15 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             }
 
             function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                    });
+                });
+
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
@@ -2895,6 +2933,15 @@ angular.module('vumigo.services').factory('routerComponent', ['boundingBox',
             }
 
             function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                    });
+                });
+
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
@@ -2989,6 +3036,9 @@ angular.module('vumigo.services').factory('conversationComponent', ['boundingBox
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.selectAll('.disc.outer')
@@ -3209,6 +3259,9 @@ angular.module('vumigo.services').factory('connectionComponent', [
                     .interpolate('linear');
 
                 selection
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    })
                     .attr('d', function (d) {
                         return line(d.points);
                     })

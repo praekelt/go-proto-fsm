@@ -9,6 +9,7 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
             function pins(router) {
                 angular.forEach(router.conversation_endpoints, function (pin, i) {
                     var metadata = componentHelper.getMetadata(pin);
+                    metadata.parent = router;
                     metadata.layout = {
                         len: router._meta.layout.r,
                         y: pinGap * (i - 1),
@@ -18,6 +19,7 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
 
                 angular.forEach(router.channel_endpoints, function (pin) {
                     var metadata = componentHelper.getMetadata(pin);
+                    metadata.parent = router;
                     metadata.layout = {
                         x: router._meta.layout.r,
                         y: 0,

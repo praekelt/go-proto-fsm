@@ -18,6 +18,9 @@ angular.module('vumigo.services').factory('connectionComponent', [
                     .interpolate('linear');
 
                 selection
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    })
                     .attr('d', function (d) {
                         return line(d.points);
                     })

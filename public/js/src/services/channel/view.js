@@ -25,9 +25,13 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
             function update(selection) {
                 if (dragBehavior) selection.call(dragBehavior);
 
-                selection.attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
-                });
+                selection
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
+                    });
 
                 selection.selectAll('.disc.outer')
                     .attr('r', function (d) { return d._meta.layout.outer.r; });

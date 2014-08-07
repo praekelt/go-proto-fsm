@@ -111,11 +111,6 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                 }
 
                 if (selectEnabled) {
-                    d3.selectAll('.component.selected')
-                        .classed('selected', false);
-
-                    selection.classed('selected', true);
-
                     $rootScope.$apply(function () {
                         var d = selection.datum();
                         $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
