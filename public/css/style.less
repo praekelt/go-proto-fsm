@@ -83,13 +83,30 @@
             }
 
             .pin {
+                @bg-selected: #ffa100;
+                @bg-hover: #ff5a00;
+
                 .head {
                     fill: @bg;
+
+                    &:hover {
+                       fill: @bg-hover;
+                    }
                 }
 
                 .line {
                     stroke: @bg;
                     stroke-width: 2px;
+                }
+
+                &.selected {
+                    .head {
+                        fill: @bg-selected;
+
+                        &:hover {
+                           fill: @bg-hover;
+                        }
+                    }
                 }
             }
         }

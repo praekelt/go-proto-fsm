@@ -80,6 +80,12 @@ directives.directive('goCampaignDesigner', [
                     var component = componentHelper.getById($scope.data, oldValue.id);
                     var metadata = componentHelper.getMetadata(component.data);
                     metadata.selected = false;
+
+                    if (oldValue.endpointId) {
+                        var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
+                        metadata = componentHelper.getMetadata(endpoint.data);
+                        metadata.selected = false;
+                    }
                 }
 
                 if (newValue.id) {
@@ -88,6 +94,12 @@ directives.directive('goCampaignDesigner', [
                     metadata.selected = true;
 
                     $scope.componentSelected = true;
+
+                    if (newValue.endpointId) {
+                        var endpoint = componentHelper.getEndpointById(component, newValue.endpointId);
+                        metadata = componentHelper.getMetadata(endpoint.data);
+                        metadata.selected = true;
+                    }
 
                     if (oldValue.id && $scope.connectPressed) {
                         componentHelper.connectComponents(

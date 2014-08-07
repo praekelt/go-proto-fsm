@@ -101,11 +101,11 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                 selection = selection.append('g')
                     .attr('class', 'pin pin-conversation');
 
-                selection.append('circle')
-                    .attr('class', 'head');
-
                 selection.append('line')
                     .attr('class', 'line');
+
+                selection.append('circle')
+                    .attr('class', 'head');
             }
 
             function update(selection) {
@@ -121,6 +121,9 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.select('.head')
@@ -169,6 +172,9 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                 selection
                     .attr('transform', function (d) {
                         return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
+                    })
+                    .classed('selected', function (d) {
+                        return d._meta.selected;
                     });
 
                 selection.select('.head')
