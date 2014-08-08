@@ -1,4 +1,14 @@
 (function() {
+    var injector = angular.injector(['vumigo.testutils']);
+
+    injector
+        .get('simulate')
+        .enable();
+
+    injector
+        .get('interop')
+        .enable();
+
     function rebind(target, source) {
         var args = [target, source].concat(d3.keys(source));
         return d3.rebind.apply(d3, args);

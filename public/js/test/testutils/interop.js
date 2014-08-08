@@ -1,4 +1,4 @@
-describe.only('interop', function () {
+describe('interop', function () {
     beforeEach(module('vumigo.testutils'));
 
     beforeEach(inject(function(interop) {
