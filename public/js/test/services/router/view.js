@@ -130,14 +130,14 @@ describe('routerComponent', function () {
         expect(routers.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));
 
-    it.skip('router pin should be selectable', inject(function ($rootScope) {
+    it('router pin should be selectable', inject(function ($rootScope) {
         sinon.stub($rootScope, '$emit');
 
         var router = element.find('.router').eq(0);
-        var pin = router.find('.pin.pin-channel').eq(0);
-        pin.eq(0).trigger('mousedown');
+        var pin = router.find('.pin.pin-conversation').eq(1);
+        pin.d3().simulate('mousedown');
 
-        expect($rootScope.$emit.calledWith('go:campaignDesignerSelect', 'router1', 'endpoint4')).to.be.true;
+        expect($rootScope.$emit.calledWith('go:campaignDesignerSelect', 'router1', 'endpoint3')).to.be.true;
     }));
 
 });
