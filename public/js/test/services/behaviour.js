@@ -30,12 +30,13 @@ describe('zoomBehavior', function () {
 
     it('should allow canvas to be draggable', inject(function () {
         element.find('g.container')
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [-50, -50],
                 scale: 1
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         var canvas = element.find('g.canvas');
         expect(canvas.eq(0).attr('transform')).to.equal('translate(-50,-50)scale(1)');
@@ -46,37 +47,41 @@ describe('zoomBehavior', function () {
         var canvas = element.find('g.canvas');
 
         container
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [10, 10],
                 scale: 1
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         expect(canvas.eq(0).attr('transform')).to.equal('translate(0,0)scale(1)');
 
         container
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [-100, -100],
                 scale: 1
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         expect(canvas.eq(0).attr('transform')).to.equal('translate(-80,-80)scale(1)');
     }));
 
     it('should allow canvas to be zoomable', inject(function () {
         var canvas = element.find('g.canvas');
+        var container = element.find('g.container');
         expect(canvas.attr('transform')).to.be.undefined;
 
-        canvas
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+        container
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [0, 0],
                 scale: 3
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         expect(canvas.attr('transform')).to.equal('translate(0,0)scale(3)');
     }));
@@ -121,12 +126,13 @@ describe('dragBehavior', function () {
     it('should allow component to be draggable', inject(function () {
         var components = element.find('.component');
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 70,
                 y: 70
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(components.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));
@@ -135,21 +141,25 @@ describe('dragBehavior', function () {
         var components = element.find('.component');
 
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: -1,
                 y: -1
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
+
         expect(components.eq(0).attr('transform')).to.equal('translate(0,0)');
 
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 101,
                 y: 101
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
+
         var svg = element.find('svg');
         var transform = 'translate(' + [100, 100] +')';
         expect(components.eq(0).attr('transform')).to.equal(transform);
@@ -159,21 +169,25 @@ describe('dragBehavior', function () {
         var components = element.find('.component');
 
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 14,
                 y: 14
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
+
         expect(components.eq(0).attr('transform')).to.equal('translate(10,10)');
 
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 15,
                 y: 15
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
+
         expect(components.eq(0).attr('transform')).to.equal('translate(20,20)');
     }));
 
@@ -182,7 +196,7 @@ describe('dragBehavior', function () {
 
         var component = element.find('.component').eq(0);
 
-        component.trigger('vumigo:dragstart');
+        component.d3().simulate('dragstart');
 
         var classes = component.attr('class').split(' ');
         expect(classes.indexOf('component')).not.to.equal(-1);
@@ -207,12 +221,13 @@ describe('dragBehavior', function () {
 
         var components = element.find('.component.non-draggable');
         components.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 70,
                 y: 70
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(components.eq(0).attr('transform')).to.equal('translate(0,0)');
     }));
@@ -236,7 +251,7 @@ describe('dragBehavior', function () {
 
         var component = element.find('.component.non-selectable').eq(0);
 
-        component.trigger('vumigo:dragstart');
+        component.d3().simulate('dragstart');
 
         var classes = component.attr('class').split(' ');
         expect(classes.indexOf('component')).not.to.equal(-1);

@@ -64,12 +64,13 @@ describe('canvasBuilder', function () {
 
     it('should allow canvas to be draggable', inject(function () {
         element.find('g.container')
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [-50, -50],
                 scale: 1
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         var canvas = element.find('g.canvas');
         expect(canvas.eq(0).attr('transform')).to.equal('translate(-50,-50)scale(1)');
@@ -79,13 +80,14 @@ describe('canvasBuilder', function () {
         var canvas = element.find('g.canvas');
         expect(canvas.attr('transform')).to.be.undefined;
 
-        canvas
-            .trigger('vumigo:zoomstart')
-            .trigger('vumigo:zoom', {
+        element.find('g.container')
+            .d3()
+            .simulate('zoomstart')
+            .simulate('zoom', {
                 translate: [0, 0],
                 scale: 3
             })
-            .trigger('vumigo:zoomend');
+            .simulate('zoomend');
 
         expect(canvas.attr('transform')).to.equal('translate(0,0)scale(3)');
     }));

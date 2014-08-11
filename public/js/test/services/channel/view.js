@@ -99,12 +99,13 @@ describe('channelComponent', function () {
     it('channel should be draggable', inject(function () {
         var channels = element.find('.channel');
         channels.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 70,
                 y: 70
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(channels.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));
