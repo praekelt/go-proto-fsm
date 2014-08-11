@@ -48,7 +48,7 @@ describe('conversationComponent', function () {
         var disc = conversation.find('.disc.outer').eq(0);
         var r = data[0]._meta.layout.outer.r;
         expect(disc.attr('r')).to.equal(String(r));
-        expect(disc.css('fill')).to.equal('rgb(204, 204, 204)');
+        expect(d3.rgb(disc.css('fill'))).to.deep.equal(d3.rgb(204, 204, 204));
 
         r = data[0]._meta.layout.inner.r;
         expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
