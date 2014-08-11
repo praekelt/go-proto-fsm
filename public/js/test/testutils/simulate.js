@@ -82,4 +82,43 @@ describe('simulate', function () {
 
         expect(d3.event).to.equal(oldEvent);
     });
+
+    it("should allow behaviors to be simulated", function() {
+        var dragstarts = [];
+
+        var drag = d3.behavior.drag()
+            .on('dragstart', function(d, i) {
+              dragstarts.push({
+                  i: i,
+                  d: d,
+                  ctx: this
+              });
+            });
+
+        el.selectAll('.foo')
+          .data([1, 2, 3, 4])
+          .enter().append('div')
+              .attr('class', 'foo')
+              .attr('data-id', function(d) { return d; })
+              .call(drag)
+              .simulate('dragstart');
+
+        expect(dragstarts).to.deep.equal([{
+            i: 0,
+            d: 1,
+            ctx: el.select('.foo[data-id="1"]').node()
+        }, {
+            i: 1,
+            d: 2,
+            ctx: el.select('.foo[data-id="2"]').node()
+        }, {
+            i: 2,
+            d: 3,
+            ctx: el.select('.foo[data-id="3"]').node()
+        }, {
+            i: 3,
+            d: 4,
+            ctx: el.select('.foo[data-id="4"]').node()
+        }]);
+    });
 });
