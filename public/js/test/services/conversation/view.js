@@ -103,12 +103,13 @@ describe('conversationComponent', function () {
     it('conversation should be draggable', inject(function () {
         var conversations = element.find('.conversation');
         conversations.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 70,
                 y: 70
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(conversations.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));

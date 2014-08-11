@@ -120,12 +120,13 @@ describe('routerComponent', function () {
     it('router should be draggable', inject(function () {
         var routers = element.find('.router');
         routers.eq(0)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 70,
                 y: 70
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(routers.eq(0).attr('transform')).to.equal('translate(70,70)');
     }));

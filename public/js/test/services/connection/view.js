@@ -218,12 +218,13 @@ describe('controlPointComponent', function () {
         expect(controlPoints.eq(1).attr('transform')).to.equal('translate(125,125)');
 
         controlPoints.eq(1)
-            .trigger('vumigo:dragstart')
-            .trigger('vumigo:drag', {
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
                 x: 10,
                 y: 10
             })
-            .trigger('vumigo:dragend');
+            .simulate('dragend');
 
         expect(controlPoints.eq(1).attr('transform')).to.equal('translate(10,10)');
     }));

@@ -121,7 +121,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.componentSelected).to.equal(false);
         expect(datum._meta.selected).to.be.undefined;
 
-        component.trigger('vumigo:dragstart');
+        component.d3().simulate('dragstart');
         expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
         expect(isolateScope.componentSelected).to.equal(true);
         expect(datum._meta.selected).to.equal(true);
@@ -138,10 +138,10 @@ describe('goCampaignDesigner', function () {
         var conversation = element.find('.conversation').eq(0);
         var channel = element.find('.channel').eq(0);
 
-        conversation.trigger('vumigo:dragstart');
+        conversation.d3().simulate('dragstart');
         element.find('.btn-connect').click();
         expect(isolateScope.connectPressed).to.equal(true);
-        channel.trigger('vumigo:dragstart');
+        channel.d3().simulate('dragstart');
 
         var datum = channel.get(0).__data__;
         expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
@@ -161,10 +161,10 @@ describe('goCampaignDesigner', function () {
         var conversation = element.find('.conversation').eq(0);
         var datum = conversation.get(0).__data__;
 
-        conversation.trigger('vumigo:dragstart');
+        conversation.d3().simulate('dragstart');
         element.find('.btn-connect').click();
         expect(isolateScope.connectPressed).to.equal(true);
-        conversation.trigger('vumigo:dragstart');
+        conversation.d3().simulate('dragstart');
 
         expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
         expect(isolateScope.componentSelected).to.equal(true);
@@ -184,10 +184,10 @@ describe('goCampaignDesigner', function () {
         var conversation2 = element.find('.conversation').eq(1);
         var datum = conversation2.get(0).__data__;
 
-        conversation1.trigger('vumigo:dragstart');
+        conversation1.d3().simulate('dragstart');
         element.find('.btn-connect').click();
         expect(isolateScope.connectPressed).to.equal(true);
-        conversation2.trigger('vumigo:dragstart');
+        conversation2.d3().simulate('dragstart');
 
         expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
         expect(isolateScope.componentSelected).to.equal(true);
