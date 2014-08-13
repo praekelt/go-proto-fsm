@@ -1917,10 +1917,12 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Create our canvas
-            var canvas = canvasBuilder()
+            var buildCanvas = canvasBuilder()
                 .width(width)
                 .height(height)
-                .gridCellSize(scope.gridCellSize)
+                .gridCellSize(scope.gridCellSize);
+
+            var canvas = buildCanvas
                 .apply(null, [d3.selectAll(element.toArray())]);
 
             // Add the layers to our canvas
@@ -2007,6 +2009,14 @@ directives.directive('goCampaignDesigner', [
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
+
+            scope.zoomIn = function () {
+                buildCanvas.zoomIn();
+            };
+
+            scope.zoomOut = function () {
+                buildCanvas.zoomOut();
+            };
         }
 
         return {
@@ -2124,6 +2134,8 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
             var width = 2048;  // Default canvas width
             var height = 2048;  // Default canvas height
             var gridCellSize = 0;  // Disable grid by default
+            var container = null;
+            var zoom = null;
 
             var canvas = function(selection) {
                 var viewportElement = $(selection[0]);
@@ -2134,7 +2146,7 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
 
                 svgToolbox.createShadowFilter(svg);
 
-                var container = svg.append('g')
+                container = svg.append('g')
                     .attr('class', 'container')
                     .attr('transform', 'translate(0, 0)');
 
@@ -2149,7 +2161,7 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
 
                 svgToolbox.drawGrid(canvas, width, height, gridCellSize);
 
-                var zoom = zoomBehavior()
+                zoom = zoomBehavior()
                     .canvas(canvas)
                     .canvasWidth(width)
                     .canvasHeight(height)
@@ -2187,6 +2199,20 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
                 if (!arguments.length) return zoomExtent;
                 zoomExtent = value;
                 return canvas;
+            };
+
+            canvas.zoomIn = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 1.2;
+                if (newScale > scaleExtent[1]) newScale = scaleExtent[1];
+                zoom.scale(newScale).event(container);
+            };
+
+            canvas.zoomOut = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 0.8;
+                if (newScale < scaleExtent[0]) newScale = scaleExtent[0];
+                zoom.scale(newScale).event(container);
             };
 
             return canvas;

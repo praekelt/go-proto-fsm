@@ -146,10 +146,12 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Create our canvas
-            var canvas = canvasBuilder()
+            var buildCanvas = canvasBuilder()
                 .width(width)
                 .height(height)
-                .gridCellSize(scope.gridCellSize)
+                .gridCellSize(scope.gridCellSize);
+
+            var canvas = buildCanvas
                 .apply(null, [d3.selectAll(element.toArray())]);
 
             // Add the layers to our canvas
@@ -236,6 +238,14 @@ directives.directive('goCampaignDesigner', [
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
+
+            scope.zoomIn = function () {
+                buildCanvas.zoomIn();
+            };
+
+            scope.zoomOut = function () {
+                buildCanvas.zoomOut();
+            };
         }
 
         return {
