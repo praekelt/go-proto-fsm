@@ -1824,6 +1824,20 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
+            $scope.remove = function () {
+                if ($scope.selectedComponentId) {
+                    componentHelper.removeById($scope.data, $scope.selectedComponentId);
+
+                    $scope.selectedComponentId = null;
+                    $scope.selectedEndpointId = null;
+                    $scope.componentSelected = false;
+                    $scope.connectPressed = false;
+
+                    console.log($scope.data);
+                }
+                $scope.refresh();
+            };
+
             $scope.refresh = function () {
                 $rootScope.$emit('go:campaignDesignerRepaint');
             };
@@ -1851,14 +1865,16 @@ directives.directive('goCampaignDesigner', [
                 // If there was a component selected, unselect it.
                 if (oldValue.id) {
                     var component = componentHelper.getById($scope.data, oldValue.id);
-                    var metadata = componentHelper.getMetadata(component.data);
-                    metadata.selected = false;
-
-                    // If the selected component had a selected endpoint, unselect it
-                    if (oldValue.endpointId) {
-                        var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
-                        metadata = componentHelper.getMetadata(endpoint.data);
+                    if (component) {
+                        var metadata = componentHelper.getMetadata(component.data);
                         metadata.selected = false;
+
+                        // If the selected component had a selected endpoint, unselect it
+                        if (oldValue.endpointId) {
+                            var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
+                            metadata = componentHelper.getMetadata(endpoint.data);
+                            metadata.selected = false;
+                        }
                     }
                 }
 
@@ -2252,6 +2268,36 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return null;
         };
 
+        function removeById(data, componentId) {
+            for (var i = 0; i < data.conversations.length; i++) {
+                if (data.conversations[i].uuid == componentId) {
+                    data.conversations.splice(i, 1);
+                    return;
+                }
+            }
+
+            for (var i = 0; i < data.channels.length; i++) {
+                if (data.channels[i].uuid == componentId) {
+                    data.channels.splice(i, 1);
+                    return;
+                }
+            }
+
+            for (var i = 0; i < data.routers.length; i++) {
+                if (data.routers[i].uuid == componentId) {
+                    data.routers.splice(i, 1);
+                    return;
+                }
+            }
+
+            for (var i = 0; i < data.routing_entries.length; i++) {
+                if (data.routing_entries[i].uuid == componentId) {
+                    data.routing_entries.splice(i, 1);
+                    return;
+                }
+            }
+        };
+
         function getByEndpointId(data, endpointId) {
             for (var i = 0; i < data.conversations.length; i++) {
                 for (var j = 0; j < data.conversations[i].endpoints.length; j++) {
@@ -2377,6 +2423,7 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
 
         return {
             getById: getById,
+            removeById: removeById,
             getByEndpointId: getByEndpointId,
             connectComponents: connectComponents,
             getEndpointById: getEndpointById,

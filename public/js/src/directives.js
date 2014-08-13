@@ -53,6 +53,20 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
+            $scope.remove = function () {
+                if ($scope.selectedComponentId) {
+                    componentHelper.removeById($scope.data, $scope.selectedComponentId);
+
+                    $scope.selectedComponentId = null;
+                    $scope.selectedEndpointId = null;
+                    $scope.componentSelected = false;
+                    $scope.connectPressed = false;
+
+                    console.log($scope.data);
+                }
+                $scope.refresh();
+            };
+
             $scope.refresh = function () {
                 $rootScope.$emit('go:campaignDesignerRepaint');
             };
@@ -80,14 +94,16 @@ directives.directive('goCampaignDesigner', [
                 // If there was a component selected, unselect it.
                 if (oldValue.id) {
                     var component = componentHelper.getById($scope.data, oldValue.id);
-                    var metadata = componentHelper.getMetadata(component.data);
-                    metadata.selected = false;
-
-                    // If the selected component had a selected endpoint, unselect it
-                    if (oldValue.endpointId) {
-                        var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
-                        metadata = componentHelper.getMetadata(endpoint.data);
+                    if (component) {
+                        var metadata = componentHelper.getMetadata(component.data);
                         metadata.selected = false;
+
+                        // If the selected component had a selected endpoint, unselect it
+                        if (oldValue.endpointId) {
+                            var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
+                            metadata = componentHelper.getMetadata(endpoint.data);
+                            metadata.selected = false;
+                        }
                     }
                 }
 
