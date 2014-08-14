@@ -1,6 +1,7 @@
 var app = angular.module('vumigo', [
     'uuid',
     'ngRoute',
+    'ui.bootstrap',
     'vumigo.services',
     'vumigo.controllers',
     'vumigo.directives'

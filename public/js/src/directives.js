@@ -5,6 +5,7 @@ var directives = angular.module('vumigo.directives', []);
  */
 directives.directive('goCampaignDesigner', [
     '$rootScope',
+    '$modal',
     'canvasBuilder',
     'dragBehavior',
     'componentHelper',
@@ -17,7 +18,7 @@ directives.directive('goCampaignDesigner', [
     'channelLayout',
     'connectionLayout',
     'controlPointComponent',
-    function ($rootScope, canvasBuilder, dragBehavior, componentHelper,
+    function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
                    channelLayout, connectionLayout, controlPointComponent) {
@@ -53,18 +54,89 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
 
+            $scope.addConversation = function () {
+                var modalInstance = $modal.open({
+                    templateUrl: '/templates/conversation_add_modal.html',
+                    size: 'md',
+                    controller: function ($scope, $modalInstance) {
+                        $scope.data = {};
+
+                        $scope.ok = function () {
+                            $modalInstance.close();
+                        };
+
+                        $scope.cancel = function () {
+                            $modalInstance.dismiss('cancel');
+                        };
+                    }
+                });
+            };
+
+            $scope.addChannel = function () {
+                var modalInstance = $modal.open({
+                    templateUrl: '/templates/channel_add_modal.html',
+                    size: 'md',
+                    controller: function ($scope, $modalInstance) {
+                        $scope.data = {};
+
+                        $scope.ok = function () {
+                            $modalInstance.close();
+                        };
+
+                        $scope.cancel = function () {
+                            $modalInstance.dismiss('cancel');
+                        };
+                    }
+                });
+            };
+
+            $scope.addRouter = function () {
+                var modalInstance = $modal.open({
+                    templateUrl: '/templates/router_add_modal.html',
+                    size: 'md',
+                    controller: function ($scope, $modalInstance) {
+                        $scope.data = {};
+
+                        $scope.ok = function () {
+                            $modalInstance.close();
+                        };
+
+                        $scope.cancel = function () {
+                            $modalInstance.dismiss('cancel');
+                        };
+                    }
+                });
+            };
+
             $scope.remove = function () {
                 if ($scope.selectedComponentId) {
-                    componentHelper.removeById($scope.data, $scope.selectedComponentId);
 
-                    $scope.selectedComponentId = null;
-                    $scope.selectedEndpointId = null;
-                    $scope.componentSelected = false;
-                    $scope.connectPressed = false;
+                    var removeComponent = function () {
+                        componentHelper.removeById($scope.data, $scope.selectedComponentId);
 
-                    console.log($scope.data);
+                        $scope.selectedComponentId = null;
+                        $scope.selectedEndpointId = null;
+                        $scope.componentSelected = false;
+                        $scope.connectPressed = false;
+
+                        $scope.refresh();
+                    };
+
+                    var modalInstance = $modal.open({
+                        templateUrl: '/templates/confirm_modal.html',
+                        size: 'md',
+                        controller: function ($scope, $modalInstance) {
+                            $scope.yes = function () {
+                                $modalInstance.close();
+                                removeComponent();
+                            };
+
+                            $scope.no = function () {
+                                $modalInstance.dismiss('cancel');
+                            };
+                        }
+                    });
                 }
-                $scope.refresh();
             };
 
             $scope.refresh = function () {
