@@ -53,8 +53,21 @@ directives.directive('goCampaignDesigner', [
             $scope.selectedEndpointId = null;
             $scope.componentSelected = false;
             $scope.connectPressed = false;
+            $scope.newComponent = null;
 
+            /**
+             * Open modal dialog and capture new conversation details.
+             */
             $scope.addConversation = function () {
+
+                var add = function (data) {
+                    $element.addClass('adding');
+                    $scope.newComponent = {
+                        type: 'conversation',
+                        data: data
+                    };
+                };
+
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/conversation_add_modal.html',
                     size: 'md',
@@ -62,6 +75,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.data = {};
 
                         $scope.ok = function () {
+                            add($scope.data);
                             $modalInstance.close();
                         };
 
@@ -72,7 +86,19 @@ directives.directive('goCampaignDesigner', [
                 });
             };
 
+            /**
+             * Open modal dialog and capture new channel details.
+             */
             $scope.addChannel = function () {
+
+                var add = function (data) {
+                    $element.addClass('adding');
+                    $scope.newComponent = {
+                        type: 'channel',
+                        data: data
+                    };
+                };
+
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/channel_add_modal.html',
                     size: 'md',
@@ -80,6 +106,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.data = {};
 
                         $scope.ok = function () {
+                            add($scope.data);
                             $modalInstance.close();
                         };
 
@@ -90,7 +117,18 @@ directives.directive('goCampaignDesigner', [
                 });
             };
 
+            /**
+             * Open modal dialog and capture new router details.
+             */
             $scope.addRouter = function () {
+                var add = function (data) {
+                    $element.addClass('adding');
+                    $scope.newComponent = {
+                        type: 'router',
+                        data: data
+                    };
+                };
+
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
@@ -98,6 +136,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.data = {};
 
                         $scope.ok = function () {
+                            add($scope.data);
                             $modalInstance.close();
                         };
 
@@ -108,6 +147,9 @@ directives.directive('goCampaignDesigner', [
                 });
             };
 
+            /**
+             * Remove the selected component after prompting the user to confirm.
+             */
             $scope.remove = function () {
                 if ($scope.selectedComponentId) {
 
@@ -127,8 +169,8 @@ directives.directive('goCampaignDesigner', [
                         size: 'md',
                         controller: function ($scope, $modalInstance) {
                             $scope.yes = function () {
-                                $modalInstance.close();
                                 removeComponent();
+                                $modalInstance.close();
                             };
 
                             $scope.no = function () {

@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body">
     <form name="form">
-        <div class="form-group">
+        <div class="form-group required" ng-class="{ 'has-error': form.name.$invalid && form.name.$dirty }">
             <label for="field-name">Name</label>
             <input id="field-name" type="text" name="name" class="form-control"
                         data-ng-model="data.name" />
@@ -16,6 +16,6 @@
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary" ng-click="ok()">OK</button>
+    <button class="btn btn-primary" ng-click="ok()" ng-disabled="form.$pristine || form.$invalid">OK</button>
     <button class="btn btn-warning" ng-click="cancel()">Cancel</button>
 </div>

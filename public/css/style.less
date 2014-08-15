@@ -1,3 +1,14 @@
+.form-group {
+    @error: #e32;
+
+    &.required {
+        label:after {
+            content: '*';
+            color: @error;
+        }
+    }
+}
+
 #campaign-designer {
     background: #fafafa;
     width: 1024px;
