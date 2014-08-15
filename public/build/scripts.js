@@ -1839,6 +1839,7 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
             $scope.newComponent = null;
+            $scope.addingComponent = false;
 
             /**
              * Open modal dialog and capture new conversation details.
@@ -1846,7 +1847,6 @@ directives.directive('goCampaignDesigner', [
             $scope.addConversation = function () {
 
                 var add = function (data) {
-                    $element.addClass('adding');
                     $scope.newComponent = {
                         type: 'conversation',
                         data: data
@@ -1857,7 +1857,9 @@ directives.directive('goCampaignDesigner', [
                     templateUrl: '/templates/conversation_add_modal.html',
                     size: 'md',
                     controller: function ($scope, $modalInstance) {
-                        $scope.data = {};
+                        $scope.data = {
+                            endpoints: []
+                        };
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -1877,7 +1879,6 @@ directives.directive('goCampaignDesigner', [
             $scope.addChannel = function () {
 
                 var add = function (data) {
-                    $element.addClass('adding');
                     $scope.newComponent = {
                         type: 'channel',
                         data: data
@@ -1888,7 +1889,10 @@ directives.directive('goCampaignDesigner', [
                     templateUrl: '/templates/channel_add_modal.html',
                     size: 'md',
                     controller: function ($scope, $modalInstance) {
-                        $scope.data = {};
+                        $scope.data = {
+                            endpoints: [],
+                            utilization: 0.5
+                        };
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -1907,7 +1911,6 @@ directives.directive('goCampaignDesigner', [
              */
             $scope.addRouter = function () {
                 var add = function (data) {
-                    $element.addClass('adding');
                     $scope.newComponent = {
                         type: 'router',
                         data: data
@@ -1918,7 +1921,10 @@ directives.directive('goCampaignDesigner', [
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
                     controller: function ($scope, $modalInstance) {
-                        $scope.data = {};
+                        $scope.data = {
+                            channel_endpoints: [],
+                            conversation_endpoints: []
+                        };
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -2037,6 +2043,14 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();  // Repaint the canvas
             });
 
+            $scope.$watch('newComponent', function (value) {
+                if (value) {
+                    $scope.addingComponent = true;
+                } else {
+                    $scope.addingComponent = false;
+                }
+            });
+
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
                 $scope.selectedComponentId = componentId || null;
                 $scope.selectedEndpointId = endpointId || null;
@@ -2152,7 +2166,15 @@ directives.directive('goCampaignDesigner', [
                 });
             }
 
-            $rootScope.$on('go:campaignDesignerRepaint', repaint);
+            function clicked(event, coordinates) {
+                if (scope.newComponent) {
+                    var x = coordinates[0];
+                    var y = coordinates[1];
+                    componentHelper.addComponent(scope.data, scope.newComponent, x, y);
+                    scope.newComponent = null;
+                    repaint();
+                }
+            }
 
             scope.zoomIn = function () {
                 buildCanvas.zoomIn();
@@ -2161,6 +2183,10 @@ directives.directive('goCampaignDesigner', [
             scope.zoomOut = function () {
                 buildCanvas.zoomOut();
             };
+
+            $rootScope.$on('go:campaignDesignerRepaint', repaint);
+
+            $rootScope.$on('go:campaignDesignerClick', clicked);
         }
 
         return {
@@ -2272,8 +2298,9 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
-    function (zoomBehavior, svgToolbox) {
+angular.module('vumigo.services').factory('canvasBuilder', [
+    '$rootScope', 'zoomBehavior', 'svgToolbox',
+    function ($rootScope, zoomBehavior, svgToolbox) {
         return function () {
             var width = 2048;  // Default canvas width
             var height = 2048;  // Default canvas height
@@ -2312,11 +2339,18 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
                     .viewportElement(viewportElement)
                     .call();
 
-                container.on('mousedown', function () {
-                    d3.select(this).classed('dragging', true);
-                }).on('mouseup', function () {
-                    d3.select(this).classed('dragging', false);
-                }).call(zoom);
+                container
+                    .on('mousedown', function () {
+                        d3.select(this).classed('dragging', true);
+                    })
+                    .on('mouseup', function () {
+                        d3.select(this).classed('dragging', false);
+                        var coordinates = d3.mouse(this);
+                        $rootScope.$apply(function () {
+                            $rootScope.$emit('go:campaignDesignerClick', coordinates);
+                        });
+                    })
+                    .call(zoom);
 
                 return canvas;
             };
@@ -2549,13 +2583,36 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return component._meta;
         }
 
+        function addComponent(data, component, x, y) {
+            angular.extend(component.data, {
+                uuid: rfc4122.v4(),
+                x: x,
+                y: y
+            });
+
+            switch (component.type) {
+                case 'conversation':
+                    data.conversations.push(component.data);
+                    break;
+
+                case 'channel':
+                    data.channels.push(component.data);
+                    break;
+
+                case 'router':
+                    data.routers.push(component.data);
+                    break;
+            }
+        }
+
         return {
             getById: getById,
             removeById: removeById,
             getByEndpointId: getByEndpointId,
             connectComponents: connectComponents,
             getEndpointById: getEndpointById,
-            getMetadata: getMetadata
+            getMetadata: getMetadata,
+            addComponent: addComponent
         };
     }
 ]);
