@@ -71,9 +71,9 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/conversation_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
                         $scope.data = {
-                            endpoints: []
+                            endpoints: [{uuid: rfc4122.v4(), name: "default"}]
                         };
 
                         $scope.ok = function () {
@@ -103,9 +103,9 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/channel_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
                         $scope.data = {
-                            endpoints: [],
+                            endpoints: [{uuid: rfc4122.v4(), name: "default"}],
                             utilization: 0.5
                         };
 
@@ -135,10 +135,10 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
                         $scope.data = {
-                            channel_endpoints: [],
-                            conversation_endpoints: []
+                            channel_endpoints: [{uuid: rfc4122.v4(), name: "default"}],
+                            conversation_endpoints: [{uuid: rfc4122.v4(), name: "default"}]
                         };
 
                         $scope.ok = function () {
