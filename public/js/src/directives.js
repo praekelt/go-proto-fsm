@@ -56,6 +56,17 @@ directives.directive('goCampaignDesigner', [
             $scope.newComponent = null;
             $scope.addingComponent = false;
 
+            $scope.reset = function () {
+                $scope.selectedComponentId = null;
+                $scope.selectedEndpointId = null;
+                $scope.componentSelected = false;
+                $scope.connectPressed = false;
+                $scope.newComponent = null;
+                $scope.addingComponent = false;
+
+                $scope.refresh();
+            };
+
             /**
              * Open modal dialog and capture new conversation details.
              */
@@ -161,19 +172,13 @@ directives.directive('goCampaignDesigner', [
 
                     var removeComponent = function () {
                         componentHelper.removeById($scope.data, $scope.selectedComponentId);
-
-                        $scope.selectedComponentId = null;
-                        $scope.selectedEndpointId = null;
-                        $scope.componentSelected = false;
-                        $scope.connectPressed = false;
-
-                        $scope.refresh();
+                        $scope.reset();
                     };
 
                     var modalInstance = $modal.open({
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
-                        controller: function ($scope, $modalInstance) {
+                        controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
                             $scope.yes = function () {
                                 removeComponent();
                                 $modalInstance.close();
@@ -182,7 +187,7 @@ directives.directive('goCampaignDesigner', [
                             $scope.no = function () {
                                 $modalInstance.dismiss('cancel');
                             };
-                        }
+                        }]
                     });
                 }
             };
@@ -402,6 +407,26 @@ directives.directive('goCampaignDesigner', [
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
 
             $rootScope.$on('go:campaignDesignerClick', clicked);
+
+            // Handle key press events as suggested here: http://stackoverflow.com/a/20126915
+            d3.select('body').on('keydown', function () {
+                switch (d3.event.keyIdentifier) {
+                    case 'U+001B':  // Esc
+                        scope.$apply(function () {
+                            scope.reset();
+                        });
+                        break;
+
+                    case 'U+007F':  // Delete
+                        scope.$apply(function () {
+                            scope.remove();
+                        });
+                        break;
+
+                    default:
+                        // Do nothing
+                }
+            });
         }
 
         return {
