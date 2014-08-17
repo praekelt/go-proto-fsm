@@ -1,5 +1,6 @@
 var app = angular.module('vumigo', [
     'uuid',
+    'colorpicker.module',
     'ngRoute',
     'ui.bootstrap',
     'vumigo.services',

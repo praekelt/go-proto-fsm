@@ -71,7 +71,7 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/conversation_add_modal.html',
                     size: 'md',
-                    controller: function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
                         $scope.data = {
                             endpoints: []
                         };
@@ -84,7 +84,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.cancel = function () {
                             $modalInstance.dismiss('cancel');
                         };
-                    }
+                    }]
                 });
             };
 
@@ -103,7 +103,7 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/channel_add_modal.html',
                     size: 'md',
-                    controller: function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
                         $scope.data = {
                             endpoints: [],
                             utilization: 0.5
@@ -117,7 +117,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.cancel = function () {
                             $modalInstance.dismiss('cancel');
                         };
-                    }
+                    }]
                 });
             };
 
@@ -135,7 +135,7 @@ directives.directive('goCampaignDesigner', [
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
-                    controller: function ($scope, $modalInstance) {
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
                         $scope.data = {
                             channel_endpoints: [],
                             conversation_endpoints: []
@@ -149,7 +149,7 @@ directives.directive('goCampaignDesigner', [
                         $scope.cancel = function () {
                             $modalInstance.dismiss('cancel');
                         };
-                    }
+                    }]
                 });
             };
 
