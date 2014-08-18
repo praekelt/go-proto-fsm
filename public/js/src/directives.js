@@ -418,6 +418,11 @@ directives.directive('goCampaignDesigner', [
                             data.push(meta.menu);
                         }
 
+                        for (var i = 0; i < scope.data.routers.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routers[i]);
+                            data.push(meta.menu);
+                        }
+
                         return data;
                     })
                     .call(menu);

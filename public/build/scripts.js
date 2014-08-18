@@ -2710,6 +2710,11 @@ directives.directive('goCampaignDesigner', [
                             data.push(meta.menu);
                         }
 
+                        for (var i = 0; i < scope.data.routers.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routers[i]);
+                            data.push(meta.menu);
+                        }
+
                         return data;
                     })
                     .call(menu);
@@ -3716,6 +3721,33 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
                     };
 
                     pins(router);
+
+                    metadata.menu = {
+                        items: [{
+                            component: router,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf0c1;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerConnect'
+                        }, {
+                            component: router,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf00d;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerRemove'
+                        }],
+                        active: metadata.selected,
+                        x: router.x,
+                        y: router.y + radius + pinGap
+                    };
                 });
 
                 return data;
