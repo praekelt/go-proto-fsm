@@ -1,7 +1,7 @@
 
 angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
     function (componentHelper) {
-        return function() {
+        return function () {
             var innerRadius = 10;
             var outerRadius = 30;
             var textMargin = 20;
@@ -25,7 +25,35 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
                         description: {
                             x: textX
                         }
-                    }
+                    };
+
+                    metadata.menu = {
+                        items: [{
+                            component: conversation,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf0c1;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerConnect'
+                        }, {
+                            component: conversation,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf00d;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerRemove'
+                        }],
+                        active: metadata.selected,
+                        x: conversation.x,
+                        y: conversation.y + outerRadius + textMargin
+                    };
+
                 });
 
                 return data;

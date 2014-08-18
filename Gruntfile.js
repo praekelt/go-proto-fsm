@@ -18,12 +18,15 @@ module.exports = function (grunt) {
                     process: function (src, filepath) {
                         if (filepath.indexOf('bootstrap.min.css') != -1) {
                             src = src.replace(/\.\.\/fonts/g, '../bower_components/bootstrap/dist/fonts');
+                        } else if (filepath.indexOf('font-awesome.css') != -1) {
+                            src = src.replace(/\.\.\/fonts/g, '../bower_components/font-awesome/fonts');
                         }
                         return src;
                     }
                 },
                 src: [
                     'public/bower_components/bootstrap/dist/css/bootstrap.min.css',
+                    'public/bower_components/font-awesome/css/font-awesome.css',
                     'public/bower_components/angular-bootstrap-colorpicker/css/colorpicker.css',
                     'public/css/style.css'
                 ],
@@ -47,6 +50,7 @@ module.exports = function (grunt) {
                     'public/js/src/controllers.js',
                     'public/js/src/directives.js',
                     'public/js/src/services/index.js',
+                    'public/js/src/services/menu.js',
                     'public/js/src/services/utils.js',
                     'public/js/src/services/behaviour.js',
                     'public/js/src/services/channel/layout.js',

@@ -18,10 +18,12 @@ directives.directive('goCampaignDesigner', [
     'channelLayout',
     'connectionLayout',
     'controlPointComponent',
+    'menuComponent',
     function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout, controlPointComponent) {
+                   channelLayout, connectionLayout, controlPointComponent,
+                   menuComponent) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -275,6 +277,14 @@ directives.directive('goCampaignDesigner', [
                 $scope.selectedComponentId = componentId || null;
                 $scope.selectedEndpointId = endpointId || null;
             });
+
+            $rootScope.$on('go:campaignDesignerRemove', function (event) {
+                $scope.remove();
+            });
+
+            $rootScope.$on('go:campaignDesignerConnect', function (event) {
+                $scope.connect();
+            });
         }
 
         /**
@@ -347,6 +357,8 @@ directives.directive('goCampaignDesigner', [
             var controlPoint = controlPointComponent()
                 .drag(controlPointDrag);
 
+            var menu = menuComponent();
+
             // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -390,6 +402,18 @@ directives.directive('goCampaignDesigner', [
                         return meta.id;
                     })
                     .call(controlPoint);
+
+                // Draw context menus
+                componentLayer.selectAll('.menu')
+                    .data(function () {
+                        var data = [];
+                        for (var i = 0; i < scope.data.conversations.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.conversations[i]);
+                            data.push(meta.menu);
+                        }
+                        return data;
+                    })
+                    .call(menu);
             }
 
             function clicked(event, coordinates) {
