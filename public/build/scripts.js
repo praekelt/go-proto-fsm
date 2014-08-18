@@ -2715,6 +2715,11 @@ directives.directive('goCampaignDesigner', [
                             data.push(meta.menu);
                         }
 
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routing_entries[i]);
+                            data.push(meta.menu);
+                        }
+
                         return data;
                     })
                     .call(menu);
@@ -4265,6 +4270,34 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         var meta = componentHelper.getMetadata(connection.points[i]);
                         meta.id = meta.connection.uuid + '-' + i;
                     }
+
+                    var midPoint = connection.points[Math.floor(connection.points.length / 2)];
+                    metadata.menu = {
+                        items: [{
+                            component: connection,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf07e;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerChangeDirection'
+                        }, {
+                            component: connection,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf00d;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerRemove'
+                        }],
+                        active: metadata.selected,
+                        x: midPoint.x,
+                        y: midPoint.y + 3 * pointRadius
+                    };
                 });
 
                 return data;
