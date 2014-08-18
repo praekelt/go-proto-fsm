@@ -407,10 +407,17 @@ directives.directive('goCampaignDesigner', [
                 componentLayer.selectAll('.menu')
                     .data(function () {
                         var data = [];
+
                         for (var i = 0; i < scope.data.conversations.length; i++) {
                             var meta = componentHelper.getMetadata(scope.data.conversations[i]);
                             data.push(meta.menu);
                         }
+
+                        for (var i = 0; i < scope.data.channels.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.channels[i]);
+                            data.push(meta.menu);
+                        }
+
                         return data;
                     })
                     .call(menu);

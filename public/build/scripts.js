@@ -2699,10 +2699,17 @@ directives.directive('goCampaignDesigner', [
                 componentLayer.selectAll('.menu')
                     .data(function () {
                         var data = [];
+
                         for (var i = 0; i < scope.data.conversations.length; i++) {
                             var meta = componentHelper.getMetadata(scope.data.conversations[i]);
                             data.push(meta.menu);
                         }
+
+                        for (var i = 0; i < scope.data.channels.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.channels[i]);
+                            data.push(meta.menu);
+                        }
+
                         return data;
                     })
                     .call(menu);
@@ -3539,6 +3546,33 @@ angular.module('vumigo.services').factory('channelLayout', [
                         description: {
                             x: textX
                         }
+                    };
+
+                    metadata.menu = {
+                        items: [{
+                            component: channel,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf0c1;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerConnect'
+                        }, {
+                            component: channel,
+                            width: 32,
+                            height: 32,
+                            text: {
+                                icon: '&#xf00d;',
+                                x: 10,
+                                dy: 20
+                            },
+                            action: 'go:campaignDesignerRemove'
+                        }],
+                        active: metadata.selected,
+                        x: channel.x,
+                        y: channel.y + outerRadius + textOffset
                     };
                 });
 
