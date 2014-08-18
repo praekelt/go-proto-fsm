@@ -344,6 +344,9 @@ directives.directive('goCampaignDesigner', [
             var connection = connectionComponent()
                 .drag(connectionDrag);
 
+            var controlPoint = controlPointComponent()
+                .drag(controlPointDrag);
+
             // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -372,18 +375,21 @@ directives.directive('goCampaignDesigner', [
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
 
-                angular.forEach(scope.data.routing_entries, function (connection) {
-                    var controlPoint = controlPointComponent()
-                        .drag(controlPointDrag)
-                        .connectionId(connection.uuid);
+                connectionLayer.selectAll('.control-point')
+                    .data(function () {
+                        var data = [];
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            for (var j = 0; j < scope.data.routing_entries[i].points.length; j++) {
+                                data.push(scope.data.routing_entries[i].points[j]);
+                            }
+                        }
+                        return data;
 
-                    var selector = '.control-point[data-connection-uuid="'
-                        + connection.uuid + '"]';
-
-                    connectionLayer.selectAll(selector)
-                        .data(connection.points)
-                        .call(controlPoint);
-                });
+                    }, function (d) {
+                        var meta = componentHelper.getMetadata(d);
+                        return meta.id;
+                    })
+                    .call(controlPoint);
             }
 
             function clicked(event, coordinates) {

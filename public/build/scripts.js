@@ -2636,6 +2636,9 @@ directives.directive('goCampaignDesigner', [
             var connection = connectionComponent()
                 .drag(connectionDrag);
 
+            var controlPoint = controlPointComponent()
+                .drag(controlPointDrag);
+
             // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
@@ -2664,18 +2667,21 @@ directives.directive('goCampaignDesigner', [
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
 
-                angular.forEach(scope.data.routing_entries, function (connection) {
-                    var controlPoint = controlPointComponent()
-                        .drag(controlPointDrag)
-                        .connectionId(connection.uuid);
+                connectionLayer.selectAll('.control-point')
+                    .data(function () {
+                        var data = [];
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            for (var j = 0; j < scope.data.routing_entries[i].points.length; j++) {
+                                data.push(scope.data.routing_entries[i].points[j]);
+                            }
+                        }
+                        return data;
 
-                    var selector = '.control-point[data-connection-uuid="'
-                        + connection.uuid + '"]';
-
-                    connectionLayer.selectAll(selector)
-                        .data(connection.points)
-                        .call(controlPoint);
-                });
+                    }, function (d) {
+                        var meta = componentHelper.getMetadata(d);
+                        return meta.id;
+                    })
+                    .call(controlPoint);
             }
 
             function clicked(event, coordinates) {
@@ -3946,7 +3952,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 };
 
                 var meta = componentHelper.getMetadata(point);
-
+                meta.connection = connection;
                 meta.layout = {
                     r: 0,
                     sourceId: connection.source.uuid,
@@ -3974,7 +3980,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     };
 
                     var meta = componentHelper.getMetadata(point);
-
+                    meta.connection = connection;
                     meta.layout = {
                         r: pointRadius,
                         sourceId: connection.source.uuid,
@@ -4043,6 +4049,12 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         }
 
                         connection.points[connection.points.length - 1] = end;
+                    }
+
+                    // Assign a unique id to each point
+                    for (var i = 0; i < connection.points.length; i++) {
+                        var meta = componentHelper.getMetadata(connection.points[i]);
+                        meta.id = meta.connection.uuid + '-' + i;
                     }
                 });
 
@@ -4119,12 +4131,10 @@ angular.module('vumigo.services').factory('connectionComponent', [
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {
         var dragBehavior = null;
-        var connectionId = null;
 
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', 'component control-point')
-                .attr('data-connection-uuid', connectionId);
+                .attr('class', 'component control-point');
 
             selection.append('circle')
                 .attr('class', 'point');
@@ -4170,18 +4180,6 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         controlPoint.drag = function(value) {
             if (!arguments.length) return dragBehavior;
             dragBehavior = value;
-            return controlPoint;
-        };
-
-       /**
-         * Get/set the connection UUID.
-         *
-         * @param {value} The new connection UUID; when setting.
-         * @return The current connection UUID.
-         */
-        controlPoint.connectionId = function(value) {
-            if (!arguments.length) return connectionId;
-            connectionId = value;
             return controlPoint;
         };
 
