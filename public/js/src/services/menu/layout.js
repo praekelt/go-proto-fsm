@@ -7,6 +7,9 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
             var menuYOffset = 20;
             var textX = 10;
             var textYOffset = 20;
+            var faLink = '&#xf0c1;';
+            var faArrowsH = '&#xf07e;';
+            var faTimes = '&#xf00d;';
 
             function item(component, icon, action) {
                 return {
@@ -27,8 +30,8 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                     var metadata = componentHelper.getMetadata(conversation);
                     metadata.menu = {
                         items: [
-                            item(conversation, '&#xf0c1;', 'go:campaignDesignerConnect'),
-                            item(conversation, '&#xf00d;', 'go:campaignDesignerRemove')
+                            item(conversation, faLink, 'go:campaignDesignerConnect'),
+                            item(conversation, faTimes, 'go:campaignDesignerRemove')
                         ],
                         active: metadata.selected || false,
                         x: conversation.x,
@@ -40,8 +43,8 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                     var metadata = componentHelper.getMetadata(channel);
                     metadata.menu = {
                         items: [
-                            item(channel, '&#xf0c1;', 'go:campaignDesignerConnect'),
-                            item(channel, '&#xf00d;', 'go:campaignDesignerRemove')
+                            item(channel, faLink, 'go:campaignDesignerConnect'),
+                            item(channel, faTimes, 'go:campaignDesignerRemove')
                         ],
                         active: metadata.selected || false,
                         x: channel.x,
@@ -53,8 +56,8 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                     var metadata = componentHelper.getMetadata(router);
                     metadata.menu = {
                         items: [
-                            item(router, '&#xf0c1;', 'go:campaignDesignerConnect'),
-                            item(router, '&#xf00d;', 'go:campaignDesignerRemove')
+                            item(router, faLink, 'go:campaignDesignerConnect'),
+                            item(router, faTimes, 'go:campaignDesignerRemove')
                         ],
                         active: metadata.selected || false,
                         x: router.x,
@@ -67,8 +70,8 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                     var point = connection.points[Math.floor(connection.points.length / 2)];
                     metadata.menu = {
                         items: [
-                            item(connection, '&#xf0c1;', 'go:campaignDesignerChangeDirection'),
-                            item(connection, '&#xf00d;', 'go:campaignDesignerRemove')
+                            item(connection, faArrowsH, 'go:campaignDesignerChangeDirection'),
+                            item(connection, faTimes, 'go:campaignDesignerRemove')
                         ],
                         active: metadata.selected || false,
                         x: point.x,
