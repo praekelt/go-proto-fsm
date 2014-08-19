@@ -2311,11 +2311,12 @@ directives.directive('goCampaignDesigner', [
     'connectionLayout',
     'controlPointComponent',
     'menuComponent',
+    'menuLayout',
     function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
                    channelLayout, connectionLayout, controlPointComponent,
-                   menuComponent) {
+                   menuComponent, menuLayout) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -2656,6 +2657,7 @@ directives.directive('goCampaignDesigner', [
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
             var layoutConnections = connectionLayout();
+            var layoutMenus = menuLayout();
 
             repaint(); // Do initial draw
 
@@ -2696,6 +2698,8 @@ directives.directive('goCampaignDesigner', [
                     .call(controlPoint);
 
                 // Draw context menus
+                layoutMenus(scope.data);
+
                 componentLayer.selectAll('.menu')
                     .data(function () {
                         var data = [];
@@ -2785,97 +2789,6 @@ directives.directive('goCampaignDesigner', [
 ]);
 
 angular.module('vumigo.services', []);
-
-
-angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
-    function ($rootScope) {
-        return function () {
-            var menuItem = menuItemComponent();
-
-            function enter(selection) {
-                selection = selection.append('g')
-                    .attr('class', 'menu');
-            }
-
-            function update(selection) {
-                selection
-                    .classed('active', function (d) { return d.active; })
-                    .attr('transform', function (d) {
-                        return 'translate(' + [d.x, d.y] + ')';
-                    });
-
-                selection.selectAll('.menu-item')
-                    .data(function (d) { return d.items; },
-                             function (d, i) { return d.component.uuid + '-' + i; })
-                    .call(menuItem);
-            }
-
-            function exit(selection) {
-                selection.remove();
-            }
-
-            var menu = function(selection) {
-                enter(selection.enter());
-                update(selection);
-                exit(selection.exit());
-                return menu;
-            };
-
-            return menu;
-        };
-
-        function menuItemComponent() {
-
-            function enter(selection) {
-                selection = selection.append('g')
-                    .attr('class', 'menu-item');
-
-                selection.append('rect');
-                selection.append('text');
-            }
-
-            function update(selection) {
-                selection.on('mousedown', function (d) {
-                    d3.event.preventDefault();
-                    d3.event.stopPropagation();
-
-                    $rootScope.$apply(function () {
-                        $rootScope.$emit(d.action, d.component.uuid);
-                    });
-                });
-
-                selection
-                    .attr('transform', function (d, i) {
-                        return 'translate(' + [d.width * i, 0] + ')';
-                    });
-
-                selection.selectAll('rect')
-                    .attr('width', function (d) { return d.width; })
-                    .attr('height', function (d) { return d.height; });
-
-                selection.selectAll('text')
-                    .html(function (d) {
-                        return d.text.icon;
-                    })
-                    .attr('x', function (d) { return d.text.x; })
-                    .attr('dy', function (d) { return d.text.dy; });
-            }
-
-            function exit(selection) {
-                selection.remove();
-            }
-
-            function menuItem(selection) {
-                enter(selection.enter());
-                update(selection);
-                exit(selection.exit());
-                return menuItem;
-            }
-
-            return menuItem;
-        }
-    }
-]);
 
 
 angular.module('vumigo.services').factory('svgToolbox', [function () {
@@ -3557,33 +3470,6 @@ angular.module('vumigo.services').factory('channelLayout', [
                             x: textX
                         }
                     };
-
-                    metadata.menu = {
-                        items: [{
-                            component: channel,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf0c1;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerConnect'
-                        }, {
-                            component: channel,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf00d;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerRemove'
-                        }],
-                        active: metadata.selected,
-                        x: channel.x,
-                        y: channel.y + outerRadius + textOffset
-                    };
                 });
 
                 return data;
@@ -3726,33 +3612,6 @@ angular.module('vumigo.services').factory('routerLayout', ['componentHelper',
                     };
 
                     pins(router);
-
-                    metadata.menu = {
-                        items: [{
-                            component: router,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf0c1;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerConnect'
-                        }, {
-                            component: router,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf00d;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerRemove'
-                        }],
-                        active: metadata.selected,
-                        x: router.x,
-                        y: router.y + radius + pinGap
-                    };
                 });
 
                 return data;
@@ -4270,34 +4129,6 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         var meta = componentHelper.getMetadata(connection.points[i]);
                         meta.id = meta.connection.uuid + '-' + i;
                     }
-
-                    var midPoint = connection.points[Math.floor(connection.points.length / 2)];
-                    metadata.menu = {
-                        items: [{
-                            component: connection,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf07e;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerChangeDirection'
-                        }, {
-                            component: connection,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf00d;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerRemove'
-                        }],
-                        active: metadata.selected,
-                        x: midPoint.x,
-                        y: midPoint.y + 3 * pointRadius
-                    };
                 });
 
                 return data;
@@ -4428,3 +4259,180 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         return controlPoint;
     };
 }]);
+
+
+angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
+    function (componentHelper) {
+        return function () {
+            var menuItemWidth = 32;
+            var menuItemHeight = 32;
+            var menuYOffset = 20;
+            var textX = 10;
+            var textYOffset = 20;
+
+            function item(component, icon, action) {
+                return {
+                    component: component,
+                    width: menuItemWidth,
+                    height: menuItemHeight,
+                    text: {
+                        icon: icon,
+                        x: textX,
+                        dy: textYOffset
+                    },
+                    action: action
+                }
+            }
+
+            function layout(data) {
+                angular.forEach(data.conversations, function (conversation) {
+                    var metadata = componentHelper.getMetadata(conversation);
+                    metadata.menu = {
+                        items: [
+                            item(conversation, '&#xf0c1;', 'go:campaignDesignerConnect'),
+                            item(conversation, '&#xf00d;', 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: conversation.x,
+                        y: conversation.y + metadata.layout.outer.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.channels, function (channel) {
+                    var metadata = componentHelper.getMetadata(channel);
+                    metadata.menu = {
+                        items: [
+                            item(channel, '&#xf0c1;', 'go:campaignDesignerConnect'),
+                            item(channel, '&#xf00d;', 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: channel.x,
+                        y: channel.y + metadata.layout.outer.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.routers, function (router) {
+                    var metadata = componentHelper.getMetadata(router);
+                    metadata.menu = {
+                        items: [
+                            item(router, '&#xf0c1;', 'go:campaignDesignerConnect'),
+                            item(router, '&#xf00d;', 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: router.x,
+                        y: router.y + metadata.layout.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.routing_entries, function (connection) {
+                    var metadata = componentHelper.getMetadata(connection);
+                    var point = connection.points[Math.floor(connection.points.length / 2)];
+                    metadata.menu = {
+                        items: [
+                            item(connection, '&#xf0c1;', 'go:campaignDesignerChangeDirection'),
+                            item(connection, '&#xf00d;', 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: point.x,
+                        y: point.y + menuYOffset
+                    };
+                });
+
+                return data;
+            }
+
+            return layout;
+        };
+    }
+]);
+
+
+angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
+    function ($rootScope) {
+        return function () {
+            var menuItem = menuItemComponent();
+
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'menu');
+            }
+
+            function update(selection) {
+                selection
+                    .classed('active', function (d) { return d.active; })
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    });
+
+                selection.selectAll('.menu-item')
+                    .data(function (d) { return d.items; },
+                             function (d, i) { return d.component.uuid + '-' + i; })
+                    .call(menuItem);
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            var menu = function(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return menu;
+            };
+
+            return menu;
+        };
+
+        function menuItemComponent() {
+
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'menu-item');
+
+                selection.append('rect');
+                selection.append('text');
+            }
+
+            function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit(d.action, d.component.uuid);
+                    });
+                });
+
+                selection
+                    .attr('transform', function (d, i) {
+                        return 'translate(' + [d.width * i, 0] + ')';
+                    });
+
+                selection.selectAll('rect')
+                    .attr('width', function (d) { return d.width; })
+                    .attr('height', function (d) { return d.height; });
+
+                selection.selectAll('text')
+                    .html(function (d) {
+                        return d.text.icon;
+                    })
+                    .attr('x', function (d) { return d.text.x; })
+                    .attr('dy', function (d) { return d.text.dy; });
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            function menuItem(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return menuItem;
+            }
+
+            return menuItem;
+        }
+    }
+]);

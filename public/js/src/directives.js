@@ -19,11 +19,12 @@ directives.directive('goCampaignDesigner', [
     'connectionLayout',
     'controlPointComponent',
     'menuComponent',
+    'menuLayout',
     function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
                    connectionComponent, conversationLayout, routerLayout,
                    channelLayout, connectionLayout, controlPointComponent,
-                   menuComponent) {
+                   menuComponent, menuLayout) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -364,6 +365,7 @@ directives.directive('goCampaignDesigner', [
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
             var layoutConnections = connectionLayout();
+            var layoutMenus = menuLayout();
 
             repaint(); // Do initial draw
 
@@ -404,6 +406,8 @@ directives.directive('goCampaignDesigner', [
                     .call(controlPoint);
 
                 // Draw context menus
+                layoutMenus(scope.data);
+
                 componentLayer.selectAll('.menu')
                     .data(function () {
                         var data = [];

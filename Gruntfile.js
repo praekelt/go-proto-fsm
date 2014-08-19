@@ -50,7 +50,6 @@ module.exports = function (grunt) {
                     'public/js/src/controllers.js',
                     'public/js/src/directives.js',
                     'public/js/src/services/index.js',
-                    'public/js/src/services/menu.js',
                     'public/js/src/services/utils.js',
                     'public/js/src/services/behaviour.js',
                     'public/js/src/services/channel/layout.js',
@@ -60,7 +59,9 @@ module.exports = function (grunt) {
                     'public/js/src/services/conversation/layout.js',
                     'public/js/src/services/conversation/view.js',
                     'public/js/src/services/connection/layout.js',
-                    'public/js/src/services/connection/view.js'
+                    'public/js/src/services/connection/view.js',
+                    'public/js/src/services/menu/layout.js',
+                    'public/js/src/services/menu/view.js'
                 ],
                 dest: 'public/build/scripts.js'
             }

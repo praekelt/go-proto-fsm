@@ -29,33 +29,6 @@ angular.module('vumigo.services').factory('channelLayout', [
                             x: textX
                         }
                     };
-
-                    metadata.menu = {
-                        items: [{
-                            component: channel,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf0c1;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerConnect'
-                        }, {
-                            component: channel,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf00d;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerRemove'
-                        }],
-                        active: metadata.selected,
-                        x: channel.x,
-                        y: channel.y + outerRadius + textOffset
-                    };
                 });
 
                 return data;
