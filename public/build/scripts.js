@@ -3862,34 +3862,6 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
                             x: textX
                         }
                     };
-
-                    metadata.menu = {
-                        items: [{
-                            component: conversation,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf0c1;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerConnect'
-                        }, {
-                            component: conversation,
-                            width: 32,
-                            height: 32,
-                            text: {
-                                icon: '&#xf00d;',
-                                x: 10,
-                                dy: 20
-                            },
-                            action: 'go:campaignDesignerRemove'
-                        }],
-                        active: metadata.selected,
-                        x: conversation.x,
-                        y: conversation.y + outerRadius + textMargin
-                    };
-
                 });
 
                 return data;
@@ -4025,7 +3997,6 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 };
 
                 var meta = componentHelper.getMetadata(point);
-                meta.connection = connection;
                 meta.layout = {
                     r: 0,
                     sourceId: connection.source.uuid,
@@ -4053,7 +4024,6 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     };
 
                     var meta = componentHelper.getMetadata(point);
-                    meta.connection = connection;
                     meta.layout = {
                         r: pointRadius,
                         sourceId: connection.source.uuid,
@@ -4127,7 +4097,7 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     // Assign a unique id to each point
                     for (var i = 0; i < connection.points.length; i++) {
                         var meta = componentHelper.getMetadata(connection.points[i]);
-                        meta.id = meta.connection.uuid + '-' + i;
+                        meta.id = connection.uuid + '-' + i;
                     }
                 });
 
