@@ -59,6 +59,7 @@ describe('menuLayout', function () {
         layout(data);
 
         var expected = {
+            id: data.conversations[0].uuid,
             items: [{
                 component: data.conversations[0],
                 width: 32,
@@ -88,6 +89,7 @@ describe('menuLayout', function () {
         expect(data.conversations[0]._meta.menu).to.deep.equal(expected);
 
         var expected = {
+            id: data.channels[0].uuid,
             items: [{
                 component: data.channels[0],
                 width: 32,
@@ -117,6 +119,7 @@ describe('menuLayout', function () {
         expect(data.channels[0]._meta.menu).to.deep.equal(expected);
 
         var expected = {
+            id: data.routers[0].uuid,
             items: [{
                 component: data.routers[0],
                 width: 32,
@@ -146,6 +149,7 @@ describe('menuLayout', function () {
         expect(data.routers[0]._meta.menu).to.deep.equal(expected);
         var point = data.routing_entries[0].points[2];
         var expected = {
+            id: data.routing_entries[0].uuid,
             items: [{
                 component: data.routing_entries[0],
                 width: 32,

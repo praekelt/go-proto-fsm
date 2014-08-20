@@ -29,6 +29,7 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                 angular.forEach(data.conversations, function (conversation) {
                     var metadata = componentHelper.getMetadata(conversation);
                     metadata.menu = {
+                        id: conversation.uuid,
                         items: [
                             item(conversation, faLink, 'go:campaignDesignerConnect'),
                             item(conversation, faTimes, 'go:campaignDesignerRemove')
@@ -42,6 +43,7 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                 angular.forEach(data.channels, function (channel) {
                     var metadata = componentHelper.getMetadata(channel);
                     metadata.menu = {
+                        id: channel.uuid,
                         items: [
                             item(channel, faLink, 'go:campaignDesignerConnect'),
                             item(channel, faTimes, 'go:campaignDesignerRemove')
@@ -55,6 +57,7 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                 angular.forEach(data.routers, function (router) {
                     var metadata = componentHelper.getMetadata(router);
                     metadata.menu = {
+                        id: router.uuid,
                         items: [
                             item(router, faLink, 'go:campaignDesignerConnect'),
                             item(router, faTimes, 'go:campaignDesignerRemove')
@@ -69,6 +72,7 @@ angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
                     var metadata = componentHelper.getMetadata(connection);
                     var point = connection.points[Math.floor(connection.points.length / 2)];
                     metadata.menu = {
+                        id: connection.uuid,
                         items: [
                             item(connection, faArrowsH, 'go:campaignDesignerChangeDirection'),
                             item(connection, faTimes, 'go:campaignDesignerRemove')

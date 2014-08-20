@@ -423,6 +423,8 @@ directives.directive('goCampaignDesigner', [
                         }
 
                         return data;
+                    }, function (d) {
+                        return d.id;
                     })
                     .call(menu);
             }
