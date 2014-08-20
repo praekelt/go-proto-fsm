@@ -2,8 +2,6 @@ describe('goCampaignDesigner', function () {
     var element, scope;
 
     beforeEach(module('uuid'));
-    beforeEach(module('colorpicker.module'));
-    beforeEach(module('ui.bootstrap'));
     beforeEach(module('vumigo.services'));
     beforeEach(module('vumigo.directives'));
     beforeEach(module('vumigo.templates'));
