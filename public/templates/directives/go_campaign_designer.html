@@ -1,5 +1,32 @@
-<div id="campaign-designer">
+<div id="campaign-designer" data-ng-class="{'adding': newComponent != null}">
     <ul class="nav nav-pills">
+        <li class="dropdown">
+            <a class="btn-add dropdown-toggle" href="javascript://">
+              <span class="glyphicon glyphicon-plus"></span> Add <span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+                <li>
+                    <a href="javascript://" class="btn-add-conversation" data-ng-click="addConversation()">
+                        <span class="glyphicon glyphicon-cog"></span> Conversation
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript://" class="btn-add-channel" data-ng-click="addChannel()">
+                        <span class="glyphicon glyphicon-road"></span> Channel
+                    </a>
+                </li>
+                <li>
+                    <a href="javascript://" class="btn-add-router" data-ng-click="addRouter()">
+                        <span class="glyphicon glyphicon-random"></span> Router
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li data-ng-class="{'disabled': !componentSelected}">
+            <a class="btn-remove" href="javascript://" data-ng-click="remove()">
+                <span class="glyphicon glyphicon-remove-circle"></span> Remove
+            </a>
+        </li>
         <li data-ng-class="{'active': connectPressed, 'disabled': !componentSelected}">
             <a href="#" class="btn-connect" data-ng-click="connect()">
                 <span class="glyphicon glyphicon-link"></span> Connect

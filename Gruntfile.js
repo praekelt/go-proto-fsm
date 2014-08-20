@@ -27,6 +27,7 @@ module.exports = function (grunt) {
                 src: [
                     'public/bower_components/bootstrap/dist/css/bootstrap.min.css',
                     'public/bower_components/font-awesome/css/font-awesome.css',
+                    'public/bower_components/angular-bootstrap-colorpicker/css/colorpicker.css',
                     'public/css/style.css'
                 ],
                 dest: 'public/build/styles.css'
@@ -42,7 +43,9 @@ module.exports = function (grunt) {
                     'public/bower_components/angular/angular.min.js',
                     'public/bower_components/angular-route/angular-route.min.js',
                     'public/bower_components/angular-resource/angular-resource.min.js',
+                    'public/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js',
                     'public/bower_components/angular-uuid-service/uuid-svc.min.js',
+                    'public/bower_components/angular-bootstrap-colorpicker/js/bootstrap-colorpicker-module.js',
                     'public/js/src/app.js',
                     'public/js/src/controllers.js',
                     'public/js/src/directives.js',

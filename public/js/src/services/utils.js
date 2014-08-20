@@ -89,8 +89,9 @@ angular.module('vumigo.services').factory('svgToolbox', [function () {
     };
 }]);
 
-angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svgToolbox',
-    function (zoomBehavior, svgToolbox) {
+angular.module('vumigo.services').factory('canvasBuilder', [
+    '$rootScope', 'zoomBehavior', 'svgToolbox',
+    function ($rootScope, zoomBehavior, svgToolbox) {
         return function () {
             var width = 2048;  // Default canvas width
             var height = 2048;  // Default canvas height
@@ -129,11 +130,18 @@ angular.module('vumigo.services').factory('canvasBuilder', ['zoomBehavior', 'svg
                     .viewportElement(viewportElement)
                     .call();
 
-                container.on('mousedown', function () {
-                    d3.select(this).classed('dragging', true);
-                }).on('mouseup', function () {
-                    d3.select(this).classed('dragging', false);
-                }).call(zoom);
+                container
+                    .on('mousedown', function () {
+                        d3.select(this).classed('dragging', true);
+                    })
+                    .on('mouseup', function () {
+                        d3.select(this).classed('dragging', false);
+                        var coordinates = d3.mouse(this);
+                        $rootScope.$apply(function () {
+                            $rootScope.$emit('go:campaignDesignerClick', coordinates);
+                        });
+                    })
+                    .call(zoom);
 
                 return canvas;
             };
@@ -211,6 +219,28 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             }
 
             return null;
+        };
+
+        function removeById(data, componentId) {
+
+            /**
+             * Helper function to remove component with the given
+             * `componentId` in the given `data`.
+             */
+            var remove = function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].uuid == componentId) {
+                        data.splice(i, 1);
+                        return true;
+                    }
+                }
+                return false;
+            };
+
+            return remove(data.conversations)
+                || remove(data.channels)
+                || remove(data.routers)
+                || remove(data.routing_entries);
         };
 
         function getByEndpointId(data, endpointId) {
@@ -336,12 +366,36 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
             return component._meta;
         }
 
+        function addComponent(data, component, x, y) {
+            angular.extend(component.data, {
+                uuid: rfc4122.v4(),
+                x: x,
+                y: y
+            });
+
+            switch (component.type) {
+                case 'conversation':
+                    data.conversations.push(component.data);
+                    break;
+
+                case 'channel':
+                    data.channels.push(component.data);
+                    break;
+
+                case 'router':
+                    data.routers.push(component.data);
+                    break;
+            }
+        }
+
         return {
             getById: getById,
+            removeById: removeById,
             getByEndpointId: getByEndpointId,
             connectComponents: connectComponents,
             getEndpointById: getEndpointById,
-            getMetadata: getMetadata
+            getMetadata: getMetadata,
+            addComponent: addComponent
         };
     }
 ]);
