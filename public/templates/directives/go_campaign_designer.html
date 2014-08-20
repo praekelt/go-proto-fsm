@@ -1,7 +1,7 @@
 <div id="campaign-designer" data-ng-class="{'adding': addingComponent}">
     <ul class="nav nav-pills">
         <li class="dropdown">
-            <a class="dropdown-toggle" href="javascript://">
+            <a class="btn-add dropdown-toggle" href="javascript://">
               <span class="glyphicon glyphicon-plus"></span> Add <span class="caret"></span>
             </a>
             <ul class="dropdown-menu" role="menu">
@@ -23,7 +23,7 @@
             </ul>
         </li>
         <li data-ng-class="{'disabled': !componentSelected}">
-            <a href="javascript://" data-ng-click="remove()">
+            <a class="btn-remove" href="javascript://" data-ng-click="remove()">
                 <span class="glyphicon glyphicon-remove-circle"></span> Remove
             </a>
         </li>
@@ -33,17 +33,17 @@
             </a>
         </li>
         <li>
-            <a href="#">
+            <a class="btn-zoom-in" href="#">
                 <span class="glyphicon glyphicon-zoom-in"></span> Zoom in
             </a>
         </li>
         <li>
-            <a href="#">
+            <a class="btn-zoom-out" href="#">
                 <span class="glyphicon glyphicon-zoom-out"></span> Zoom out
             </a>
         </li>
         <li>
-            <a href="#" data-ng-click="refresh()">
+            <a class="btn-refresh" href="#" data-ng-click="refresh()">
                 <span class="glyphicon glyphicon-refresh"></span> Refresh
             </a>
         </li>

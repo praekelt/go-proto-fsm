@@ -196,4 +196,16 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
     });
+
+    it('should have drawn the toolbar', function () {
+        expect(element.find('.nav .btn-add')).to.have.length(1);
+        expect(element.find('.nav .btn-add-conversation')).to.have.length(1);
+        expect(element.find('.nav .btn-add-router')).to.have.length(1);
+        expect(element.find('.nav .btn-add-channel')).to.have.length(1);
+        expect(element.find('.nav .btn-remove')).to.have.length(1);
+        expect(element.find('.nav .btn-connect')).to.have.length(1);
+        expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
+        expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
+        expect(element.find('.nav .btn-refresh')).to.have.length(1);
+    });
 });
