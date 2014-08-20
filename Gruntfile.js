@@ -18,12 +18,15 @@ module.exports = function (grunt) {
                     process: function (src, filepath) {
                         if (filepath.indexOf('bootstrap.min.css') != -1) {
                             src = src.replace(/\.\.\/fonts/g, '../bower_components/bootstrap/dist/fonts');
+                        } else if (filepath.indexOf('font-awesome.css') != -1) {
+                            src = src.replace(/\.\.\/fonts/g, '../bower_components/font-awesome/fonts');
                         }
                         return src;
                     }
                 },
                 src: [
                     'public/bower_components/bootstrap/dist/css/bootstrap.min.css',
+                    'public/bower_components/font-awesome/css/font-awesome.css',
                     'public/bower_components/angular-bootstrap-colorpicker/css/colorpicker.css',
                     'public/css/style.css'
                 ],
@@ -56,7 +59,9 @@ module.exports = function (grunt) {
                     'public/js/src/services/conversation/layout.js',
                     'public/js/src/services/conversation/view.js',
                     'public/js/src/services/connection/layout.js',
-                    'public/js/src/services/connection/view.js'
+                    'public/js/src/services/connection/view.js',
+                    'public/js/src/services/menu/layout.js',
+                    'public/js/src/services/menu/view.js'
                 ],
                 dest: 'public/build/scripts.js'
             }
@@ -75,7 +80,7 @@ module.exports = function (grunt) {
             }
         },
         watch: {
-            files: ['public/css/**/*.less', 'public/js/**/*.js'],
+            files: ['Gruntfile.js', 'public/css/**/*.less', 'public/js/**/*.js'],
             tasks: ['less', 'concat']
         }
     });

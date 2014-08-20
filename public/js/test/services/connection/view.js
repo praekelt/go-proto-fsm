@@ -191,8 +191,7 @@ describe('controlPointComponent', function () {
         // Draw control points
         angular.forEach(data.routing_entries, function (connection) {
             var controlPoint = controlPointComponent()
-                .drag(controlPointDrag)
-                .connectionId(connection.uuid);
+                .drag(controlPointDrag);
 
             var selector = '.control-point[data-connection-uuid="'
                 + connection.uuid + '"]';

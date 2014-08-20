@@ -160,6 +160,12 @@ describe('connectionLayout', function () {
 
         expected[1].points.push(end);
 
+        angular.forEach(expected, function (connection) {
+            for (var i = 0; i < connection.points.length; i++) {
+                connection.points[i]._meta.id = connection.uuid + '-' + i;
+            }
+        });
+
         expect(data.routing_entries).to.deep.equal(expected);
     }));
 

@@ -1,7 +1,7 @@
 
 angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
     function (componentHelper) {
-        return function() {
+        return function () {
             var innerRadius = 10;
             var outerRadius = 30;
             var textMargin = 20;
@@ -25,7 +25,7 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
                         description: {
                             x: textX
                         }
-                    }
+                    };
                 });
 
                 return data;

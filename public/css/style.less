@@ -197,4 +197,40 @@
             fill: @point-bg;
         }
     }
+
+    .menu {
+        @menu-border: #ddd;
+        @menu-item: #428bca;
+        @menu-item-bg: #eee;
+        @menu-item-bg-hover: #fafafa;
+
+        visibility: hidden;
+
+        &.active {
+            visibility: visible;
+        }
+
+        .menu-item {
+            &:hover {
+                rect {
+                    cursor: pointer;
+                    fill: @menu-item-bg-hover;
+                }
+
+                text {
+                    cursor: pointer;
+                }
+            }
+
+            rect {
+                fill: @menu-item-bg;
+                stroke: @menu-border;
+            }
+
+            text {
+                font-family: FontAwesome;
+                fill: @menu-item;
+            }
+        }
+    }
 }

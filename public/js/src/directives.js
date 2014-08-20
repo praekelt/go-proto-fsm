@@ -13,15 +13,18 @@ directives.directive('goCampaignDesigner', [
     'channelComponent',
     'routerComponent',
     'connectionComponent',
+    'controlPointComponent',
+    'menuComponent',
     'conversationLayout',
     'routerLayout',
     'channelLayout',
     'connectionLayout',
-    'controlPointComponent',
+    'menuLayout',
     function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
-                   connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout, controlPointComponent) {
+                   connectionComponent, controlPointComponent, menuComponent,
+                   conversationLayout, routerLayout, channelLayout, connectionLayout,
+                   menuLayout) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -266,6 +269,10 @@ directives.directive('goCampaignDesigner', [
                 $scope.selectedEndpointId = endpointId || null;
             });
 
+            $rootScope.$on('go:campaignDesignerConnect', function (event) {
+                $scope.connect();
+            });
+
             $rootScope.$on('go:campaignDesignerRemove', function (event) {
                 $scope.remove();
             });
@@ -289,10 +296,12 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Create our canvas
-            var canvas = canvasBuilder()
+            var buildCanvas = canvasBuilder()
                 .width(width)
                 .height(height)
-                .gridCellSize(scope.gridCellSize)
+                .gridCellSize(scope.gridCellSize);
+
+            var canvas = buildCanvas
                 .apply(null, [d3.selectAll(element.toArray())]);
 
             // Add the layers to our canvas
@@ -336,11 +345,17 @@ directives.directive('goCampaignDesigner', [
             var connection = connectionComponent()
                 .drag(connectionDrag);
 
+            var controlPoint = controlPointComponent()
+                .drag(controlPointDrag);
+
+            var menu = menuComponent();
+
             // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
             var layoutConnections = connectionLayout();
+            var layoutMenus = menuLayout();
 
             repaint(); // Do initial draw
 
@@ -364,19 +379,63 @@ directives.directive('goCampaignDesigner', [
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
 
-                angular.forEach(scope.data.routing_entries, function (connection) {
-                    var controlPoint = controlPointComponent()
-                        .drag(controlPointDrag)
-                        .connectionId(connection.uuid);
+                connectionLayer.selectAll('.control-point')
+                    .data(function () {
+                        var data = [];
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            for (var j = 0; j < scope.data.routing_entries[i].points.length; j++) {
+                                data.push(scope.data.routing_entries[i].points[j]);
+                            }
+                        }
+                        return data;
 
-                    var selector = '.control-point[data-connection-uuid="'
-                        + connection.uuid + '"]';
+                    }, function (d) {
+                        var meta = componentHelper.getMetadata(d);
+                        return meta.id;
+                    })
+                    .call(controlPoint);
 
-                    connectionLayer.selectAll(selector)
-                        .data(connection.points)
-                        .call(controlPoint);
-                });
+                // Draw context menus
+                layoutMenus(scope.data);
+
+                componentLayer.selectAll('.menu')
+                    .data(function () {
+                        var data = [];
+
+                        for (var i = 0; i < scope.data.conversations.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.conversations[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.channels.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.channels[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.routers.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routers[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routing_entries[i]);
+                            data.push(meta.menu);
+                        }
+
+                        return data;
+                    }, function (d) {
+                        return d.id;
+                    })
+                    .call(menu);
             }
+
+            scope.zoomIn = function () {
+                buildCanvas.zoomIn();
+            };
+
+            scope.zoomOut = function () {
+                buildCanvas.zoomOut();
+            };
 
             function drop(event, coordinates) {
                 if (scope.newComponent) {

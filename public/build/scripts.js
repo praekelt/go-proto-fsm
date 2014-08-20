@@ -2305,15 +2305,18 @@ directives.directive('goCampaignDesigner', [
     'channelComponent',
     'routerComponent',
     'connectionComponent',
+    'controlPointComponent',
+    'menuComponent',
     'conversationLayout',
     'routerLayout',
     'channelLayout',
     'connectionLayout',
-    'controlPointComponent',
+    'menuLayout',
     function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
                    conversationComponent, channelComponent, routerComponent,
-                   connectionComponent, conversationLayout, routerLayout,
-                   channelLayout, connectionLayout, controlPointComponent) {
+                   connectionComponent, controlPointComponent, menuComponent,
+                   conversationLayout, routerLayout, channelLayout, connectionLayout,
+                   menuLayout) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -2346,7 +2349,6 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
             $scope.newComponent = null;
-            $scope.addingComponent = false;
 
             $scope.reset = function () {
                 $scope.selectedComponentId = null;
@@ -2354,7 +2356,6 @@ directives.directive('goCampaignDesigner', [
                 $scope.componentSelected = false;
                 $scope.connectPressed = false;
                 $scope.newComponent = null;
-                $scope.addingComponent = false;
 
                 $scope.refresh();
             };
@@ -2555,17 +2556,13 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();  // Repaint the canvas
             });
 
-            $scope.$watch('newComponent', function (value) {
-                if (value) {
-                    $scope.addingComponent = true;
-                } else {
-                    $scope.addingComponent = false;
-                }
-            });
-
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
                 $scope.selectedComponentId = componentId || null;
                 $scope.selectedEndpointId = endpointId || null;
+            });
+
+            $rootScope.$on('go:campaignDesignerConnect', function (event) {
+                $scope.connect();
             });
 
             $rootScope.$on('go:campaignDesignerRemove', function (event) {
@@ -2591,10 +2588,12 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Create our canvas
-            var canvas = canvasBuilder()
+            var buildCanvas = canvasBuilder()
                 .width(width)
                 .height(height)
-                .gridCellSize(scope.gridCellSize)
+                .gridCellSize(scope.gridCellSize);
+
+            var canvas = buildCanvas
                 .apply(null, [d3.selectAll(element.toArray())]);
 
             // Add the layers to our canvas
@@ -2638,11 +2637,17 @@ directives.directive('goCampaignDesigner', [
             var connection = connectionComponent()
                 .drag(connectionDrag);
 
+            var controlPoint = controlPointComponent()
+                .drag(controlPointDrag);
+
+            var menu = menuComponent();
+
             // Create layouts
             var layoutConversations = conversationLayout();
             var layoutRouters = routerLayout();
             var layoutChannels = channelLayout();
             var layoutConnections = connectionLayout();
+            var layoutMenus = menuLayout();
 
             repaint(); // Do initial draw
 
@@ -2666,19 +2671,63 @@ directives.directive('goCampaignDesigner', [
                     .data(layoutConnections(scope.data).routing_entries)
                     .call(connection);
 
-                angular.forEach(scope.data.routing_entries, function (connection) {
-                    var controlPoint = controlPointComponent()
-                        .drag(controlPointDrag)
-                        .connectionId(connection.uuid);
+                connectionLayer.selectAll('.control-point')
+                    .data(function () {
+                        var data = [];
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            for (var j = 0; j < scope.data.routing_entries[i].points.length; j++) {
+                                data.push(scope.data.routing_entries[i].points[j]);
+                            }
+                        }
+                        return data;
 
-                    var selector = '.control-point[data-connection-uuid="'
-                        + connection.uuid + '"]';
+                    }, function (d) {
+                        var meta = componentHelper.getMetadata(d);
+                        return meta.id;
+                    })
+                    .call(controlPoint);
 
-                    connectionLayer.selectAll(selector)
-                        .data(connection.points)
-                        .call(controlPoint);
-                });
+                // Draw context menus
+                layoutMenus(scope.data);
+
+                componentLayer.selectAll('.menu')
+                    .data(function () {
+                        var data = [];
+
+                        for (var i = 0; i < scope.data.conversations.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.conversations[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.channels.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.channels[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.routers.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routers[i]);
+                            data.push(meta.menu);
+                        }
+
+                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
+                            var meta = componentHelper.getMetadata(scope.data.routing_entries[i]);
+                            data.push(meta.menu);
+                        }
+
+                        return data;
+                    }, function (d) {
+                        return d.id;
+                    })
+                    .call(menu);
             }
+
+            scope.zoomIn = function () {
+                buildCanvas.zoomIn();
+            };
+
+            scope.zoomOut = function () {
+                buildCanvas.zoomOut();
+            };
 
             function drop(event, coordinates) {
                 if (scope.newComponent) {
@@ -2810,6 +2859,8 @@ angular.module('vumigo.services').factory('canvasBuilder', [
             var width = 2048;  // Default canvas width
             var height = 2048;  // Default canvas height
             var gridCellSize = 0;  // Disable grid by default
+            var container = null;
+            var zoom = null;
 
             var canvas = function(selection) {
                 var viewportElement = $(selection[0]);
@@ -2820,7 +2871,7 @@ angular.module('vumigo.services').factory('canvasBuilder', [
 
                 svgToolbox.createShadowFilter(svg);
 
-                var container = svg.append('g')
+                container = svg.append('g')
                     .attr('class', 'container')
                     .attr('transform', 'translate(0, 0)');
 
@@ -2835,7 +2886,7 @@ angular.module('vumigo.services').factory('canvasBuilder', [
 
                 svgToolbox.drawGrid(canvas, width, height, gridCellSize);
 
-                var zoom = zoomBehavior()
+                zoom = zoomBehavior()
                     .canvas(canvas)
                     .canvasWidth(width)
                     .canvasHeight(height)
@@ -2882,6 +2933,20 @@ angular.module('vumigo.services').factory('canvasBuilder', [
                 return canvas;
             };
 
+            canvas.zoomIn = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 1.2;
+                if (newScale > scaleExtent[1]) newScale = scaleExtent[1];
+                zoom.scale(newScale).event(container);
+            };
+
+            canvas.zoomOut = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 0.8;
+                if (newScale < scaleExtent[0]) newScale = scaleExtent[0];
+                zoom.scale(newScale).event(container);
+            };
+
             return canvas;
         };
     }
@@ -2920,33 +2985,25 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
         };
 
         function removeById(data, componentId) {
-            for (var i = 0; i < data.conversations.length; i++) {
-                if (data.conversations[i].uuid == componentId) {
-                    data.conversations.splice(i, 1);
-                    return;
-                }
-            }
 
-            for (var i = 0; i < data.channels.length; i++) {
-                if (data.channels[i].uuid == componentId) {
-                    data.channels.splice(i, 1);
-                    return;
+            /**
+             * Helper function to remove component with the given
+             * `componentId` in the given `data`.
+             */
+            var remove = function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].uuid == componentId) {
+                        data.splice(i, 1);
+                        return true;
+                    }
                 }
-            }
+                return false;
+            };
 
-            for (var i = 0; i < data.routers.length; i++) {
-                if (data.routers[i].uuid == componentId) {
-                    data.routers.splice(i, 1);
-                    return;
-                }
-            }
-
-            for (var i = 0; i < data.routing_entries.length; i++) {
-                if (data.routing_entries[i].uuid == componentId) {
-                    data.routing_entries.splice(i, 1);
-                    return;
-                }
-            }
+            return remove(data.conversations)
+                || remove(data.channels)
+                || remove(data.routers)
+                || remove(data.routing_entries);
         };
 
         function getByEndpointId(data, endpointId) {
@@ -3743,7 +3800,7 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
 angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
     function (componentHelper) {
-        return function() {
+        return function () {
             var innerRadius = 10;
             var outerRadius = 30;
             var textMargin = 20;
@@ -3767,7 +3824,7 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
                         description: {
                             x: textX
                         }
-                    }
+                    };
                 });
 
                 return data;
@@ -3903,7 +3960,6 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                 };
 
                 var meta = componentHelper.getMetadata(point);
-
                 meta.layout = {
                     r: 0,
                     sourceId: connection.source.uuid,
@@ -3931,7 +3987,6 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                     };
 
                     var meta = componentHelper.getMetadata(point);
-
                     meta.layout = {
                         r: pointRadius,
                         sourceId: connection.source.uuid,
@@ -4000,6 +4055,12 @@ angular.module('vumigo.services').factory('connectionLayout', ['componentHelper'
                         }
 
                         connection.points[connection.points.length - 1] = end;
+                    }
+
+                    // Assign a unique id to each point
+                    for (var i = 0; i < connection.points.length; i++) {
+                        var meta = componentHelper.getMetadata(connection.points[i]);
+                        meta.id = connection.uuid + '-' + i;
                     }
                 });
 
@@ -4076,12 +4137,10 @@ angular.module('vumigo.services').factory('connectionComponent', [
 angular.module('vumigo.services').factory('controlPointComponent', [function () {
     return function () {
         var dragBehavior = null;
-        var connectionId = null;
 
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', 'component control-point')
-                .attr('data-connection-uuid', connectionId);
+                .attr('class', 'component control-point');
 
             selection.append('circle')
                 .attr('class', 'point');
@@ -4130,18 +4189,190 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
             return controlPoint;
         };
 
-       /**
-         * Get/set the connection UUID.
-         *
-         * @param {value} The new connection UUID; when setting.
-         * @return The current connection UUID.
-         */
-        controlPoint.connectionId = function(value) {
-            if (!arguments.length) return connectionId;
-            connectionId = value;
-            return controlPoint;
-        };
-
         return controlPoint;
     };
 }]);
+
+
+angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
+    function (componentHelper) {
+        return function () {
+            var menuItemWidth = 32;
+            var menuItemHeight = 32;
+            var menuYOffset = 20;
+            var textX = 10;
+            var textYOffset = 20;
+            var faLink = '&#xf0c1;';
+            var faArrowsH = '&#xf07e;';
+            var faTimes = '&#xf00d;';
+
+            function item(component, icon, action) {
+                return {
+                    component: component,
+                    width: menuItemWidth,
+                    height: menuItemHeight,
+                    text: {
+                        icon: icon,
+                        x: textX,
+                        dy: textYOffset
+                    },
+                    action: action
+                }
+            }
+
+            function layout(data) {
+                angular.forEach(data.conversations, function (conversation) {
+                    var metadata = componentHelper.getMetadata(conversation);
+                    metadata.menu = {
+                        id: conversation.uuid,
+                        items: [
+                            item(conversation, faLink, 'go:campaignDesignerConnect'),
+                            item(conversation, faTimes, 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: conversation.x,
+                        y: conversation.y + metadata.layout.outer.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.channels, function (channel) {
+                    var metadata = componentHelper.getMetadata(channel);
+                    metadata.menu = {
+                        id: channel.uuid,
+                        items: [
+                            item(channel, faLink, 'go:campaignDesignerConnect'),
+                            item(channel, faTimes, 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: channel.x,
+                        y: channel.y + metadata.layout.outer.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.routers, function (router) {
+                    var metadata = componentHelper.getMetadata(router);
+                    metadata.menu = {
+                        id: router.uuid,
+                        items: [
+                            item(router, faLink, 'go:campaignDesignerConnect'),
+                            item(router, faTimes, 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: router.x,
+                        y: router.y + metadata.layout.r + menuYOffset
+                    };
+                });
+
+                angular.forEach(data.routing_entries, function (connection) {
+                    var metadata = componentHelper.getMetadata(connection);
+                    var point = connection.points[Math.floor(connection.points.length / 2)];
+                    metadata.menu = {
+                        id: connection.uuid,
+                        items: [
+                            item(connection, faArrowsH, 'go:campaignDesignerChangeDirection'),
+                            item(connection, faTimes, 'go:campaignDesignerRemove')
+                        ],
+                        active: metadata.selected || false,
+                        x: point.x,
+                        y: point.y + menuYOffset
+                    };
+                });
+
+                return data;
+            }
+
+            return layout;
+        };
+    }
+]);
+
+
+angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
+    function ($rootScope) {
+        return function () {
+            var menuItem = menuItemComponent();
+
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'menu');
+            }
+
+            function update(selection) {
+                selection
+                    .classed('active', function (d) { return d.active; })
+                    .attr('transform', function (d) {
+                        return 'translate(' + [d.x, d.y] + ')';
+                    });
+
+                selection.selectAll('.menu-item')
+                    .data(function (d) { return d.items; },
+                             function (d, i) { return d.component.uuid + '-' + i; })
+                    .call(menuItem);
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            var menu = function(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return menu;
+            };
+
+            return menu;
+        };
+
+        function menuItemComponent() {
+
+            function enter(selection) {
+                selection = selection.append('g')
+                    .attr('class', 'menu-item');
+
+                selection.append('rect');
+                selection.append('text');
+            }
+
+            function update(selection) {
+                selection.on('mousedown', function (d) {
+                    d3.event.preventDefault();
+                    d3.event.stopPropagation();
+
+                    $rootScope.$apply(function () {
+                        $rootScope.$emit(d.action, d.component.uuid);
+                    });
+                });
+
+                selection
+                    .attr('transform', function (d, i) {
+                        return 'translate(' + [d.width * i, 0] + ')';
+                    });
+
+                selection.selectAll('rect')
+                    .attr('width', function (d) { return d.width; })
+                    .attr('height', function (d) { return d.height; });
+
+                selection.selectAll('text')
+                    .html(function (d) {
+                        return d.text.icon;
+                    })
+                    .attr('x', function (d) { return d.text.x; })
+                    .attr('dy', function (d) { return d.text.dy; });
+            }
+
+            function exit(selection) {
+                selection.remove();
+            }
+
+            function menuItem(selection) {
+                enter(selection.enter());
+                update(selection);
+                exit(selection.exit());
+                return menuItem;
+            }
+
+            return menuItem;
+        }
+    }
+]);

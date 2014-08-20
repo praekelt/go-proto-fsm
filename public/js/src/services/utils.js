@@ -96,6 +96,8 @@ angular.module('vumigo.services').factory('canvasBuilder', [
             var width = 2048;  // Default canvas width
             var height = 2048;  // Default canvas height
             var gridCellSize = 0;  // Disable grid by default
+            var container = null;
+            var zoom = null;
 
             var canvas = function(selection) {
                 var viewportElement = $(selection[0]);
@@ -106,7 +108,7 @@ angular.module('vumigo.services').factory('canvasBuilder', [
 
                 svgToolbox.createShadowFilter(svg);
 
-                var container = svg.append('g')
+                container = svg.append('g')
                     .attr('class', 'container')
                     .attr('transform', 'translate(0, 0)');
 
@@ -121,7 +123,7 @@ angular.module('vumigo.services').factory('canvasBuilder', [
 
                 svgToolbox.drawGrid(canvas, width, height, gridCellSize);
 
-                var zoom = zoomBehavior()
+                zoom = zoomBehavior()
                     .canvas(canvas)
                     .canvasWidth(width)
                     .canvasHeight(height)
@@ -166,6 +168,20 @@ angular.module('vumigo.services').factory('canvasBuilder', [
                 if (!arguments.length) return zoomExtent;
                 zoomExtent = value;
                 return canvas;
+            };
+
+            canvas.zoomIn = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 1.2;
+                if (newScale > scaleExtent[1]) newScale = scaleExtent[1];
+                zoom.scale(newScale).event(container);
+            };
+
+            canvas.zoomOut = function() {
+                var scaleExtent = zoom.scaleExtent();
+                var newScale = zoom.scale() * 0.8;
+                if (newScale < scaleExtent[0]) newScale = scaleExtent[0];
+                zoom.scale(newScale).event(container);
             };
 
             return canvas;
