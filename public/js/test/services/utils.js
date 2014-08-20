@@ -222,15 +222,14 @@ describe('componentHelper', function () {
 
     it('should add new component', inject(function (rfc4122, componentHelper) {
         var stub = sinon.stub(rfc4122, 'v4');
-        stub.onCall(0).returns('endpoint2');
-        stub.onCall(1).returns('conversation2');
+        stub.onCall(0).returns('conversation2');
 
         var newComponent = {
             type: 'conversation',
             data: {
                 name: 'Conversation 2',
                 description: '',
-                endpoints: [{uuid: rfc4122.v4(), name: "default"}],
+                endpoints: [{uuid: 'endpoint2', name: "default"}],
                 colour: 'red',
             }
         };

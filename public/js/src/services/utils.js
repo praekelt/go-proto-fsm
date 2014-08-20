@@ -206,33 +206,25 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
         };
 
         function removeById(data, componentId) {
-            for (var i = 0; i < data.conversations.length; i++) {
-                if (data.conversations[i].uuid == componentId) {
-                    data.conversations.splice(i, 1);
-                    return;
-                }
-            }
 
-            for (var i = 0; i < data.channels.length; i++) {
-                if (data.channels[i].uuid == componentId) {
-                    data.channels.splice(i, 1);
-                    return;
+            /**
+             * Helper function to remove component with the given
+             * `componentId` in the given `data`.
+             */
+            var remove = function (data) {
+                for (var i = 0; i < data.length; i++) {
+                    if (data[i].uuid == componentId) {
+                        data.splice(i, 1);
+                        return true;
+                    }
                 }
-            }
+                return false;
+            };
 
-            for (var i = 0; i < data.routers.length; i++) {
-                if (data.routers[i].uuid == componentId) {
-                    data.routers.splice(i, 1);
-                    return;
-                }
-            }
-
-            for (var i = 0; i < data.routing_entries.length; i++) {
-                if (data.routing_entries[i].uuid == componentId) {
-                    data.routing_entries.splice(i, 1);
-                    return;
-                }
-            }
+            return remove(data.conversations)
+                || remove(data.channels)
+                || remove(data.routers)
+                || remove(data.routing_entries);
         };
 
         function getByEndpointId(data, endpointId) {

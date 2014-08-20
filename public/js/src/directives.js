@@ -54,7 +54,6 @@ directives.directive('goCampaignDesigner', [
             $scope.componentSelected = false;
             $scope.connectPressed = false;
             $scope.newComponent = null;
-            $scope.addingComponent = false;
 
             $scope.reset = function () {
                 $scope.selectedComponentId = null;
@@ -62,7 +61,6 @@ directives.directive('goCampaignDesigner', [
                 $scope.componentSelected = false;
                 $scope.connectPressed = false;
                 $scope.newComponent = null;
-                $scope.addingComponent = false;
 
                 $scope.refresh();
             };
@@ -261,14 +259,6 @@ directives.directive('goCampaignDesigner', [
 
                 $scope.connectPressed = false;
                 $scope.refresh();  // Repaint the canvas
-            });
-
-            $scope.$watch('newComponent', function (value) {
-                if (value) {
-                    $scope.addingComponent = true;
-                } else {
-                    $scope.addingComponent = false;
-                }
             });
 
             $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
