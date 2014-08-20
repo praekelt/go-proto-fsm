@@ -214,6 +214,47 @@ describe('componentHelper', function () {
         expect(endpoint.data.uuid).to.equal('endpoint4');
         expect(endpoint.type).to.equal('channel');
     }));
+
+    it('should remove component by id', inject(function (componentHelper) {
+        componentHelper.removeById(data, 'conversation1');
+        expect(data.conversations).to.deep.equal([]);
+    }));
+
+    it('should add new component', inject(function (rfc4122, componentHelper) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('conversation2');
+
+        var newComponent = {
+            type: 'conversation',
+            data: {
+                name: 'Conversation 2',
+                description: '',
+                endpoints: [{uuid: 'endpoint2', name: "default"}],
+                colour: 'red',
+            }
+        };
+        componentHelper.addComponent(data, newComponent, 200, 200);
+
+        var expected = [{
+            uuid: 'conversation1',
+            name: "Conversation 1",
+            description: '',
+            endpoints: [{uuid: 'endpoint1', name: 'default'}],
+            colour: '#000000',
+            x: 100,
+            y: 100
+        }, {
+            uuid: 'conversation2',
+            name: 'Conversation 2',
+            description: '',
+            endpoints: [{uuid: 'endpoint2', name: "default"}],
+            colour: 'red',
+            x: 200,
+            y: 200
+        }];
+
+        expect(data.conversations).to.deep.equal(expected);
+    }));
 });
 
 describe('boundingBox', function () {

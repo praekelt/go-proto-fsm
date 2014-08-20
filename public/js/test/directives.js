@@ -2,6 +2,8 @@ describe('goCampaignDesigner', function () {
     var element, scope;
 
     beforeEach(module('uuid'));
+    beforeEach(module('colorpicker.module'));
+    beforeEach(module('ui.bootstrap'));
     beforeEach(module('vumigo.services'));
     beforeEach(module('vumigo.directives'));
     beforeEach(module('vumigo.templates'));
@@ -193,5 +195,17 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.componentSelected).to.equal(true);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
+    });
+
+    it('should have drawn the toolbar', function () {
+        expect(element.find('.nav .btn-add')).to.have.length(1);
+        expect(element.find('.nav .btn-add-conversation')).to.have.length(1);
+        expect(element.find('.nav .btn-add-router')).to.have.length(1);
+        expect(element.find('.nav .btn-add-channel')).to.have.length(1);
+        expect(element.find('.nav .btn-remove')).to.have.length(1);
+        expect(element.find('.nav .btn-connect')).to.have.length(1);
+        expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
+        expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
+        expect(element.find('.nav .btn-refresh')).to.have.length(1);
     });
 });
