@@ -2987,13 +2987,41 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
         function removeById(data, componentId) {
 
             /**
-             * Helper function to remove component with the given
-             * `componentId` in the given `data`.
+             * Return a list of endpoint ids for the given component.
              */
-            var remove = function (data) {
-                for (var i = 0; i < data.length; i++) {
-                    if (data[i].uuid == componentId) {
-                        data.splice(i, 1);
+            var endpoints = function(component) {
+                var endpoints = [];
+                angular.forEach([
+                    component.endpoints,
+                    component.channel_endpoints,
+                    component.conversation_endpoints
+                ], function (list) {
+                    angular.forEach(list || [], function (endpoint) {
+                        endpoints.push(endpoint.uuid);
+                    });
+                });
+                return endpoints;
+            };
+
+            /**
+             * Helper function to remove component with the given
+             * `componentId` in the given `components`.
+             */
+            var remove = function (components) {
+                for (var i = 0; i < components.length; i++) {
+                    if (components[i].uuid == componentId) {
+                        // Remove component connections
+                        angular.forEach(endpoints(components[i]), function (endpointId) {
+                            for (var j = 0; j < data.routing_entries.length; j++) {
+                                if (data.routing_entries[j].source.uuid == endpointId
+                                    || data.routing_entries[j].target.uuid == endpointId) {
+                                    data.routing_entries.splice(j, 1);
+                                }
+                            }
+                        });
+
+                        // Remove actual component
+                        components.splice(i, 1);
                         return true;
                     }
                 }
