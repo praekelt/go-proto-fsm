@@ -10,10 +10,11 @@ describe('goCampaignDesigner', function () {
 
     beforeEach(inject(function ($rootScope, $compile) {
         element = angular.element(
-            '<go-campaign-designer data-data="data">' +
+            '<go-campaign-designer data-data="data" data-reset="reset()">' +
             '</go-campaign-designer>');
 
         scope = $rootScope;
+
         scope.data = {
             conversations: [{
                 uuid: 'conversation1',
@@ -69,6 +70,14 @@ describe('goCampaignDesigner', function () {
                 target: {uuid: 'endpoint6'}
             }]
         };
+
+        scope.reset = function () {
+            scope.data.conversations = [];
+            scope.data.channels = [];
+            scope.data.routers = [];
+            scope.data.routing_entries = [];
+        };
+
         $compile(element)(scope);
         scope.$digest();
     }));
@@ -207,5 +216,13 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.nav .btn-connect')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
+    });
+
+    it('new button should clear canvas', function () {
+        element.find('.nav .btn-new').eq(0).click();
+        expect(element.find('.conversation')).to.have.length(0);
+        expect(element.find('.router')).to.have.length(0);
+        expect(element.find('.channel')).to.have.length(0);
+        expect(element.find('.connection')).to.have.length(0);
     });
 });

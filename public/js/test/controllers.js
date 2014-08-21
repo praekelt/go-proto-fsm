@@ -8,7 +8,18 @@ describe('CampaignMakerController', function () {
         controller = $controller('CampaignMakerController', {$scope: scope});
     }));
 
-    it ('should have some data', function () {
+    it('should have some data', function () {
         expect(scope.data).to.not.be.empty;
+    });
+
+    it('should have reset the data', function () {
+        scope.reset();
+        var expected = {
+            conversations: [],
+            channels: [],
+            routers: [],
+            routing_entries: []
+        };
+        expect(scope.data).to.deep.equal(expected);
     });
 });
