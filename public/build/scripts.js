@@ -2722,11 +2722,11 @@ directives.directive('goCampaignDesigner', [
             }
 
             scope.zoomIn = function () {
-                buildCanvas.zoomIn();
+                buildCanvas.zoom('in');
             };
 
             scope.zoomOut = function () {
-                buildCanvas.zoomOut();
+                buildCanvas.zoom('out');
             };
 
             function drop(event, coordinates) {
@@ -2861,9 +2861,12 @@ angular.module('vumigo.services').factory('canvasBuilder', [
             var gridCellSize = 0;  // Disable grid by default
             var container = null;
             var zoom = null;
+            var zoomInFactor = 1.1;
+            var zoomOutFactor = 0.9;
+            var viewportElement = null;
 
             var canvas = function(selection) {
-                var viewportElement = $(selection[0]);
+                viewportElement = $(selection[0]);
 
                 var svg = svgToolbox.selectOrAppend(selection, 'svg')
                     .attr('width', width)
@@ -2933,18 +2936,35 @@ angular.module('vumigo.services').factory('canvasBuilder', [
                 return canvas;
             };
 
-            canvas.zoomIn = function() {
-                var scaleExtent = zoom.scaleExtent();
-                var newScale = zoom.scale() * 1.2;
-                if (newScale > scaleExtent[1]) newScale = scaleExtent[1];
-                zoom.scale(newScale).event(container);
-            };
+            /**
+             * Zoom the canvas in the given direction (in/out).
+             */
+            canvas.zoom = function(direction) {
+                var zoomExtent = zoom.scaleExtent();
+                var currentZoom = zoom.scale();
+                var viewportWidth = viewportElement.width();
+                var viewportHeight = viewportElement.height();
+                var viewportCenterX = (viewportWidth / 2) - zoom.translate()[0];
+                var viewportCenterY = (viewportHeight / 2) - zoom.translate()[1];
 
-            canvas.zoomOut = function() {
-                var scaleExtent = zoom.scaleExtent();
-                var newScale = zoom.scale() * 0.8;
-                if (newScale < scaleExtent[0]) newScale = scaleExtent[0];
-                zoom.scale(newScale).event(container);
+                if (direction == 'in') {
+                    var newZoom = currentZoom * zoomInFactor;
+                    if (newZoom > zoomExtent[1]) newZoom = zoomExtent[1];
+                    var zoomFactor = newZoom / currentZoom;
+
+                    var newX = zoom.translate()[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
+                    var newY = zoom.translate()[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
+
+                } else {
+                    var newZoom = currentZoom * zoomOutFactor;
+                    if (newZoom < zoomExtent[0]) newZoom = zoomExtent[0];
+                    var zoomFactor = newZoom / currentZoom;
+
+                    var newX = zoom.translate()[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
+                    var newY = zoom.translate()[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
+                }
+
+                zoom.scale(newZoom).translate([newX, newY]).event(container);
             };
 
             return canvas;

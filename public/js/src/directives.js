@@ -430,11 +430,11 @@ directives.directive('goCampaignDesigner', [
             }
 
             scope.zoomIn = function () {
-                buildCanvas.zoomIn();
+                buildCanvas.zoom('in');
             };
 
             scope.zoomOut = function () {
-                buildCanvas.zoomOut();
+                buildCanvas.zoom('out');
             };
 
             function drop(event, coordinates) {
