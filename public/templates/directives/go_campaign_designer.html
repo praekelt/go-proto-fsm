@@ -1,5 +1,10 @@
 <div id="campaign-designer" data-ng-class="{'adding': newComponent != null}">
     <ul class="nav nav-pills">
+        <li>
+            <a href="#" class="btn-new" data-ng-click="new()">
+                <span class="glyphicon glyphicon-file"></span> New
+            </a>
+        </li>
         <li class="dropdown">
             <a class="btn-add dropdown-toggle" href="javascript://">
               <span class="glyphicon glyphicon-plus"></span> Add <span class="caret"></span>
@@ -40,11 +45,6 @@
         <li>
             <a href="#" class="btn-zoom-out" data-ng-click="zoomOut()">
                 <span class="glyphicon glyphicon-zoom-out"></span> Zoom out
-            </a>
-        </li>
-        <li>
-            <a href="#" class="btn-refresh" data-ng-click="refresh()">
-                <span class="glyphicon glyphicon-refresh"></span> Refresh
             </a>
         </li>
     </ul>
