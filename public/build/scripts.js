@@ -2950,19 +2950,15 @@ angular.module('vumigo.services').factory('canvasBuilder', [
                 if (direction == 'in') {
                     var newZoom = currentZoom * zoomInFactor;
                     if (newZoom > zoomExtent[1]) newZoom = zoomExtent[1];
-                    var zoomFactor = newZoom / currentZoom;
-
-                    var newX = zoom.translate()[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
-                    var newY = zoom.translate()[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
 
                 } else {
                     var newZoom = currentZoom * zoomOutFactor;
                     if (newZoom < zoomExtent[0]) newZoom = zoomExtent[0];
-                    var zoomFactor = newZoom / currentZoom;
-
-                    var newX = zoom.translate()[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
-                    var newY = zoom.translate()[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
                 }
+
+                var zoomFactor = newZoom / currentZoom;
+                var newX = zoom.translate()[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
+                var newY = zoom.translate()[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
 
                 zoom.scale(newZoom).translate([newX, newY]).event(container);
             };
