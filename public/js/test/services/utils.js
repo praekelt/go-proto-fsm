@@ -285,6 +285,7 @@ describe('componentHelper', function () {
     it('should remove component by id', inject(function (componentHelper) {
         componentHelper.removeById(data, 'conversation1');
         expect(data.conversations).to.deep.equal([]);
+        expect(data.routing_entries).to.deep.equal([]);
     }));
 
     it('should add new component', inject(function (rfc4122, componentHelper) {
