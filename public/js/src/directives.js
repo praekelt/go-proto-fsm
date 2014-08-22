@@ -58,7 +58,7 @@ directives.directive('goCampaignDesigner', [
             $scope.connectPressed = false;
             $scope.newComponent = null;
 
-            $scope.reset = function () {
+            $scope.clear = function () {
                 $scope.selectedComponentId = null;
                 $scope.selectedEndpointId = null;
                 $scope.componentSelected = false;
@@ -166,6 +166,14 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
+             * Reset the canvas data and redraw.
+             */
+            $scope.new = function () {
+                $scope.reset();
+                $scope.refresh();
+            };
+
+            /**
              * Remove the selected component after prompting the user to confirm.
              */
             $scope.remove = function () {
@@ -173,7 +181,7 @@ directives.directive('goCampaignDesigner', [
 
                     var removeComponent = function () {
                         componentHelper.removeById($scope.data, $scope.selectedComponentId);
-                        $scope.reset();
+                        $scope.clear();
                     };
 
                     var modalInstance = $modal.open({
@@ -457,6 +465,7 @@ directives.directive('goCampaignDesigner', [
             templateUrl: '/templates/directives/go_campaign_designer.html',
             scope: {
                 data: '=',
+                reset: '&',
                 canvasWidth: '=?',
                 canvasHeight: '=?',
                 gridCellSize: '=?'  // Set to 0 to disable grid
