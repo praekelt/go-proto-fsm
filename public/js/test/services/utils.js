@@ -41,7 +41,46 @@ describe('svgToolbox', function () {
 });
 
 describe('canvasBuilder', function () {
-    var element;
+    var element, buildCanvas;
+
+    /** Calculate a transform for the given options. */
+    function transform (params) {
+        var options = {
+            zoomExtent: [1, 10],
+            currentZoom: 1,
+            zoomFactor: 1,
+            zoomDirection: 'in',
+            currentTranslate: [0.0, 0.0],
+            viewportWidth: 20,
+            viewportHeight: 20
+        };
+
+        angular.extend(options, params);
+
+        var viewportCenterX = (options.viewportWidth / 2) - options.currentTranslate[0];
+        var viewportCenterY = (options.viewportHeight / 2) - options.currentTranslate[1];
+        var newZoom = options.currentZoom * options.zoomFactor;
+
+        if (options.zoomDirection == 'in') {
+            if (newZoom > options.zoomExtent[1]) newZoom = options.zoomExtent[1];
+            var zoomFactor = newZoom / options.currentZoom;
+
+            var newX = options.currentTranslate[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
+            var newY = options.currentTranslate[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
+
+        } else {
+            if (newZoom < options.zoomExtent[0]) newZoom = options.zoomExtent[0];
+            var zoomFactor = newZoom / options.currentZoom;
+
+            var newX = options.currentTranslate[0] - ((viewportCenterX * zoomFactor) - viewportCenterX);
+            var newY = options.currentTranslate[1] - ((viewportCenterY * zoomFactor) - viewportCenterY);
+        }
+
+        return {
+            scale: newZoom,
+            translate: [newX, newY]
+        }
+    };
 
     beforeEach(module('vumigo.services'));
 
@@ -51,11 +90,13 @@ describe('canvasBuilder', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        canvasBuilder()
+        buildCanvas = canvasBuilder();
+
+        buildCanvas
             .width(100)
             .height(100)
             .gridCellSize(10)
-            .apply(null, [d3.selectAll(element.find('svg').toArray())]);
+            .apply(null, [d3.selectAll(element.toArray())]);
     }));
 
     it('should create canvas', inject(function () {
@@ -90,6 +131,32 @@ describe('canvasBuilder', function () {
             .simulate('zoomend');
 
         expect(canvas.attr('transform')).to.equal('translate(0,0)scale(3)');
+    }));
+
+    it('should zoom canvas in and out', inject(function () {
+        var canvas = element.find('g.canvas');
+        expect(canvas.attr('transform')).to.be.undefined;
+
+        buildCanvas.zoom('in');
+
+        var expected = transform({
+            zoomFactor: 1.1
+        });
+
+        expect(canvas.attr('transform')).to.equal('translate('
+            + expected.translate + ')scale(' + expected.scale + ')');
+
+        buildCanvas.zoom('out')
+
+        expected = transform({
+            zoomFactor: 0.9,
+            zoomDirection: 'out',
+            currentZoom: expected.scale,
+            currentTranslate: expected.translate
+        });
+
+        expect(canvas.attr('transform')).to.equal('translate('
+            + expected.translate + ')scale(' + expected.scale + ')');
     }));
 });
 
