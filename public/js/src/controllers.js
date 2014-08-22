@@ -59,5 +59,12 @@ controllers.controller('CampaignMakerController', ['$scope',
                 target: {uuid: 'endpoint6'}
             }]
         };
+
+        $scope.reset = function () {
+            $scope.data.conversations = [];
+            $scope.data.channels = [];
+            $scope.data.routers = [];
+            $scope.data.routing_entries = [];
+        };
     }
 ]);

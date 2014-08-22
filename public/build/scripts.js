@@ -2287,6 +2287,13 @@ controllers.controller('CampaignMakerController', ['$scope',
                 target: {uuid: 'endpoint6'}
             }]
         };
+
+        $scope.reset = function () {
+            $scope.data.conversations = [];
+            $scope.data.channels = [];
+            $scope.data.routers = [];
+            $scope.data.routing_entries = [];
+        };
     }
 ]);
 
@@ -2350,7 +2357,7 @@ directives.directive('goCampaignDesigner', [
             $scope.connectPressed = false;
             $scope.newComponent = null;
 
-            $scope.reset = function () {
+            $scope.clear = function () {
                 $scope.selectedComponentId = null;
                 $scope.selectedEndpointId = null;
                 $scope.componentSelected = false;
@@ -2458,6 +2465,14 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
+             * Reset the canvas data and redraw.
+             */
+            $scope.new = function () {
+                $scope.reset();
+                $scope.refresh();
+            };
+
+            /**
              * Remove the selected component after prompting the user to confirm.
              */
             $scope.remove = function () {
@@ -2465,7 +2480,7 @@ directives.directive('goCampaignDesigner', [
 
                     var removeComponent = function () {
                         componentHelper.removeById($scope.data, $scope.selectedComponentId);
-                        $scope.reset();
+                        $scope.clear();
                     };
 
                     var modalInstance = $modal.open({
@@ -2749,6 +2764,7 @@ directives.directive('goCampaignDesigner', [
             templateUrl: '/templates/directives/go_campaign_designer.html',
             scope: {
                 data: '=',
+                reset: '&',
                 canvasWidth: '=?',
                 canvasHeight: '=?',
                 gridCellSize: '=?'  // Set to 0 to disable grid
@@ -3003,13 +3019,41 @@ angular.module('vumigo.services').factory('componentHelper', ['$rootScope', 'rfc
         function removeById(data, componentId) {
 
             /**
-             * Helper function to remove component with the given
-             * `componentId` in the given `data`.
+             * Return a list of endpoint ids for the given component.
              */
-            var remove = function (data) {
-                for (var i = 0; i < data.length; i++) {
-                    if (data[i].uuid == componentId) {
-                        data.splice(i, 1);
+            var endpoints = function(component) {
+                var endpoints = [];
+                angular.forEach([
+                    component.endpoints,
+                    component.channel_endpoints,
+                    component.conversation_endpoints
+                ], function (list) {
+                    angular.forEach(list || [], function (endpoint) {
+                        endpoints.push(endpoint.uuid);
+                    });
+                });
+                return endpoints;
+            };
+
+            /**
+             * Helper function to remove component with the given
+             * `componentId` in the given `components`.
+             */
+            var remove = function (components) {
+                for (var i = 0; i < components.length; i++) {
+                    if (components[i].uuid == componentId) {
+                        // Remove component connections
+                        angular.forEach(endpoints(components[i]), function (endpointId) {
+                            for (var j = 0; j < data.routing_entries.length; j++) {
+                                if (data.routing_entries[j].source.uuid == endpointId
+                                    || data.routing_entries[j].target.uuid == endpointId) {
+                                    data.routing_entries.splice(j, 1);
+                                }
+                            }
+                        });
+
+                        // Remove actual component
+                        components.splice(i, 1);
                         return true;
                     }
                 }
