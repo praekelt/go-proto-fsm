@@ -8,27 +8,25 @@ directives.directive('goCampaignDesigner', [
     '$modal',
     'canvasBuilder',
     'dragBehavior',
-    'componentHelper',
     'conversationComponent',
     'channelComponent',
     'routerComponent',
     'connectionComponent',
     'controlPointComponent',
     'menuComponent',
-    'conversationLayout',
-    'routerLayout',
-    'channelLayout',
-    'connectionLayout',
-    'menuLayout',
-    function ($rootScope, $modal, canvasBuilder, dragBehavior, componentHelper,
-                   conversationComponent, channelComponent, routerComponent,
-                   connectionComponent, controlPointComponent, menuComponent,
-                   conversationLayout, routerLayout, channelLayout, connectionLayout,
-                   menuLayout) {
+    'ComponentManager',
+    'Conversation',
+    'Router',
+    'Channel',
+    function ($rootScope, $modal, canvasBuilder, dragBehavior,
+              conversationComponent, channelComponent, routerComponent,
+              connectionComponent, controlPointComponent, menuComponent,
+              ComponentManager, Conversation, Router, Channel) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
+        var componentManager = new ComponentManager();
 
         /**
          * Directive controller constructor.
@@ -52,16 +50,17 @@ directives.directive('goCampaignDesigner', [
                 $scope.gridCellSize = gridCellSize;
             }
 
+            // Initialise the component manager
+            componentManager.load($scope.data);
+
             $scope.selectedComponentId = null;
             $scope.selectedEndpointId = null;
-            $scope.componentSelected = false;
             $scope.connectPressed = false;
             $scope.newComponent = null;
 
-            $scope.clear = function () {
-                $scope.selectedComponentId = null;
-                $scope.selectedEndpointId = null;
-                $scope.componentSelected = false;
+            $scope.clearSelection = function () {
+                $scope.selectedComponent = null;
+                $scope.selectedEndpoint = null;
                 $scope.connectPressed = false;
                 $scope.newComponent = null;
 
@@ -74,19 +73,14 @@ directives.directive('goCampaignDesigner', [
             $scope.addConversation = function () {
 
                 var add = function (data) {
-                    $scope.newComponent = {
-                        type: 'conversation',
-                        data: data
-                    };
+                    $scope.newComponent = new Conversation(data);
                 };
 
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/conversation_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
-                        $scope.data = {
-                            endpoints: [{uuid: rfc4122.v4(), name: "default"}]
-                        };
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                        $scope.data = {};
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -106,20 +100,14 @@ directives.directive('goCampaignDesigner', [
             $scope.addChannel = function () {
 
                 var add = function (data) {
-                    $scope.newComponent = {
-                        type: 'channel',
-                        data: data
-                    };
+                    $scope.newComponent = new Channel(data);
                 };
 
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/channel_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
-                        $scope.data = {
-                            endpoints: [{uuid: rfc4122.v4(), name: "default"}],
-                            utilization: 0.5
-                        };
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                        $scope.data = {};
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -138,20 +126,14 @@ directives.directive('goCampaignDesigner', [
              */
             $scope.addRouter = function () {
                 var add = function (data) {
-                    $scope.newComponent = {
-                        type: 'router',
-                        data: data
-                    };
+                    $scope.newComponent = new Router(data);
                 };
 
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', 'rfc4122', function ($scope, $modalInstance, rfc4122) {
-                        $scope.data = {
-                            channel_endpoints: [{uuid: rfc4122.v4(), name: "default"}],
-                            conversation_endpoints: [{uuid: rfc4122.v4(), name: "default"}]
-                        };
+                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                        $scope.data = {};
 
                         $scope.ok = function () {
                             add($scope.data);
@@ -169,7 +151,7 @@ directives.directive('goCampaignDesigner', [
              * Reset the canvas data and redraw.
              */
             $scope.new = function () {
-                $scope.reset();
+                componentManager.reset();
                 $scope.refresh();
             };
 
@@ -180,8 +162,8 @@ directives.directive('goCampaignDesigner', [
                 if ($scope.selectedComponentId) {
 
                     var removeComponent = function () {
-                        componentHelper.removeById($scope.data, $scope.selectedComponentId);
-                        $scope.clear();
+                        componentManager.removeComponent($scope.selectedComponentId);
+                        $scope.clearSelection();
                     };
 
                     var modalInstance = $modal.open({
@@ -226,55 +208,57 @@ directives.directive('goCampaignDesigner', [
                     return;
 
                 // If there was a component selected, unselect it.
+                var oldComponent = null;
+                var oldEndpoint = null;
                 if (oldValue.id) {
-                    var component = componentHelper.getById($scope.data, oldValue.id);
-                    if (component) {
-                        var metadata = componentHelper.getMetadata(component.data);
-                        metadata.selected = false;
+                    oldComponent = componentManager.getComponent(oldValue.id);
+                    if (oldComponent) {
+                        oldComponent.meta().selected = false;
 
                         // If the selected component had a selected endpoint, unselect it
                         if (oldValue.endpointId) {
-                            var endpoint = componentHelper.getEndpointById(component, oldValue.endpointId);
-                            metadata = componentHelper.getMetadata(endpoint.data);
-                            metadata.selected = false;
+                            oldEndpoint = componentManager.getEndpoint(oldValue.endpointId);
+                            oldEndpoint.meta().selected = false;
                         }
                     }
                 }
 
                 // If a new component has been selected update its metadata
                 if (newValue.id) {
-                    var component = componentHelper.getById($scope.data, newValue.id);
-                    var metadata = componentHelper.getMetadata(component.data);
-                    metadata.selected = true;
-
-                    $scope.componentSelected = true;
+                    var component = componentManager.getComponent(newValue.id);
+                    component.meta().selected = true;
 
                     // If the user selected a specific endpoint update it metadata
+                    var endpoint = null;
                     if (newValue.endpointId) {
-                        var endpoint = componentHelper.getEndpointById(component, newValue.endpointId);
-                        metadata = componentHelper.getMetadata(endpoint.data);
-                        metadata.selected = true;
+                        endpoint = componentManager.getEndpoint(newValue.endpointId);
+                        endpoint.meta().selected = true;
                     }
 
                     // If the connect button was pressed and there was a previously selected component,
                     // connect the components
-                    if (oldValue.id && $scope.connectPressed) {
-                        componentHelper.connectComponents(
-                            $scope.data, oldValue.id, oldValue.endpointId,
-                            newValue.id, newValue.endpointId);
+                    if (oldComponent && $scope.connectPressed) {
+                        componentManager.connectComponents(
+                            oldComponent, oldEndpoint, component, endpoint);
                     }
-
-                } else {
-                    $scope.componentSelected = false;
                 }
 
                 $scope.connectPressed = false;
                 $scope.refresh();  // Repaint the canvas
             });
 
-            $rootScope.$on('go:campaignDesignerSelect', function (event, componentId, endpointId) {
-                $scope.selectedComponentId = componentId || null;
-                $scope.selectedEndpointId = endpointId || null;
+            $rootScope.$on('go:campaignDesignerSelect', function (event, component, endpoint) {
+                if (component) {
+                    $scope.selectedComponentId = component.id;
+                } else {
+                    $scope.selectedComponentId = null;
+                }
+
+                if (endpoint) {
+                    $scope.selectedEndpointId = endpoint.id;
+                } else {
+                    $scope.selectedEndpointId = null;
+                }
             });
 
             $rootScope.$on('go:campaignDesignerConnect', function (event) {
@@ -358,82 +342,40 @@ directives.directive('goCampaignDesigner', [
 
             var menu = menuComponent();
 
-            // Create layouts
-            var layoutConversations = conversationLayout();
-            var layoutRouters = routerLayout();
-            var layoutChannels = channelLayout();
-            var layoutConnections = connectionLayout();
-            var layoutMenus = menuLayout();
-
             repaint(); // Do initial draw
 
             /** Repaint the canvas **/
             function repaint() {
-                // Draw components
+                componentManager.layoutComponents();
+
                 componentLayer.selectAll('.conversation')
-                    .data(layoutConversations(scope.data.conversations))
+                    .data(componentManager.getConversations(),
+                          function (d) { return d.id; })
                     .call(conversation);
 
-                componentLayer.selectAll('.channel')
-                    .data(layoutChannels(scope.data.channels))
-                    .call(channel);
-
                 componentLayer.selectAll('.router')
-                    .data(layoutRouters(scope.data.routers))
+                    .data(componentManager.getRouters(),
+                          function (d) { return d.id; })
                     .call(router);
 
-                // Draw connections and control points
+                componentLayer.selectAll('.channel')
+                    .data(componentManager.getChannels(),
+                          function (d) { return d.id; })
+                    .call(channel);
+
                 connectionLayer.selectAll('.connection')
-                    .data(layoutConnections(scope.data).routing_entries)
+                    .data(componentManager.getConnections(),
+                          function (d) { return d.id; })
                     .call(connection);
 
                 connectionLayer.selectAll('.control-point')
-                    .data(function () {
-                        var data = [];
-                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
-                            for (var j = 0; j < scope.data.routing_entries[i].points.length; j++) {
-                                data.push(scope.data.routing_entries[i].points[j]);
-                            }
-                        }
-                        return data;
-
-                    }, function (d) {
-                        var meta = componentHelper.getMetadata(d);
-                        return meta.id;
-                    })
+                    .data(componentManager.getControlPoints(),
+                          function (d) { return d.id; })
                     .call(controlPoint);
 
-                // Draw context menus
-                layoutMenus(scope.data);
-
                 componentLayer.selectAll('.menu')
-                    .data(function () {
-                        var data = [];
-
-                        for (var i = 0; i < scope.data.conversations.length; i++) {
-                            var meta = componentHelper.getMetadata(scope.data.conversations[i]);
-                            data.push(meta.menu);
-                        }
-
-                        for (var i = 0; i < scope.data.channels.length; i++) {
-                            var meta = componentHelper.getMetadata(scope.data.channels[i]);
-                            data.push(meta.menu);
-                        }
-
-                        for (var i = 0; i < scope.data.routers.length; i++) {
-                            var meta = componentHelper.getMetadata(scope.data.routers[i]);
-                            data.push(meta.menu);
-                        }
-
-                        for (var i = 0; i < scope.data.routing_entries.length; i++) {
-                            var meta = componentHelper.getMetadata(scope.data.routing_entries[i]);
-                            data.push(meta.menu);
-                        }
-
-                        return data;
-                    }, function (d) {
-                        return d.id;
-                    })
+                    .data(componentManager.getMenus(),
+                          function (d) { return d.id; })
                     .call(menu);
             }
 
@@ -447,9 +389,9 @@ directives.directive('goCampaignDesigner', [
 
             function drop(event, coordinates) {
                 if (scope.newComponent) {
-                    var x = coordinates[0];
-                    var y = coordinates[1];
-                    componentHelper.addComponent(scope.data, scope.newComponent, x, y);
+                    scope.newComponent.x = coordinates[0];
+                    scope.newComponent.y = coordinates[1];
+                    componentManager.addComponent(scope.newComponent);
                     scope.newComponent = null;
                     repaint();
                 }

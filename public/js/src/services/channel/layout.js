@@ -1,6 +1,6 @@
 
 angular.module('vumigo.services').factory('channelLayout', [
-    'componentHelper', function (componentHelper) {
+    function () {
         return function () {
             var innerRadius = 10;
             var maxOuterRadius = 100;
@@ -8,14 +8,13 @@ angular.module('vumigo.services').factory('channelLayout', [
 
             function layout(data) {
                 angular.forEach(data, function (channel) {
-                    var metadata = componentHelper.getMetadata(channel);
-
                     var outerRadius = innerRadius
                         + maxOuterRadius * channel.utilization;
 
                     var textX = innerRadius / 2.0 + textOffset;
 
-                    metadata.layout = {
+                    var meta = channel.meta();
+                    meta.layout = {
                         inner: {
                             r: innerRadius
                         },
