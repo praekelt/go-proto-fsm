@@ -112,8 +112,7 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
 
                 if (selectEnabled) {
                     $rootScope.$apply(function () {
-                        var d = selection.datum();
-                        $rootScope.$emit('go:campaignDesignerSelect', d.uuid);
+                        $rootScope.$emit('go:campaignDesignerSelect', selection.datum());
                     });
                 }
             }

@@ -195,13 +195,14 @@ describe('dragBehavior', function () {
         sinon.stub(scope, '$emit');
 
         var component = element.find('.component').eq(0);
+        var datum = component.get(0).__data__;
 
         component.d3().simulate('dragstart');
 
         var classes = component.attr('class').split(' ');
         expect(classes.indexOf('component')).not.to.equal(-1);
         expect(classes.indexOf('dragging')).not.to.equal(-1);
-        expect(scope.$emit.calledWith('go:campaignDesignerSelect', 'component1')).to.be.true;
+        expect(scope.$emit.calledWith('go:campaignDesignerSelect', datum)).to.be.true;
     }));
 
     it('should not allow component to be draggable', inject(function (dragBehavior) {

@@ -27,12 +27,12 @@
                 </li>
             </ul>
         </li>
-        <li data-ng-class="{'disabled': !componentSelected}">
+        <li data-ng-class="{'disabled': selectedComponentId == null}">
             <a class="btn-remove" href="javascript://" data-ng-click="remove()">
                 <span class="glyphicon glyphicon-remove-circle"></span> Remove
             </a>
         </li>
-        <li data-ng-class="{'active': connectPressed, 'disabled': !componentSelected}">
+        <li data-ng-class="{'active': connectPressed, 'disabled': selectedComponentId == null}">
             <a href="#" class="btn-connect" data-ng-click="connect()">
                 <span class="glyphicon glyphicon-link"></span> Connect
             </a>

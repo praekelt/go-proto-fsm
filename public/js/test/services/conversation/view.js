@@ -1,14 +1,26 @@
 describe('conversationComponent', function () {
-    var element, conversation, layout, data;
+    var element, componentManager, conversation;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (conversationComponent, conversationLayout, dragBehavior) {
+    beforeEach(inject(function (ComponentManager, conversationComponent, dragBehavior) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
             '</div>');
+
+        componentManager = new ComponentManager({
+            conversations: [{
+                uuid: 'conversation1',
+                name: "Conversation 1",
+                description: "Test conversation",
+                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
+                colour: '#cccccc',
+                x: 50,
+                y: 50,
+            }]
+        });
 
         var drag = dragBehavior()
             .canvasWidth(100)
@@ -16,24 +28,16 @@ describe('conversationComponent', function () {
             .gridCellSize(10)
             .call();
 
-        conversation = conversationComponent().drag(drag);
-        layout = conversationLayout();
+        conversation = conversationComponent()
+            .drag(drag);
 
-        data = [{
-            uuid: 'conversation1',
-            name: "Conversation 1",
-            description: "Test conversation",
-            endpoints: [{uuid: 'endpoint1', name: 'default'}],
-            colour: '#cccccc',
-            x: 50,
-            y: 50,
-            _meta: {
-                selected: true
-            }
-        }];
+        componentManager.layoutComponents();
+
+        var meta = componentManager.getComponent('conversation1').meta();
+        meta.selected = true;
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(layout(data))
+            .data(componentManager.getConversations())
             .call(conversation);
     }));
 
@@ -46,21 +50,22 @@ describe('conversationComponent', function () {
         expect(conversation.attr('class').indexOf('selected')).not.to.equal(-1);
 
         var disc = conversation.find('.disc.outer').eq(0);
-        var r = data[0]._meta.layout.outer.r;
+        var meta = componentManager.getComponent('conversation1').meta();
+        var r = meta.layout.outer.r;
         expect(disc.attr('r')).to.equal(String(r));
         expect(d3.rgb(disc.css('fill'))).to.deep.equal(d3.rgb(204, 204, 204));
 
-        r = data[0]._meta.layout.inner.r;
+        r = meta.layout.inner.r;
         expect(conversation.find('.disc.inner').eq(0).attr('r')).to.equal(String(r));
 
         var name = conversation.find('.name').eq(0);
         expect(name.text()).to.equal('Conversation 1');
-        var x = data[0]._meta.layout.name.x;
+        var x = meta.layout.name.x;
         expect(name.attr('x')).to.equal(String(x));
 
         var description = conversation.find('.description').eq(0);
         expect(description.text()).to.equal('Test conversation');
-        x = data[0]._meta.layout.description.x;
+        x = meta.layout.description.x;
         expect(description.attr('x')).to.equal(String(x));
     }));
 
@@ -68,18 +73,22 @@ describe('conversationComponent', function () {
         var conversations = element.find('.conversation');
         expect(conversations).to.have.length(1);
 
-        data.push({
-            uuid: "conversation2",
-            name: "Conversation 2",
-            description: "Another conversation",
-            endpoints: [{uuid: 'endpoint2', name: 'default'}],
-            colour: '#e32',
-            x: 100,
-            y: 100
+        componentManager.load({
+            conversations: [{
+                uuid: "conversation2",
+                name: "Conversation 2",
+                description: "Another conversation",
+                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
+                colour: '#e32',
+                x: 100,
+                y: 100
+            }]
         });
 
+        componentManager.layoutComponents();
+
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(layout(data))
+            .data(componentManager.getConversations())
             .call(conversation);
 
         conversations = element.find('.conversation');
@@ -90,10 +99,10 @@ describe('conversationComponent', function () {
         var conversations = element.find('.conversation');
         expect(conversations).to.have.length(1);
 
-        data.pop();
+        componentManager.reset();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(layout(data))
+            .data(componentManager.getConversations())
             .call(conversation);
 
         conversations = element.find('.conversation');

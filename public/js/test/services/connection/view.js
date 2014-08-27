@@ -1,27 +1,23 @@
-describe('channelComponent', function () {
-    var element, layout, connection, data;
+describe('connectionComponent', function () {
+    var element, componentManager, connection;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (channelComponent, channelLayout,
-                                                conversationComponent, conversationLayout,
-                                                connectionComponent, connectionLayout,
-                                                dragBehavior) {
+    beforeEach(inject(function (ComponentManager, dragBehavior, channelComponent,
+                                conversationComponent, connectionComponent) {
 
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        layout = connectionLayout();
-
-        data = {
+        componentManager = new ComponentManager({
             conversations: [{
                 uuid: 'conversation1',
                 name: "Conversation 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint1', name: 'default'}],
+                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
                 colour: '#red',
                 x: 100,
                 y: 100
@@ -30,20 +26,20 @@ describe('channelComponent', function () {
                 uuid: 'channel1',
                 name: "Channel 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
                 utilization: 0.4,
                 x: 200,
                 y: 200
             }],
             routers: [],
             routing_entries: [{
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint2'},
-                _meta: {
-                    selected: true
-                }
+                source: { uuid: 'endpoint1' },
+                target: { uuid: 'endpoint2' }
             }]
-        };
+        });
+
+        var meta = componentManager.getConnections()[0].meta();
+        meta.selected = true;
 
         var drag = dragBehavior()
             .canvasWidth(100)
@@ -59,22 +55,25 @@ describe('channelComponent', function () {
         var componentLayer = svg.append('g')
             .attr('class', 'layer components');
 
-        var channel = channelComponent().drag(drag);
+        componentManager.layoutComponents();
 
-        componentLayer.selectAll('.channel')
-            .data(channelLayout()(data))
-            .call(channel);
-
-        var conversation = conversationComponent().drag(drag);
+        var conversation = conversationComponent()
+            .drag(drag);
 
         componentLayer.selectAll('.conversation')
-            .data(conversationLayout()(data))
+            .data(componentManager.getConversations())
             .call(conversation);
 
-        connection = connectionComponent();
+        var channel = channelComponent()
+            .drag(drag);
 
+        componentLayer.selectAll('.channel')
+            .data(componentManager.getChannels())
+            .call(channel);
+
+        connection = connectionComponent();
         connectionLayer.selectAll('.connection')
-            .data(layout(data).routing_entries)
+            .data(componentManager.getConnections())
             .call(connection);
     }));
 
@@ -85,11 +84,14 @@ describe('channelComponent', function () {
         expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L200,200');
         expect(connections.eq(0).attr('class').indexOf('selected')).not.to.equal(-1);
 
-        data.channels[0].x = 300;
-        data.channels[0].y = 300;
+        var component = componentManager.getComponent('channel1')
+        component.x = 300;
+        component.y = 300;
+
+        componentManager.layoutComponents();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.connection')
-            .data(layout(data).routing_entries)
+            .data(componentManager.getConnections())
             .call(connection);
 
         expect(connections).to.have.length(1);
@@ -99,27 +101,26 @@ describe('channelComponent', function () {
 });
 
 describe('controlPointComponent', function () {
-    var element, data;
+    var element, componentManager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (channelComponent, channelLayout,
-                                                 conversationComponent, conversationLayout,
-                                                 connectionComponent,  connectionLayout,
-                                                 controlPointComponent, dragBehavior) {
+    beforeEach(inject(function (ComponentManager, dragBehavior, channelComponent,
+                                conversationComponent, connectionComponent,
+                                controlPointComponent) {
 
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        data = {
+        componentManager = new ComponentManager({
             conversations: [{
                 uuid: 'conversation1',
                 name: "Conversation 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint1', name: 'default'}],
+                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
                 colour: '#red',
                 x: 100,
                 y: 100
@@ -128,17 +129,17 @@ describe('controlPointComponent', function () {
                 uuid: 'channel1',
                 name: "Channel 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
                 utilization: 0.4,
                 x: 200,
                 y: 200
             }],
             routers: [],
             routing_entries: [{
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint2'}
+                source: { uuid: 'endpoint1' },
+                target: { uuid: 'endpoint2' }
             }]
-        };
+        });
 
         // Configure behaviors
         var drag = dragBehavior()
@@ -164,42 +165,40 @@ describe('controlPointComponent', function () {
         // Create canvas
         var svg = d3.selectAll(element.find('svg').toArray());
 
-        // Draw channels
-        var channel = channelComponent()
-            .drag(drag);
-
-        svg.selectAll('.channel')
-            .data(channelLayout()(data))
-            .call(channel);
+        // Layout components
+        componentManager.layoutComponents();
 
         // Draw conversations
         var conversation = conversationComponent()
             .drag(drag);
 
         svg.selectAll('.conversation')
-            .data(conversationLayout()(data))
+            .data(componentManager.getConversations())
             .call(conversation);
+
+        // Draw channels
+        var channel = channelComponent()
+            .drag(drag);
+
+        svg.selectAll('.channel')
+            .data(componentManager.getChannels())
+            .call(channel);
 
         // Draw connections
         connection = connectionComponent()
             .drag(connectionDrag);
 
         svg.selectAll('.connection')
-            .data(connectionLayout()(data).routing_entries)
+            .data(componentManager.getConnections())
             .call(connection);
 
         // Draw control points
-        angular.forEach(data.routing_entries, function (connection) {
-            var controlPoint = controlPointComponent()
-                .drag(controlPointDrag);
+        var controlPoint = controlPointComponent()
+            .drag(controlPointDrag);
 
-            var selector = '.control-point[data-connection-uuid="'
-                + connection.uuid + '"]';
-
-            svg.selectAll(selector)
-                .data(connection.points)
-                .call(controlPoint);
-        });
+        svg.selectAll('.control-point')
+            .data(componentManager.getControlPoints())
+            .call(controlPoint);
     }));
 
     it('should have drawn the control points', inject(function () {

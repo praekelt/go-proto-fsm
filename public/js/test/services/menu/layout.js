@@ -1,182 +1,138 @@
 describe('menuLayout', function () {
-    var data, layout;
+    var components, layout;
 
     beforeEach(module('vumigo.services'));
     beforeEach(module('uuid'));
 
-    beforeEach(inject(function (conversationLayout, routerLayout,
-                                             channelLayout, connectionLayout,
-                                             menuLayout) {
-        data = {
-            conversations: [{
-                uuid: 'conversation1',
+    beforeEach(inject(function (Endpoint, Conversation, Channel, Router, Connection, Route,
+                                conversationLayout, routerLayout, channelLayout,
+                                connectionLayout, menuLayout) {
+        components = {
+            'conversation1': new Conversation({
+                id: 'conversation1',
                 name: "Register",
                 description: "4 Steps",
-                endpoints: [{uuid: 'endpoint1', name: 'default'}],
+                endpoints: [new Endpoint({ id: 'endpoint1', name: 'default' })],
                 colour: '#f82943',
                 x: 220,
                 y: 120
-            }],
-            channels: [{
-                uuid: 'channel1',
+            }),
+            'channel1': new Channel({
+                id: 'channel1',
                 name: "SMS",
                 description: "082 335 29 24",
-                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                endpoints: [new Endpoint({ uuid: 'endpoint2', name: 'default' })],
                 utilization: 0.4,
                 x: 840,
                 y: 360
-            }],
-            routers: [{
-                uuid: 'router1',
+            }),
+            'router1': new Router({
+                id: 'router1',
                 name: "K",
                 description: "Keyword",
-                channel_endpoints: [{uuid: 'endpoint3', name: 'default'}],
-                conversation_endpoints: [{
-                    uuid: 'endpoint4',
-                    name: 'default'
-                }, {
-                    uuid: 'endpoint5',
-                    name: 'default'
-                }],
+                endpoints: [
+                    new Endpoint({ id: 'endpoint3', name: 'default' }),
+                    new Endpoint({ id: 'endpoint4', name: 'default' }),
+                    new Endpoint({ id: 'endpoint5', name: 'default' })
+                ],
                 x: 500,
                 y: 220
-            }],
-            routing_entries: [{
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint4'}
-            }]
+            }),
+            'connection1': new Connection({
+                id: 'connection1',
+                routes: [new Route({
+                    source: null,
+                    target: null
+                })]
+            })
         };
 
-        conversationLayout()(data.conversations);
-        routerLayout()(data.routers);
-        channelLayout()(data.channels);
-        connectionLayout()(data);
+        _.forEach(components['connection1'].endpoints, function (endpoint) {
+            endpoint.component = components['connection1'];
+        });
+
+        _.forEach(components['channel1'].endpoints, function (endpoint) {
+            endpoint.component = components['channel1'];
+        });
+
+        _.forEach(components['router1'].endpoints, function (endpoint) {
+            endpoint.component = components['router1'];
+        });
+
+        components['connection1'].routes[0].source = components['conversation1'].endpoints[0];
+        components['connection1'].routes[0].target = components['router1'].endpoints[1];
+
+        conversationLayout()([components['conversation1']]);
+        routerLayout()([components['router1']]);
+        channelLayout()([components['channel1']]);
+        connectionLayout()([components['connection1']]);
 
         layout = menuLayout();
     }));
 
     it('should compute menu layout', inject(function () {
-        layout(data);
+        layout(_.pluck(_.filter(components, 'menu'), 'menu'));
 
         var expected = {
-            id: data.conversations[0].uuid,
-            items: [{
-                component: data.conversations[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf0c1;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerConnect'
-            }, {
-                component: data.conversations[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf00d;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerRemove'
-            }],
             active: false,
-            x: data.conversations[0].x,
-            y: data.conversations[0].y + data.conversations[0]._meta.layout.outer.r + 20
+            layout: {
+                x: components['conversation1'].x,
+                y: components['conversation1'].y + components['conversation1'].meta().layout.outer.r + 20
+            }
         };
 
-        expect(data.conversations[0]._meta.menu).to.deep.equal(expected);
+        expect(components['conversation1'].menu.meta()).to.deep.equal(expected);
 
-        var expected = {
-            id: data.channels[0].uuid,
-            items: [{
-                component: data.channels[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf0c1;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerConnect'
-            }, {
-                component: data.channels[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf00d;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerRemove'
-            }],
+        _.forEach(components['conversation1'].menu.items, function (item) {
+            expected = { layout: { width: 32, height: 32, text: { x: 10, dy: 20 } } };
+            expect(item.meta()).to.deep.equal(expected);
+        });
+
+        expected = {
             active: false,
-            x: data.channels[0].x,
-            y: data.channels[0].y + data.channels[0]._meta.layout.outer.r + 20
+            layout: {
+                x: components['channel1'].x,
+                y: components['channel1'].y + components['channel1'].meta().layout.outer.r + 20
+            }
         };
 
-        expect(data.channels[0]._meta.menu).to.deep.equal(expected);
+        expect(components['channel1'].menu.meta()).to.deep.equal(expected);
 
-        var expected = {
-            id: data.routers[0].uuid,
-            items: [{
-                component: data.routers[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf0c1;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerConnect'
-            }, {
-                component: data.routers[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf00d;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerRemove'
-            }],
+        _.forEach(components['channel1'].menu.items, function (item) {
+            expected = { layout: { width: 32, height: 32, text: { x: 10, dy: 20 } } };
+            expect(item.meta()).to.deep.equal(expected);
+        });
+
+        expected = {
             active: false,
-            x: data.routers[0].x,
-            y: data.routers[0].y + data.routers[0]._meta.layout.r + 20
+            layout: {
+                x: components['router1'].x,
+                y: components['router1'].y + components['router1'].meta().layout.r + 20
+            }
         };
 
-        expect(data.routers[0]._meta.menu).to.deep.equal(expected);
-        var point = data.routing_entries[0].points[2];
-        var expected = {
-            id: data.routing_entries[0].uuid,
-            items: [{
-                component: data.routing_entries[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf07e;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerChangeDirection'
-            }, {
-                component: data.routing_entries[0],
-                width: 32,
-                height: 32,
-                text: {
-                    icon: '&#xf00d;',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:campaignDesignerRemove'
-            }],
+        expect(components['router1'].menu.meta()).to.deep.equal(expected);
+
+        _.forEach(components['router1'].menu.items, function (item) {
+            expected = { layout: { width: 32, height: 32, text: { x: 10, dy: 20 } } };
+            expect(item.meta()).to.deep.equal(expected);
+        });
+
+        var point = components['connection1'].points[2];
+        expected = {
             active: false,
-            x: point.x,
-            y: point.y + 20
+            layout: {
+                x: point.x,
+                y: point.y + 20
+            }
         };
 
-        expect(data.routing_entries[0]._meta.menu).to.deep.equal(expected);
+        expect(components['connection1'].menu.meta()).to.deep.equal(expected);
+
+        _.forEach(components['connection1'].menu.items, function (item) {
+            expected = { layout: { width: 32, height: 32, text: { x: 10, dy: 20 } } };
+            expect(item.meta()).to.deep.equal(expected);
+        });
     }));
 
 });
