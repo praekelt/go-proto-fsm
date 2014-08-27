@@ -29,7 +29,7 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 var yOffset = (end.y - start.y) / (points.length - 1);
                 for (var i = 1; i <= points.length - 1; i++) {
                     var point = points[i];
-                    if (_.isUndefined(point.meta().layout)) {
+                    if (_.isUndefined(point.x) || _.isUndefined(point.y)) {
                         point.x = start.x + i * xOffset;
                         point.y = start.y + i * yOffset;
                     }
@@ -38,11 +38,10 @@ angular.module('vumigo.services').factory('connectionLayout', [
 
             function layout(data) {
                 _.forEach(data, function (connection) {
-                    var source = connection.getSourceEndpoint();
-                    var target = connection.getTargetEndpoint();
+                    if (_.isEmpty(connection.routes)) return;
 
-                    if (_.isNull(source) || _.isNull(target)) return;
-
+                    var source = connection.routes[0].source;
+                    var target = connection.routes[0].target;
                     var meta = connection.meta();
 
                     // Set connection colour to match conversation colour

@@ -101,8 +101,8 @@ angular.module('vumigo.services').factory('MenuItem', [
 ]);
 
 angular.module('vumigo.services').factory('Menu', [
-    'BaseComponent', 'MenuItem',
-    function (BaseComponent, MenuItem) {
+    'BaseComponent',
+    function (BaseComponent) {
 
         function Menu(options) {
             options = options || {};
@@ -185,8 +185,8 @@ angular.module('vumigo.services').factory('Router', [
             this.y = options.y || 0;
 
             this.addEndpoints(options.endpoints || [
-                new Endpoint({accepts: ['conversation']}),
-                new Endpoint({accepts: ['channel']})
+                new Endpoint({ accepts: ['conversation'] }),
+                new Endpoint({ accepts: ['channel'] })
             ]);
 
             this.menu = new Menu({
@@ -273,8 +273,8 @@ angular.module('vumigo.services').factory('ControlPoint', [
             options.type = 'control point';
             BaseComponent.call(this, options);
 
-            this.x = options.x || 0;
-            this.y = options.y || 0;
+            this.x = options.x;
+            this.y = options.y;
         }
 
         ControlPoint.prototype = Object.create(BaseComponent.prototype);
@@ -295,14 +295,13 @@ angular.module('vumigo.services').factory('Connection', [
 
             this.routes = options.routes || [];
 
-            if (_.isUndefined(options.points)) {
+            if (_.isArray(options.points)) {
+                this.points = options.points;
+            } else {
                 this.points = [];
                 for (var i = 0; i < numberOfPoints + 2; i++) {
                     this.points.push(new ControlPoint());
                 }
-
-            } else {
-                this.points = options.points;
             }
 
             this.menu = new Menu({
@@ -337,27 +336,12 @@ angular.module('vumigo.services').factory('Connection', [
             });
         };
 
-        Connection.prototype.getSourceEndpoint = function () {
-            if (!_.isEmpty(this.routes)) {
-                return this.routes[0].source;
-            }
-            return null;
-        };
-
-        Connection.prototype.getTargetEndpoint = function () {
-            if (!_.isEmpty(this.routes)) {
-                return this.routes[0].target;
-            }
-            return null;
-        };
-
         Connection.prototype.isConnectedTo = function (endpoints) {
-            console.log(this.getEndpoints());
-
             endpoints = _.intersection(
                 _.pluck(this.getEndpoints(), 'id'),
                 _.pluck(endpoints, 'id')
             );
+
             return !_.isEmpty(endpoints);
         };
 
@@ -433,11 +417,10 @@ angular.module('vumigo.services').factory('ComponentManager', [
         ComponentManager.prototype.connectComponents = function (
                 sourceComponent, sourceEndpoint, targetComponent, targetEndpoint) {
 
-            if (!sourceComponent
-                || !sourceComponent
+            if (!sourceComponent || !targetComponent
                 || sourceComponent.type == targetComponent.type) return;
 
-            if (!sourceEndpoint) {
+            if (!sourceEndpoint && !_.isEmpty(sourceComponent.endpoints)) {
                 if (['conversation', 'channel'].indexOf(sourceComponent.type) != -1) {
                     sourceEndpoint = sourceComponent.endpoints[0];
 
@@ -445,13 +428,13 @@ angular.module('vumigo.services').factory('ComponentManager', [
                     if (targetComponent.type == 'conversation') {
                         sourceEndpoint = sourceComponent.getEndpoints('conversation')[0];
 
-                    } else if (target.type == 'channel') {
+                    } else if (targetComponent.type == 'channel') {
                         sourceEndpoint = sourceComponent.getEndpoints('channel')[0];
                     }
                 }
             }
 
-            if (!targetEndpoint) {
+            if (!targetEndpoint && !_.isEmpty(targetComponent.endpoints)) {
                 if (['conversation', 'channel'].indexOf(targetComponent.type) != -1) {
                     targetEndpoint = targetComponent.endpoints[0];
 
@@ -466,36 +449,28 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }
 
             if (sourceEndpoint && targetEndpoint) {
-                var connection = this.addComponent(new Connection());
-                connection.addRoute(new Route({
-                    source: sourceEndpoint,
-                    target: targetEndpoint
+                var connection = this.addComponent(new Connection({
+                    routes: [
+                        new Route({ source: sourceEndpoint, target: targetEndpoint })
+                    ]
                 }));
             }
         };
 
         ComponentManager.prototype.getConversations = function () {
-            return _.filter(_.values(this.components), function (component) {
-                return component.type == 'conversation';
-            });
+            return _.where(this.components, { type: 'conversation' });
         };
 
         ComponentManager.prototype.getRouters = function () {
-            return _.filter(_.values(this.components), function (component) {
-                return component.type == 'router';
-            });
+            return _.where(this.components, { type: 'router' });
         };
 
         ComponentManager.prototype.getChannels = function () {
-            return _.filter(_.values(this.components), function (component) {
-                return component.type == 'channel';
-            });
+            return _.where(this.components, { type: 'channel' });
         };
 
         ComponentManager.prototype.getConnections = function () {
-            return _.filter(_.values(this.components), function (component) {
-                return component.type == 'connection';
-            });
+            return _.where(this.components, { type: 'connection' });
         };
 
         ComponentManager.prototype.getControlPoints = function () {
@@ -509,13 +484,7 @@ angular.module('vumigo.services').factory('ComponentManager', [
         };
 
         ComponentManager.prototype.getMenus = function () {
-            return _.reduce(_.values(this.components), function (menus, component) {
-                if (!_.isUndefined(component.menu)) {
-                    menus.push(component.menu);
-                }
-
-                return menus;
-            }, []);
+            return _.pluck(_.filter(this.components, 'menu'), 'menu');
         };
 
         ComponentManager.prototype.layoutComponents = function () {
