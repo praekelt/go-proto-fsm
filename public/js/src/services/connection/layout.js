@@ -27,7 +27,7 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 var end = points[points.length - 1];
                 var xOffset = (end.x - start.x) / (points.length - 1);
                 var yOffset = (end.y - start.y) / (points.length - 1);
-                for (var i = 1; i <= points.length - 1; i++) {
+                for (var i = 1; i < points.length - 1; i++) {
                     var point = points[i];
                     if (_.isUndefined(point.x) || _.isUndefined(point.y)) {
                         point.x = start.x + i * xOffset;

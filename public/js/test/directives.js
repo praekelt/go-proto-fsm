@@ -129,20 +129,17 @@ describe('goCampaignDesigner', function () {
         var datum = component.get(0).__data__;
 
         expect(isolateScope.selectedComponentId).to.equal(null);
-        expect(isolateScope.componentSelected).to.equal(false);
-        expect(datum._meta.selected).to.be.undefined;
+        expect(datum.meta().selected).to.be.undefined;
 
         component.d3().simulate('dragstart');
-        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
-        expect(isolateScope.componentSelected).to.equal(true);
-        expect(datum._meta.selected).to.equal(true);
+        expect(isolateScope.selectedComponentId).to.equal(datum.id);
+        expect(datum.meta().selected).to.equal(true);
     });
 
     it('should allow components to be connected', function () {
         var isolateScope = element.isolateScope();
 
         expect(isolateScope.selectedComponentId).to.equal(null);
-        expect(isolateScope.componentSelected).to.equal(false);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
 
@@ -155,8 +152,7 @@ describe('goCampaignDesigner', function () {
         channel.d3().simulate('dragstart');
 
         var datum = channel.get(0).__data__;
-        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
-        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.selectedComponentId).to.equal(datum.id);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(2);
     });
@@ -165,7 +161,6 @@ describe('goCampaignDesigner', function () {
         var isolateScope = element.isolateScope();
 
         expect(isolateScope.selectedComponentId).to.equal(null);
-        expect(isolateScope.componentSelected).to.equal(false);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
 
@@ -177,8 +172,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.connectPressed).to.equal(true);
         conversation.d3().simulate('dragstart');
 
-        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
-        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.selectedComponentId).to.equal(datum.id);
         expect(isolateScope.connectPressed).to.equal(true);
         expect(element.find('path.connection')).to.have.length(1);
     });
@@ -187,7 +181,6 @@ describe('goCampaignDesigner', function () {
         var isolateScope = element.isolateScope();
 
         expect(isolateScope.selectedComponentId).to.equal(null);
-        expect(isolateScope.componentSelected).to.equal(false);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
 
@@ -200,8 +193,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.connectPressed).to.equal(true);
         conversation2.d3().simulate('dragstart');
 
-        expect(isolateScope.selectedComponentId).to.equal(datum.uuid);
-        expect(isolateScope.componentSelected).to.equal(true);
+        expect(isolateScope.selectedComponentId).to.equal(datum.id);
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
     });
