@@ -59,7 +59,7 @@ describe('menuComponent', function () {
         expect(text).to.have.length(1);
         expect(text.eq(0).attr('x')).to.equal('10');
         expect(text.eq(0).attr('dy')).to.equal('20');
-        expect(text.eq(0).text()).to.equal('icon1');
+        expect(text.eq(0).html()).to.equal('icon1');
     }));
 
     it('should trigger action on click', inject(function () {
