@@ -32,31 +32,31 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                         return 'translate(' + [d.x, d.y] + ')';
                     })
                     .classed('selected', function (d) {
-                        return d._meta.selected;
+                        return d.meta().selected;
                     });
 
                 selection.selectAll('.disc')
-                    .attr('r', function (d) { return d._meta.layout.r; });
+                    .attr('r', function (d) { return d.meta().layout.r; });
 
                 selection.selectAll('.name')
                     .style('font-size', function (d) {
-                        return d._meta.layout.r;
+                        return d.meta().layout.r;
                     })
                     .text(function (d) { return d.name; });
 
                 selection.select('.pins-conversation')
                     .attr('transform', function (d) {
-                        return 'translate(' + [-d._meta.layout.r, 0] + ')';
+                        return 'translate(' + [-d.meta().layout.r, 0] + ')';
                     })
                     .selectAll('.pin')
-                        .data(function(d) { return d.conversation_endpoints; },
-                                 function(d) { return d.uuid; })
+                        .data(function(d) { return d.getEndpoints('conversation'); },
+                              function(d) { return d.id; })
                         .call(conversationPin);
 
                 selection.select('.pins-channel')
                     .selectAll('.pin')
-                        .data(function(d) { return d.channel_endpoints; },
-                                 function(d) { return d.uuid; })
+                        .data(function(d) { return d.getEndpoints('channel'); },
+                              function(d) { return d.id; })
                         .call(channelPin);
 
                 selection.call(bBox);
@@ -114,23 +114,23 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                     d3.event.stopPropagation();
 
                     $rootScope.$apply(function () {
-                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                        $rootScope.$emit('go:campaignDesignerSelect', d.component, d);
                     });
                 });
 
                 selection
                     .attr('transform', function (d) {
-                        return 'translate(' + [-d._meta.layout.len / 2.0, d._meta.layout.y] + ')';
+                        return 'translate(' + [-d.meta().layout.len / 2.0, d.meta().layout.y] + ')';
                     })
                     .classed('selected', function (d) {
-                        return d._meta.selected;
+                        return d.meta().selected;
                     });
 
                 selection.select('.head')
-                    .attr('r', function (d) { return d._meta.layout.r; })
+                    .attr('r', function (d) { return d.meta().layout.r; })
 
                 selection.select('.line')
-                    .attr('x2', function (d) { return d._meta.layout.len; });
+                    .attr('x2', function (d) { return d.meta().layout.len; });
             }
 
             function exit(selection) {
@@ -165,20 +165,20 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                     d3.event.stopPropagation();
 
                     $rootScope.$apply(function () {
-                        $rootScope.$emit('go:campaignDesignerSelect', d._meta.parent.uuid, d.uuid);
+                        $rootScope.$emit('go:campaignDesignerSelect', d.component, d);
                     });
                 });
 
                 selection
                     .attr('transform', function (d) {
-                        return 'translate(' + [d._meta.layout.x, d._meta.layout.y] + ')';
+                        return 'translate(' + [d.meta().layout.x, d.meta().layout.y] + ')';
                     })
                     .classed('selected', function (d) {
-                        return d._meta.selected;
+                        return d.meta().selected;
                     });
 
                 selection.select('.head')
-                    .attr('r', function (d) { return d._meta.layout.r; })
+                    .attr('r', function (d) { return d.meta().layout.r; })
             }
 
             function exit(selection) {

@@ -30,21 +30,21 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
                         return 'translate(' + [d.x, d.y] + ')';
                     })
                     .classed('selected', function (d) {
-                        return d._meta.selected;
+                        return d.meta().selected;
                     });
 
                 selection.selectAll('.disc.outer')
-                    .attr('r', function (d) { return d._meta.layout.outer.r; });
+                    .attr('r', function (d) { return d.meta().layout.outer.r; });
 
                 selection.selectAll('.disc.inner')
-                    .attr('r', function (d) { return d._meta.layout.inner.r; });
+                    .attr('r', function (d) { return d.meta().layout.inner.r; });
 
                 selection.selectAll('.name')
-                    .attr('x', function (d) { return d._meta.layout.name.x; })
+                    .attr('x', function (d) { return d.meta().layout.name.x; })
                     .text(function (d) { return d.name; });
 
                 selection.selectAll('.description')
-                    .attr('x', function (d) { return d._meta.layout.description.x; })
+                    .attr('x', function (d) { return d.meta().layout.description.x; })
                     .attr('dy', function (d) {
                         var fontSize = selection.select('.name')
                             .style('font-size');

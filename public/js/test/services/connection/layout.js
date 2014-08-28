@@ -1,172 +1,182 @@
 describe('connectionLayout', function () {
-    var data, layout;
+    var components, layout;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function (conversationLayout, channelLayout, routerLayout, connectionLayout, dragBehavior) {
-        data = {
-            conversations: [{
-                uuid: 'conversation1',
+    beforeEach(inject(function (Endpoint, Conversation, Channel, Router, Connection, Route,
+                                conversationLayout, channelLayout, routerLayout, connectionLayout,
+                                dragBehavior) {
+        components = {
+            'conversation1': new Conversation({
+                id: 'conversation1',
                 name: "Conversation 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint1', name: 'default'}],
-                colour: '#red',
+                endpoints: [
+                    new Endpoint({ id: 'endpoint1', name: 'default', accepts: ['channel', 'router'] })
+                ],
+                colour: 'red',
                 x: 100,
                 y: 100
-            }],
-            channels: [{
-                uuid: 'channel1',
+            }),
+            'channel1': new Channel({
+                id: 'channel1',
                 name: "Channel 1",
                 description: "",
-                endpoints: [{uuid: 'endpoint2', name: 'default'}],
+                endpoints: [
+                    new Endpoint({ uuid: 'endpoint2', name: 'default', accepts: ['conversation', 'router'] })
+                ],
                 utilization: 0.4,
                 x: 200,
                 y: 200
-            }],
-            routers: [{
-                uuid: 'router1',
+            }),
+            'router1': new Router({
+                id: 'router1',
                 name: "Router 1",
                 description: "",
-                channel_endpoints: [{uuid: 'endpoint3', name: 'default'}],
-                conversation_endpoints: [{uuid: 'endpoint4', name: 'default'}],
+                endpoints: [
+                    new Endpoint({ id: 'endpoint3', name: 'default', accepts: ['channel'] }),
+                    new Endpoint({ id: 'endpoint4', name: 'default', accepts: ['conversation'] })
+                ],
                 x: 300,
                 y: 200
-            }],
-            routing_entries: [{
-                uuid: 'connection1',
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint4'}
-            }, {
-                uuid: 'connection2',
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint2'}
-            }]
+            }),
+            'connection1': new Connection({
+                id: 'connection1',
+                routes: [new Route({
+                    source: null,
+                    target: null
+                })]
+            }),
+            'connection2': new Connection({
+                id: 'connection2',
+                routes: [new Route({
+                    source: null,
+                    target: null
+                })]
+            })
         };
 
-        conversationLayout()(data.conversations);
-        channelLayout()(data.channels);
-        routerLayout()(data.routers);
+        _.forEach(components['connection1'].endpoints, function (endpoint) {
+            endpoint.component = components['connection1'];
+        });
+
+        _.forEach(components['channel1'].endpoints, function (endpoint) {
+            endpoint.component = components['channel1'];
+        });
+
+        _.forEach(components['router1'].endpoints, function (endpoint) {
+            endpoint.component = components['router1'];
+        });
+
+        components['connection1'].routes[0].source = components['conversation1'].endpoints[0];
+        components['connection1'].routes[0].target = components['router1'].endpoints[1];
+
+        components['connection2'].routes[0].source = components['conversation1'].endpoints[0];
+        components['connection2'].routes[0].target = components['channel1'].endpoints[0];
+
+        conversationLayout()([components['conversation1']]);
+        routerLayout()([components['router1']]);
+        channelLayout()([components['channel1']]);
 
         layout = connectionLayout();
     }));
 
-    it('should compute connection layout', inject(function () {
-        layout(data);
-
-        var expected = [{
-            uuid: 'connection1',
-            source: {uuid: 'endpoint1'},
-            target: {uuid: 'endpoint4'},
-            points: [],
-            _meta: {
-                colour: '#red'
-            }
-        }, {
-            uuid: 'connection2',
-            source: {uuid: 'endpoint1'},
-            target: {uuid: 'endpoint2'},
-            points: [],
-            _meta: {
-                colour: '#red'
-            }
-        }];
-
-        var mklayout = function (r, connection) {
-            return {
-                r: r,
-                sourceId: connection.source.uuid,
-                targetId: connection.target.uuid
-            };
-        };
+    it('should compute connection layout', inject(function (ControlPoint) {
+        layout([
+            components['connection1'],
+            components['connection2']
+        ]);
 
         var pointRadius = 5;
-        var numberOfPoints = 3;
+        var numberOfPoints = 5;
 
         // connection1
-        var start = {
+        var connection = components['connection1'];
+        var points = [];
+
+        var start = new ControlPoint({
+            id: connection.points[0].id,
             x: 100,
-            y: 100,
-            _meta: {
-                layout: mklayout(0, expected[0]),
-                visible: false
-            }
-        };
+            y: 100
+        });
+        start.meta().layout = { r: 0 };
+        start.meta().visible = false;
 
-        var end = {
-            _meta: {
-                layout: mklayout(0, expected[0]),
-                visible: false
-            }
-        };
+        var end = new ControlPoint({
+            id: connection.points[connection.points.length - 1].id,
+        });
+        end.meta().layout = { r: 0 };
+        end.meta().visible = false;
 
-        end.x = data.routers[0].x
-            - (data.routers[0]._meta.layout.r
-               + data.routers[0].conversation_endpoints[0]._meta.layout.len / 2.0);
+        var router = components['router1'];
+        end.x = router.x
+            - (router.meta().layout.r
+               + router.getEndpoints('conversation')[0].meta().layout.len / 2.0);
 
-        end.y = data.routers[0].y
-            + data.routers[0].conversation_endpoints[0]._meta.layout.y;
+        end.y = router.y + router.getEndpoints('conversation')[0].meta().layout.y;
 
-        expected[0].points.push(start);
+        points.push(start);
 
-        var xOffset = (end.x - start.x) / (numberOfPoints + 1);
-        var yOffset = (end.y - start.y) / (numberOfPoints + 1);
-        for (var i = 1; i <= numberOfPoints; i++) {
-            expected[0].points.push({
+        var xOffset = (end.x - start.x) / (numberOfPoints - 1);
+        var yOffset = (end.y - start.y) / (numberOfPoints - 1);
+        for (var i = 1; i < numberOfPoints - 1; i++) {
+            var point = new ControlPoint({
+                id: connection.points[i].id,
                 x: start.x + i * xOffset,
-                y: start.y + i * yOffset,
-                _meta: {
-                    layout: mklayout(pointRadius, expected[0]),
-                    visible: false
-                }
+                y: start.y + i * yOffset
             });
+            point.meta().layout = { r: pointRadius };
+            point.meta().visible = false;
+            points.push(point);
         }
 
-        expected[0].points.push(end);
+        points.push(end);
+
+        expect(components['connection1'].meta().colour).to.deep.equal('red');
+        expect(components['connection1'].points).to.deep.equal(points);
 
         // connection2
-        start = {
+        connection = components['connection2'];
+        points = [];
+
+        start = new ControlPoint({
+            id: connection.points[0].id,
             x: 100,
-            y: 100,
-            _meta: {
-                layout: mklayout(0, expected[1]),
-                visible: false
-            }
-        };
+            y: 100
+        });
+        start.meta().layout = { r: 0 };
+        start.meta().visible = false;
 
-        end = {
-            x: 200,
-            y: 200,
-            _meta: {
-                layout: mklayout(0, expected[1]),
-                visible: false
-            }
-        };
+        end = new ControlPoint({
+            id: connection.points[connection.points.length - 1].id,
+        });
+        end.meta().layout = { r: 0 };
+        end.meta().visible = false;
 
-        expected[1].points.push(start);
+        var channel = components['channel1'];
+        end.x = channel.x;
+        end.y = channel.y;
 
-        xOffset = (end.x - start.x) / (numberOfPoints + 1);
-        yOffset = (end.y - start.y) / (numberOfPoints + 1);
-        for (var i = 1; i <= numberOfPoints; i++) {
-            expected[1].points.push({
+        points.push(start);
+
+        xOffset = (end.x - start.x) / (numberOfPoints - 1);
+        yOffset = (end.y - start.y) / (numberOfPoints - 1);
+        for (var i = 1; i < numberOfPoints - 1; i++) {
+            var point = new ControlPoint({
+                id: connection.points[i].id,
                 x: start.x + i * xOffset,
-                y: start.y + i * yOffset,
-                _meta: {
-                    layout: mklayout(pointRadius, expected[1]),
-                    visible: false
-                }
+                y: start.y + i * yOffset
             });
+            point.meta().layout = { r: pointRadius };
+            point.meta().visible = false;
+            points.push(point);
         }
 
-        expected[1].points.push(end);
+        points.push(end);
 
-        angular.forEach(expected, function (connection) {
-            for (var i = 0; i < connection.points.length; i++) {
-                connection.points[i]._meta.id = connection.uuid + '-' + i;
-            }
-        });
-
-        expect(data.routing_entries).to.deep.equal(expected);
+        expect(components['connection2'].meta().colour).to.deep.equal('red');
+        expect(components['connection2'].points).to.deep.equal(points);
     }));
 
 });

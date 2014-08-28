@@ -1,6 +1,6 @@
 
-angular.module('vumigo.services').factory('conversationLayout', ['componentHelper',
-    function (componentHelper) {
+angular.module('vumigo.services').factory('conversationLayout', [
+    function () {
         return function () {
             var innerRadius = 10;
             var outerRadius = 30;
@@ -8,11 +8,10 @@ angular.module('vumigo.services').factory('conversationLayout', ['componentHelpe
 
             function layout(data) {
                 angular.forEach(data, function (conversation) {
-                    var metadata = componentHelper.getMetadata(conversation);
-
                     var textX = -(outerRadius / 2.0 + textMargin);
 
-                    metadata.layout = {
+                    var meta = conversation.meta();
+                    meta.layout = {
                         inner: {
                             r: innerRadius
                         },
