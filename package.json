@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "node app"
+    "start": "node app",
+    "test": "./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"
   },
   "dependencies": {
     "connect": "~2.15.0",
@@ -34,6 +35,7 @@
     "karma-chai": "~0.1.0",
     "karma-sinon": "~1.0.3",
     "karma-chrome-launcher": "~0.1.4",
-    "karma-ng-html2js-preprocessor": "~0.1.0"
+    "karma-ng-html2js-preprocessor": "~0.1.0",
+    "karma-phantomjs-launcher": "~1.9.7"
   }
 }
