@@ -2366,10 +2366,11 @@ directives.directive('goCampaignDesigner', [
     'Conversation',
     'Router',
     'Channel',
+    'Endpoint',
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
               connectionComponent, controlPointComponent, menuComponent,
-              ComponentManager, Conversation, Router, Channel) {
+              ComponentManager, Conversation, Router, Channel, Endpoint) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -2421,7 +2422,11 @@ directives.directive('goCampaignDesigner', [
             $scope.addConversation = function () {
 
                 var add = function (data) {
-                    $scope.newComponent = new Conversation(data);
+                    $scope.newComponent = new Conversation({
+                        name: data.name,
+                        description: data.description,
+                        colour: data.colour
+                    });
                 };
 
                 var modalInstance = $modal.open({
@@ -2448,7 +2453,10 @@ directives.directive('goCampaignDesigner', [
             $scope.addChannel = function () {
 
                 var add = function (data) {
-                    $scope.newComponent = new Channel(data);
+                    $scope.newComponent = new Channel({
+                        name: data.name,
+                        description: data.description
+                    });
                 };
 
                 var modalInstance = $modal.open({
@@ -2474,14 +2482,46 @@ directives.directive('goCampaignDesigner', [
              */
             $scope.addRouter = function () {
                 var add = function (data) {
-                    $scope.newComponent = new Router(data);
+                    var options = {
+                        name: data.name,
+                        description: data.description
+                    };
+
+                    var endpoints = _.reduce(_.filter(data.endpoints, 'name'),
+                        function (endpoints, endpoint) {
+                            endpoints.push(new Endpoint({
+                                name: endpoint.name,
+                                accepts: ['conversation']
+                            }));
+
+                            return endpoints;
+                        }, []);
+
+                    if (!_.isEmpty(endpoints)) {
+                        endpoints.push(new Endpoint({
+                            accepts: ['channel']
+                        }));
+                        options.endpoints = endpoints;
+                    }
+
+                    $scope.newComponent = new Router(options);
                 };
 
                 var modalInstance = $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
                     controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-                        $scope.data = {};
+                        $scope.data = {
+                            endpoints: [{ name: "" }]
+                        };
+
+                        $scope.addEndpoint = function () {
+                            $scope.data.endpoints.push({ name: "" });
+                        };
+
+                        $scope.removeEndpoint = function (index) {
+                            $scope.data.endpoints.splice(index, 1);
+                        };
 
                         $scope.ok = function () {
                             add($scope.data);
