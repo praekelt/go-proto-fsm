@@ -73,6 +73,7 @@ describe('routerComponent', function () {
         expect(pin.find('.head').eq(0).attr('r')).to.equal('8');
         expect(pin.find('.line')).to.have.length(1);
         expect(pin.find('.line').eq(0).attr('x2')).to.equal(String(len));
+        expect(pin.find('.name').eq(0).html()).to.equal('default');
 
         endpoint = componentManager.getComponent('router1').getEndpoints('conversation')[1];
         pin = pins.find('.pin').eq(1);
@@ -80,6 +81,7 @@ describe('routerComponent', function () {
         x = -(len / 2.0);
         y = endpoint.meta().layout.y;
         expect(pin.attr('transform')).to.equal('translate(' + [x, y] + ')');
+        expect(pin.find('.name').eq(0).html()).to.equal('default');
     }));
 
     it('should have drawn new router component', inject(function () {
