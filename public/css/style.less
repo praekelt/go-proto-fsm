@@ -116,6 +116,19 @@
                     stroke-width: 2px;
                 }
 
+                .name {
+                    fill: @bg;
+                    font-size: 12px !important;
+                    text-anchor: end;
+                    alignment-baseline: after-edge;
+                }
+
+                &.pin-channel {
+                    .name {
+                        text-anchor: start;
+                    }
+                }
+
                 &.selected {
                     .head {
                         fill: @bg-selected;
