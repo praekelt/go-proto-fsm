@@ -1,86 +1,78 @@
 
-angular.module('vumigo.services').factory('menuLayout', ['componentHelper',
-    function (componentHelper) {
+angular.module('vumigo.services').factory('menuLayout', [
+    function () {
         return function () {
             var menuItemWidth = 32;
             var menuItemHeight = 32;
             var menuYOffset = 20;
             var textX = 10;
             var textYOffset = 20;
-            var faLink = '&#xf0c1;';
-            var faArrowsH = '&#xf07e;';
-            var faTimes = '&#xf00d;';
-
-            function item(component, icon, action) {
-                return {
-                    component: component,
-                    width: menuItemWidth,
-                    height: menuItemHeight,
-                    text: {
-                        icon: icon,
-                        x: textX,
-                        dy: textYOffset
-                    },
-                    action: action
-                }
-            }
 
             function layout(data) {
-                angular.forEach(data.conversations, function (conversation) {
-                    var metadata = componentHelper.getMetadata(conversation);
-                    metadata.menu = {
-                        id: conversation.uuid,
-                        items: [
-                            item(conversation, faLink, 'go:campaignDesignerConnect'),
-                            item(conversation, faTimes, 'go:campaignDesignerRemove')
-                        ],
-                        active: metadata.selected || false,
-                        x: conversation.x,
-                        y: conversation.y + metadata.layout.outer.r + menuYOffset
-                    };
-                });
+                _.forEach(data, function (menu) {
+                    var meta = menu.meta();
 
-                angular.forEach(data.channels, function (channel) {
-                    var metadata = componentHelper.getMetadata(channel);
-                    metadata.menu = {
-                        id: channel.uuid,
-                        items: [
-                            item(channel, faLink, 'go:campaignDesignerConnect'),
-                            item(channel, faTimes, 'go:campaignDesignerRemove')
-                        ],
-                        active: metadata.selected || false,
-                        x: channel.x,
-                        y: channel.y + metadata.layout.outer.r + menuYOffset
-                    };
-                });
+                    meta.active = menu.component.meta().selected || false;
 
-                angular.forEach(data.routers, function (router) {
-                    var metadata = componentHelper.getMetadata(router);
-                    metadata.menu = {
-                        id: router.uuid,
-                        items: [
-                            item(router, faLink, 'go:campaignDesignerConnect'),
-                            item(router, faTimes, 'go:campaignDesignerRemove')
-                        ],
-                        active: metadata.selected || false,
-                        x: router.x,
-                        y: router.y + metadata.layout.r + menuYOffset
-                    };
-                });
+                    switch (menu.component.type) {
+                        case 'conversation':
+                            meta.layout = {
+                                x: menu.component.x,
+                                y: menu.component.y
+                                    + menu.component.meta().layout.outer.r
+                                    + menuYOffset
+                            };
+                            break;
 
-                angular.forEach(data.routing_entries, function (connection) {
-                    var metadata = componentHelper.getMetadata(connection);
-                    var point = connection.points[Math.floor(connection.points.length / 2)];
-                    metadata.menu = {
-                        id: connection.uuid,
-                        items: [
-                            item(connection, faArrowsH, 'go:campaignDesignerChangeDirection'),
-                            item(connection, faTimes, 'go:campaignDesignerRemove')
-                        ],
-                        active: metadata.selected || false,
-                        x: point.x,
-                        y: point.y + menuYOffset
-                    };
+                        case 'router':
+                            meta.layout = {
+                                x: menu.component.x,
+                                y: menu.component.y
+                                    + menu.component.meta().layout.r
+                                    + menuYOffset
+                            };
+                            break;
+
+                        case 'channel':
+                            meta.layout = {
+                                x: menu.component.x,
+                                y: menu.component.y
+                                    + menu.component.meta().layout.outer.r
+                                    + menuYOffset
+                            };
+                            break;
+
+                        case 'connection':
+                            var point = menu.component.points[
+                                Math.floor(menu.component.points.length / 2)];
+
+                            meta.layout = {
+                                x: point.x,
+                                y: point.y + menuYOffset
+                            };
+                            break;
+
+                        default:
+                            meta.active = false;
+                            meta.layout = {
+                                x: 0,
+                                y: 0
+                            };
+                            break;
+                    }
+
+                    _.forEach(menu.items, function (item) {
+                        var meta = item.meta();
+                        meta.layout = {
+                            width: menuItemWidth,
+                            height: menuItemHeight,
+                            text: {
+                                x: textX,
+                                dy: textYOffset
+                            }
+                        };
+                    });
+
                 });
 
                 return data;

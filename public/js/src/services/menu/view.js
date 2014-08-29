@@ -11,14 +11,16 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
 
             function update(selection) {
                 selection
-                    .classed('active', function (d) { return d.active; })
+                    .classed('active', function (d) {
+                        return d.meta().active;
+                    })
                     .attr('transform', function (d) {
-                        return 'translate(' + [d.x, d.y] + ')';
+                        return 'translate(' + [d.meta().layout.x, d.meta().layout.y] + ')';
                     });
 
                 selection.selectAll('.menu-item')
                     .data(function (d) { return d.items; },
-                             function (d, i) { return d.component.uuid + '-' + i; })
+                          function (d, i) { return d.id; })
                     .call(menuItem);
             }
 
@@ -52,25 +54,25 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
                     d3.event.stopPropagation();
 
                     $rootScope.$apply(function () {
-                        $rootScope.$emit(d.action, d.component.uuid);
+                        $rootScope.$emit(d.action, d.menu.component);
                     });
                 });
 
                 selection
                     .attr('transform', function (d, i) {
-                        return 'translate(' + [d.width * i, 0] + ')';
+                        return 'translate(' + [d.meta().layout.width * i, 0] + ')';
                     });
 
                 selection.selectAll('rect')
-                    .attr('width', function (d) { return d.width; })
-                    .attr('height', function (d) { return d.height; });
+                    .attr('width', function (d) { return d.meta().layout.width; })
+                    .attr('height', function (d) { return d.meta().layout.height; });
 
                 selection.selectAll('text')
                     .html(function (d) {
-                        return d.text.icon;
+                        return d.icon;
                     })
-                    .attr('x', function (d) { return d.text.x; })
-                    .attr('dy', function (d) { return d.text.dy; });
+                    .attr('x', function (d) { return d.meta().layout.text.x; })
+                    .attr('dy', function (d) { return d.meta().layout.text.dy; });
             }
 
             function exit(selection) {

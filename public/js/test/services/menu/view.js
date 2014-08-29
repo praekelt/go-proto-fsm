@@ -1,9 +1,10 @@
 describe('menuComponent', function () {
-    var element, scope, component, data;
+    var element, scope, menu;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function ($rootScope, menuComponent) {
+    beforeEach(inject(function ($rootScope, Menu, MenuItem, menuComponent) {
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -11,39 +12,30 @@ describe('menuComponent', function () {
 
         scope = $rootScope;
 
-        component = {
-            uuid: 'compinent1'
+        menu = new Menu({
+            component: { id: 'component1' },
+            items: [
+                new MenuItem({
+                    icon: 'icon1',
+                    action: 'go:action1'
+                }),
+                new MenuItem({
+                    icon: 'icon2',
+                    action: 'go:action2'
+                })
+            ],
+        });
+
+        menu.meta().layout = { x: 50, y: 50 };
+        menu.meta().active = false;
+        menu.items[0].meta().layout = menu.items[1].meta().layout = {
+            width: 32,
+            height: 32,
+            text: { x: 10, dy: 20 }
         };
 
-        data = [{
-            items: [{
-                component: component,
-                width: 32,
-                height: 32,
-                text: {
-                    icon: 'icon1',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:action1'
-            }, {
-                component: component,
-                width: 32,
-                height: 32,
-                text: {
-                    icon: 'icon2',
-                    x: 10,
-                    dy: 20
-                },
-                action: 'go:action2'
-            }],
-            active: false,
-            x: 50,
-            y: 50
-        }];
-
         d3.selectAll(element.find('svg').toArray()).selectAll('.menu')
-            .data(data)
+            .data([menu])
             .call(menuComponent());
     }));
 
@@ -67,7 +59,7 @@ describe('menuComponent', function () {
         expect(text).to.have.length(1);
         expect(text.eq(0).attr('x')).to.equal('10');
         expect(text.eq(0).attr('dy')).to.equal('20');
-        expect(text.eq(0).text()).to.equal('icon1');
+        expect(text.eq(0).html()).to.equal('icon1');
     }));
 
     it('should trigger action on click', inject(function () {
@@ -76,7 +68,7 @@ describe('menuComponent', function () {
         var item = element.find('.menu-item').eq(0);
         item.d3().simulate('mousedown');
 
-        expect(scope.$emit.calledWith('go:action1', component.uuid)).to.be.true;
+        expect(scope.$emit.calledWith('go:action1', menu.component)).to.be.true;
     }));
 
 });

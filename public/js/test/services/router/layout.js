@@ -4,62 +4,46 @@ describe('routerLayout', function () {
     beforeEach(module('vumigo.services'));
     beforeEach(module('uuid'));
 
-    beforeEach(inject(function (routerLayout, dragBehavior) {
+    beforeEach(inject(function (routerLayout) {
         layout = routerLayout();
     }));
 
-    it('should compute router layout', inject(function () {
-        var data = [{
-            uuid: "router1",
+    it('should compute router layout', inject(function (Router, Endpoint) {
+        var routers = [new Router({
+            id: "router1",
             name: "A",
             description: "Keyword",
-            channel_endpoints: [{uuid: 'endpoint1', name: 'default'}],
-            conversation_endpoints: [{uuid: 'endpoint2', name: 'default'}],
+            endpoints: [
+                new Endpoint({ id: 'endpoint1', name: 'default', accepts: ['channel'] }),
+                new Endpoint({ id: 'endpoint2', name: 'default', accepts: ['conversation'] })
+            ],
             x: 100,
             y: 100
-        }];
+        })];
 
-        layout(data);
+        layout(routers);
 
         var size = Math.max(layout.minSize(),
-            data[0].conversation_endpoints.length * layout.pinGap());
+            routers[0].getEndpoints('conversation').length * layout.pinGap());
 
         var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 
-        var expected = [{
-            uuid: "router1",
-            name: "A",
-            description: "Keyword",
-            channel_endpoints: [{
-                uuid: 'endpoint1',
-                name: 'default',
-                _meta: {
-                    layout: { x: radius, y: 0, r: 8 }
-                }
-            }],
-            conversation_endpoints: [{
-                uuid: 'endpoint2',
-                name: 'default',
-                _meta: {
-                    layout: { len: radius, y: -20, r: 8 }
-                }
-            }],
-            x: 100,
-            y: 100,
-            _meta: {
-                layout: { r: radius }
-            }
-        }];
+        var expected = {
+            layout: { r: radius }
+        };
 
-        for (var i = 0; i < expected[0].channel_endpoints.length; i++) {
-            expected[0].channel_endpoints[i]._meta.parent = expected[0];
-        }
+        expect(routers[0].meta()).to.deep.equal(expected);
 
-        for (var i = 0; i < expected[0].conversation_endpoints.length; i++) {
-            expected[0].conversation_endpoints[i]._meta.parent = expected[0];
-        }
+        expected = [
+            { layout: { x: radius, y: 0, r: 8 } },
+            { layout: { len: radius, y: -20, r: 8 } }
+        ];
 
-        expect(data).to.deep.equal(expected);
+        var actual = [
+            routers[0].endpoints[0].meta(),
+            routers[0].endpoints[1].meta()
+        ];
+
+        expect(actual).to.deep.equal(expected);
     }));
-
 });
