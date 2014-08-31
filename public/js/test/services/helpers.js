@@ -49,6 +49,8 @@ describe('ConnectableComponent', function () {
         });
 
         expect(component instanceof BaseComponent).to.be.true;
+        expect(component.id).to.equal('component1');
+        expect(component.type).to.equal('test component');
         expect(component.endpoints).not.to.be.undefined;
         expect(component.endpoints).to.be.empty;
     }));
