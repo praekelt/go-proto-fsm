@@ -118,3 +118,39 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         return controlPoint;
     };
 }]);
+
+angular.module('vumigo.services').factory('arrowComponent', [function () {
+    return function () {
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component arrow');
+
+            selection.append('text')
+                .attr('class', 'icon');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.select('.icon')
+                .html('&#xf04e;');
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        var arrow = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return arrow;
+        };
+
+        return arrow;
+    };
+}]);

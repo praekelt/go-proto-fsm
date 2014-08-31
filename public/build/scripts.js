@@ -2361,6 +2361,7 @@ directives.directive('goCampaignDesigner', [
     'routerComponent',
     'connectionComponent',
     'controlPointComponent',
+    'arrowComponent',
     'menuComponent',
     'ComponentManager',
     'Conversation',
@@ -2368,8 +2369,8 @@ directives.directive('goCampaignDesigner', [
     'Channel',
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
-              connectionComponent, controlPointComponent, menuComponent,
-              ComponentManager, Conversation, Router, Channel) {
+              connectionComponent, controlPointComponent, arrowComponent,
+              menuComponent, ComponentManager, Conversation, Router, Channel) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -2688,6 +2689,8 @@ directives.directive('goCampaignDesigner', [
             var controlPoint = controlPointComponent()
                 .drag(controlPointDrag);
 
+            var arrow = arrowComponent();
+
             var menu = menuComponent();
 
             repaint(); // Do initial draw
@@ -2720,6 +2723,10 @@ directives.directive('goCampaignDesigner', [
                     .data(componentManager.getControlPoints(),
                           function (d) { return d.id; })
                     .call(controlPoint);
+
+                connectionLayer.selectAll('.arrow')
+                    .data(componentManager.getArrows())
+                    .call(arrow);
 
                 componentLayer.selectAll('.menu')
                     .data(componentManager.getMenus(),
@@ -3688,6 +3695,16 @@ angular.module('vumigo.services').factory('ComponentManager', [
             return _.where(this.components, { type: 'connection' });
         };
 
+        ComponentManager.prototype.getArrows = function () {
+            return _.reduce(this.getConnections(), function (arrows, connection) {
+                _.forEach(connection.meta().arrows, function (arrow) {
+                    arrows.push(arrow);
+                });
+
+                return arrows;
+            }, []);
+        };
+
         ComponentManager.prototype.getControlPoints = function () {
             return _.reduce(this.getConnections(), function (points, connection) {
                 _.forEach(connection.points, function (point) {
@@ -4400,9 +4417,10 @@ angular.module('vumigo.services').factory('connectionLayout', [
                     }
 
                     // Fix the start and end point to the source and target components
-                    position(connection.points[0], source.component, source);
-                    position(connection.points[connection.points.length - 1],
-                             target.component, target);
+                    var start = connection.points[0];
+                    var end = connection.points[connection.points.length - 1];
+                    position(start, source.component, source);
+                    position(end, target.component, target);
 
                     interpolate(connection.points);
 
@@ -4420,6 +4438,27 @@ angular.module('vumigo.services').factory('connectionLayout', [
                             };
                         }
                     }
+
+                    var first = connection.points[1];
+                    var x1 = 0;
+                    var y1 = 0;
+                    var x2 = first.x - start.x;
+                    var y2 = -(first.y - start.y);
+
+                    var angle = Math.atan((y2 - y1) / (x2 - x1)) * (180 / Math.PI);
+
+                    if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
+                    if (x2 < 0 && y2 > 0) angle = 270 + Math.abs(angle);
+                    if (x2 < 0 && y2 > 0) angle = 270 - angle;
+                    if (x2 > 0 && y2 < 0) angle = 90 + Math.abs(angle);
+
+                    console.log(angle);
+
+                    connection.meta().arrows = [{
+                        angle: angle,
+                        x: start.x + (first.x - start.x) / 2,
+                        y: start.y + (first.y - start.y) / 2
+                    }];
                 });
 
                 return data;
@@ -4548,6 +4587,42 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
         };
 
         return controlPoint;
+    };
+}]);
+
+angular.module('vumigo.services').factory('arrowComponent', [function () {
+    return function () {
+
+        function enter(selection) {
+            selection = selection.append('g')
+                .attr('class', 'component arrow');
+
+            selection.append('text')
+                .attr('class', 'icon');
+        }
+
+        function update(selection) {
+            selection
+                .attr('transform', function (d) {
+                    return 'translate(' + [d.x, d.y] + ')';
+                });
+
+            selection.select('.icon')
+                .html('&#xf04e;');
+        }
+
+        function exit(selection) {
+            selection.remove();
+        }
+
+        var arrow = function (selection) {
+            enter(selection.enter());
+            update(selection);
+            exit(selection.exit());
+            return arrow;
+        };
+
+        return arrow;
     };
 }]);
 

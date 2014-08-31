@@ -60,9 +60,10 @@ angular.module('vumigo.services').factory('connectionLayout', [
                     }
 
                     // Fix the start and end point to the source and target components
-                    position(connection.points[0], source.component, source);
-                    position(connection.points[connection.points.length - 1],
-                             target.component, target);
+                    var start = connection.points[0];
+                    var end = connection.points[connection.points.length - 1];
+                    position(start, source.component, source);
+                    position(end, target.component, target);
 
                     interpolate(connection.points);
 
@@ -80,6 +81,27 @@ angular.module('vumigo.services').factory('connectionLayout', [
                             };
                         }
                     }
+
+                    var first = connection.points[1];
+                    var x1 = 0;
+                    var y1 = 0;
+                    var x2 = first.x - start.x;
+                    var y2 = -(first.y - start.y);
+
+                    var angle = Math.atan((y2 - y1) / (x2 - x1)) * (180 / Math.PI);
+
+                    if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
+                    if (x2 < 0 && y2 > 0) angle = 270 + Math.abs(angle);
+                    if (x2 < 0 && y2 > 0) angle = 270 - angle;
+                    if (x2 > 0 && y2 < 0) angle = 90 + Math.abs(angle);
+
+                    console.log(angle);
+
+                    connection.meta().arrows = [{
+                        angle: angle,
+                        x: start.x + (first.x - start.x) / 2,
+                        y: start.y + (first.y - start.y) / 2
+                    }];
                 });
 
                 return data;

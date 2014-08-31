@@ -473,6 +473,16 @@ angular.module('vumigo.services').factory('ComponentManager', [
             return _.where(this.components, { type: 'connection' });
         };
 
+        ComponentManager.prototype.getArrows = function () {
+            return _.reduce(this.getConnections(), function (arrows, connection) {
+                _.forEach(connection.meta().arrows, function (arrow) {
+                    arrows.push(arrow);
+                });
+
+                return arrows;
+            }, []);
+        };
+
         ComponentManager.prototype.getControlPoints = function () {
             return _.reduce(this.getConnections(), function (points, connection) {
                 _.forEach(connection.points, function (point) {

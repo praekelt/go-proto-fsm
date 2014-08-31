@@ -13,6 +13,7 @@ directives.directive('goCampaignDesigner', [
     'routerComponent',
     'connectionComponent',
     'controlPointComponent',
+    'arrowComponent',
     'menuComponent',
     'ComponentManager',
     'Conversation',
@@ -20,8 +21,8 @@ directives.directive('goCampaignDesigner', [
     'Channel',
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
-              connectionComponent, controlPointComponent, menuComponent,
-              ComponentManager, Conversation, Router, Channel) {
+              connectionComponent, controlPointComponent, arrowComponent,
+              menuComponent, ComponentManager, Conversation, Router, Channel) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -340,6 +341,8 @@ directives.directive('goCampaignDesigner', [
             var controlPoint = controlPointComponent()
                 .drag(controlPointDrag);
 
+            var arrow = arrowComponent();
+
             var menu = menuComponent();
 
             repaint(); // Do initial draw
@@ -372,6 +375,10 @@ directives.directive('goCampaignDesigner', [
                     .data(componentManager.getControlPoints(),
                           function (d) { return d.id; })
                     .call(controlPoint);
+
+                connectionLayer.selectAll('.arrow')
+                    .data(componentManager.getArrows())
+                    .call(arrow);
 
                 componentLayer.selectAll('.menu')
                     .data(componentManager.getMenus(),
