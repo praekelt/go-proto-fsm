@@ -139,15 +139,13 @@ directives.directive('goCampaignDesigner', [
                         description: data.description
                     };
 
-                    var endpoints = _.reduce(_.filter(data.endpoints, 'name'),
-                        function (endpoints, endpoint) {
-                            endpoints.push(new Endpoint({
+                    var endpoints = _.map(_.filter(data.endpoints, 'name'),
+                        function (endpoint) {
+                            return new Endpoint({
                                 name: endpoint.name,
                                 accepts: ['conversation']
-                            }));
-
-                            return endpoints;
-                        }, []);
+                            })
+                        });
 
                     if (!_.isEmpty(endpoints)) {
                         endpoints.push(new Endpoint({
