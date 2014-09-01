@@ -260,6 +260,13 @@ angular.module('vumigo.services').factory('Route', ['rfc4122',
             this.target = options.target || null;
         }
 
+        Route.prototype.flip = function () {
+            var endpoint = this.source;
+            this.source = this.target;
+            this.target = endpoint;
+            return this;
+        };
+
         return Route;
     }
 ]);
@@ -308,8 +315,12 @@ angular.module('vumigo.services').factory('Connection', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf07e;',
-                        action: 'go:campaignDesignerChangeDirection'
+                        icon: '&#xf065;',
+                        action: 'go:campaignDesignerFlipDirection'
+                    }),
+                    new MenuItem({
+                        icon: '&#xf066;',
+                        action: 'go:campaignDesignerBiDirectional'
                     }),
                     new MenuItem({
                         icon: '&#xf00d;',
@@ -343,6 +354,23 @@ angular.module('vumigo.services').factory('Connection', [
             );
 
             return !_.isEmpty(endpoints);
+        };
+
+        Connection.prototype.flipDirection = function () {
+            if (_.isEmpty(this.routes)) return;
+            this.routes = [_.first(this.routes).flip()];
+            this.points.reverse();
+            return this;
+        };
+
+        Connection.prototype.biDirectional = function () {
+            if (_.isEmpty(this.routes) || _.size(this.routes) > 1) return;
+            var route = _.first(this.routes);
+            this.routes.push(new Route({
+                source: route.target,
+                target: route.source
+            }));
+            return this;
         };
 
         return Connection;

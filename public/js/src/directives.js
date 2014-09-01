@@ -307,6 +307,16 @@ directives.directive('goCampaignDesigner', [
             $rootScope.$on('go:campaignDesignerRemove', function (event) {
                 $scope.remove();
             });
+
+            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, connection) {
+                connection.flipDirection();
+                $scope.refresh();
+            });
+
+            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, connection) {
+                connection.biDirectional();
+                $scope.refresh();
+            });
         }
 
         /**
