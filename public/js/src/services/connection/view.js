@@ -133,7 +133,8 @@ angular.module('vumigo.services').factory('arrowComponent', [function () {
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
+                    return 'translate(' + [d.x, d.y]
+                        + ')rotate(' + (d.angle - 90) + ')';
                 });
 
             selection.select('.icon')

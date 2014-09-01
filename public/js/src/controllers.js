@@ -57,6 +57,10 @@ controllers.controller('CampaignMakerController', ['$scope',
                 uuid: 'connection1',
                 source: {uuid: 'endpoint1'},
                 target: {uuid: 'endpoint6'}
+            }, {
+                uuid: 'connection2',
+                source: {uuid: 'endpoint6'},
+                target: {uuid: 'endpoint1'}
             }]
         };
     }

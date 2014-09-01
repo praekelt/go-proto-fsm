@@ -36,6 +36,27 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 }
             }
 
+            function arrow(start, end) {
+                var x1 = 0;
+                var y1 = 0;
+                var x2 = end.x - start.x;
+                var y2 = -(end.y - start.y);
+
+                var angle = Math.atan(Math.abs(y2 - y1) / Math.abs(x2 - x1))
+                    * (180 / Math.PI);
+
+                if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
+                if (x2 < 0 && y2 > 0) angle = 270 + angle;
+                if (x2 <= 0 && y2 <= 0) angle = 270 - angle;
+                if (x2 > 0 && y2 < 0) angle = 90 + angle;
+
+                return {
+                    angle: angle,
+                    x: (start.x + (end.x - start.x) / 2),
+                    y: (start.y + (end.y - start.y) / 2)
+                };
+            }
+
             function layout(data) {
                 _.forEach(data, function (connection) {
                     if (_.isEmpty(connection.routes)) return;
@@ -82,26 +103,14 @@ angular.module('vumigo.services').factory('connectionLayout', [
                         }
                     }
 
-                    var first = connection.points[1];
-                    var x1 = 0;
-                    var y1 = 0;
-                    var x2 = first.x - start.x;
-                    var y2 = -(first.y - start.y);
+                    connection.meta().arrows = [
+                        arrow(start, connection.points[1])
+                    ];
 
-                    var angle = Math.atan((y2 - y1) / (x2 - x1)) * (180 / Math.PI);
-
-                    if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
-                    if (x2 < 0 && y2 > 0) angle = 270 + Math.abs(angle);
-                    if (x2 < 0 && y2 > 0) angle = 270 - angle;
-                    if (x2 > 0 && y2 < 0) angle = 90 + Math.abs(angle);
-
-                    console.log(angle);
-
-                    connection.meta().arrows = [{
-                        angle: angle,
-                        x: start.x + (first.x - start.x) / 2,
-                        y: start.y + (first.y - start.y) / 2
-                    }];
+                    if (_.size(connection.routes) > 1) {  // bi-directional
+                        var point = connection.points[connection.points.length - 2];
+                        connection.meta().arrows.push(arrow(end, point));
+                    }
                 });
 
                 return data;
