@@ -6,13 +6,30 @@
         <div class="form-group" ng-class="{ 'has-error': form.name.$invalid && form.name.$dirty }">
             <label for="field-name">Name</label>
             <input id="field-name" type="text" name="name" class="form-control"
-                        data-ng-model="data.name" />
+                   data-ng-model="data.name" />
         </div>
         <div class="form-group">
             <label for="field-description">Description</label>
             <textarea id="field-description" type="text" name="description" class="form-control"
-                             data-ng-model="data.description"></textarea>
+                      data-ng-model="data.description"></textarea>
         </div>
+        <div data-ng-repeat="endpoint in data.endpoints track by $index">
+            <ng-form name="f">
+                <div class="form-group">
+                    <label for="field-endpoint-{{ $index }}">
+                        <span>Keyword #{{ $index + 1 }}</span>
+                        <a class="btn btn-link" data-ng-click="removeEndpoint($index)">
+                            <i class="fa fa-times-circle"></i>&nbsp;Remove keyword
+                        </a>
+                    </label>
+                    <input id="field-endpoint-{{ $index }}" type="text" name="endpoint{{ $index }}"
+                           class="form-control" data-ng-model="endpoint.name"></input>
+                </div>
+            </ng-form>
+        </div>
+        <a class="btn btn-link" data-ng-click="addEndpoint()">
+            <i class="fa fa-plus-circle"></i>&nbsp;<span>Add keyword</span>
+        </a>
     </form>
 </div>
 <div class="modal-footer">

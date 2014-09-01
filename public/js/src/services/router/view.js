@@ -106,6 +106,9 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.append('circle')
                     .attr('class', 'head');
+
+                selection.append('text')
+                    .attr('class', 'name');
             }
 
             function update(selection) {
@@ -131,6 +134,10 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.select('.line')
                     .attr('x2', function (d) { return d.meta().layout.len; });
+
+                selection.select('.name')
+                    .attr('x', function (d) { return d.meta().layout.name.x; })
+                    .text(function (d) { return d.name; });
             }
 
             function exit(selection) {
@@ -157,6 +164,9 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.append('circle')
                     .attr('class', 'head');
+
+                selection.append('text')
+                    .attr('class', 'name');
             }
 
             function update(selection) {
@@ -179,6 +189,10 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.select('.head')
                     .attr('r', function (d) { return d.meta().layout.r; })
+
+                selection.select('.name')
+                    .attr('x', function (d) { return d.meta().layout.name.x; })
+                    .text(function (d) { return d.name; });
             }
 
             function exit(selection) {
