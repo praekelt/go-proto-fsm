@@ -5,6 +5,7 @@ angular.module('vumigo.services').factory('routerLayout', [
             var minSize = 60;
             var pinGap = 20;
             var pinHeadRadius = 8;
+            var pinTextOffset = 10;
 
             function pins(router) {
                 var endpoints = router.getEndpoints('conversation');
@@ -13,7 +14,10 @@ angular.module('vumigo.services').factory('routerLayout', [
                     meta.layout = {
                         len: router.meta().layout.r,
                         y: pinGap * (i - 1),
-                        r: pinHeadRadius
+                        r: pinHeadRadius,
+                        name: {
+                            x: -pinTextOffset
+                        }
                     };
                 });
 
@@ -23,7 +27,10 @@ angular.module('vumigo.services').factory('routerLayout', [
                     meta.layout = {
                         x: router.meta().layout.r,
                         y: 0,
-                        r: pinHeadRadius
+                        r: pinHeadRadius,
+                        name: {
+                            x: pinTextOffset
+                        }
                     };
                 });
             }

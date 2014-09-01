@@ -34,10 +34,21 @@ describe('routerLayout', function () {
 
         expect(routers[0].meta()).to.deep.equal(expected);
 
-        expected = [
-            { layout: { x: radius, y: 0, r: 8 } },
-            { layout: { len: radius, y: -20, r: 8 } }
-        ];
+        expected = [{
+            layout: {
+                x: radius,
+                y: 0,
+                r: 8,
+                name: { x: 10 }
+            }
+        }, {
+            layout: {
+                len: radius,
+                y: -20,
+                r: 8,
+                name: { x: -10 }
+            }
+        }];
 
         var actual = [
             routers[0].endpoints[0].meta(),
