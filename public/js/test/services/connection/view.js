@@ -228,3 +228,145 @@ describe('controlPointComponent', function () {
     }));
 
 });
+
+describe('arrowComponent', function () {
+    var element, componentManager;
+
+    beforeEach(module('uuid'));
+    beforeEach(module('vumigo.services'));
+
+    beforeEach(inject(function (ComponentManager, dragBehavior, channelComponent,
+                                conversationComponent, connectionComponent,
+                                controlPointComponent, arrowComponent) {
+
+        element = angular.element(
+            '<div id="viewport" style="width: 20px; height: 20px">' +
+                '<svg width="100" height="100"></svg>' +
+            '</div>');
+
+        componentManager = new ComponentManager({
+            conversations: [{
+                uuid: 'conversation1',
+                name: "Conversation 1",
+                description: "",
+                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
+                colour: '#red',
+                x: 100,
+                y: 100
+            }],
+            channels: [{
+                uuid: 'channel1',
+                name: "Channel 1",
+                description: "",
+                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
+                utilization: 0.4,
+                x: 200,
+                y: 200
+            }],
+            routers: [],
+            routing_entries: [{
+                source: { uuid: 'endpoint1' },
+                target: { uuid: 'endpoint2' }
+            }, {
+                source: { uuid: 'endpoint2' },
+                target: { uuid: 'endpoint1' }
+            }]
+        });
+
+        // Configure behaviors
+        var drag = dragBehavior()
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .call();
+
+        var connectionDrag = dragBehavior()
+            .dragEnabled(false)
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .call();
+
+        var controlPointDrag = dragBehavior()
+            .selectEnabled(false)
+            .canvasWidth(100)
+            .canvasHeight(100)
+            .gridCellSize(10)
+            .call();
+
+        // Create canvas
+        var svg = d3.selectAll(element.find('svg').toArray());
+
+        // Layout components
+        componentManager.layoutComponents();
+
+        // Draw conversations
+        var conversation = conversationComponent()
+            .drag(drag);
+
+        svg.selectAll('.conversation')
+            .data(componentManager.getConversations())
+            .call(conversation);
+
+        // Draw channels
+        var channel = channelComponent()
+            .drag(drag);
+
+        svg.selectAll('.channel')
+            .data(componentManager.getChannels())
+            .call(channel);
+
+        // Draw connections
+        connection = connectionComponent()
+            .drag(connectionDrag);
+
+        svg.selectAll('.connection')
+            .data(componentManager.getConnections())
+            .call(connection);
+
+        // Draw control points
+        var controlPoint = controlPointComponent()
+            .drag(controlPointDrag);
+
+        svg.selectAll('.control-point')
+            .data(componentManager.getControlPoints())
+            .call(controlPoint);
+
+        // Draw arrows
+        var arrow = arrowComponent();
+
+        svg.selectAll('.arrow')
+            .data(componentManager.getArrows())
+            .call(arrow);
+    }));
+
+    it('should have drawn the arrows', inject(function () {
+        var arrows = element.find('.arrow');
+        expect(arrows).to.have.length(2);
+
+        var datum = arrows.get(0).__data__;
+        expect(arrows.eq(0).attr('transform')).to.equal('translate('
+            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+
+        datum = arrows.get(1).__data__;
+        expect(arrows.eq(1).attr('transform')).to.equal('translate('
+            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+    }));
+
+    it('should rotate the arrow', inject(function () {
+        element.find('.control-point').eq(1)
+            .d3()
+            .simulate('dragstart')
+            .simulate('drag', {
+                x: 300,
+                y: 500
+            })
+            .simulate('dragend');
+
+        var arrows = element.find('.arrow');
+        var datum = arrows.get(0).__data__;
+        expect(arrows.eq(0).attr('transform')).to.equal('translate('
+            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+    }));
+
+});
