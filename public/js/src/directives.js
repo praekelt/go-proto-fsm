@@ -425,7 +425,8 @@ directives.directive('goCampaignDesigner', [
                     .call(controlPoint);
 
                 connectionLayer.selectAll('.arrow')
-                    .data(componentManager.getArrows())
+                    .data(componentManager.getArrows(),
+                          function (d) { return d.id; })
                     .call(arrow);
 
                 componentLayer.selectAll('.menu')

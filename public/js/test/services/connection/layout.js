@@ -4,7 +4,7 @@ describe('connectionLayout', function () {
     /**
      * Helper to compute arrow position and rotation.
      */
-    var arrow = function(start, end) {
+    var arrow = function(connection, index, start, end) {
         var x1 = 0;
         var y1 = 0;
         var x2 = end.x - start.x;
@@ -19,6 +19,7 @@ describe('connectionLayout', function () {
         if (x2 > 0 && y2 < 0) angle = 90 + angle;
 
         return {
+            id: connection.id + '-' + index,
             angle: angle,
             x: (start.x + (end.x - start.x) / 2),
             y: (start.y + (end.y - start.y) / 2)
@@ -164,8 +165,9 @@ describe('connectionLayout', function () {
         points.push(end);
 
         var arrows = [
-            arrow(points[0], points[1]),
-            arrow(points[points.length - 1], points[points.length - 2])
+            arrow(components['connection1'], 0, points[0], points[1]),
+            arrow(components['connection1'], 1,
+                  points[points.length - 1], points[points.length - 2])
         ];
 
         expect(components['connection1'].meta().colour).to.deep.equal('red');
@@ -211,7 +213,9 @@ describe('connectionLayout', function () {
 
         points.push(end);
 
-        arrows = [arrow(points[0], points[1])];
+        arrows = [
+            arrow(components['connection2'], 0, points[0], points[1])
+        ];
 
         expect(components['connection2'].meta().colour).to.deep.equal('red');
         expect(components['connection2'].points).to.deep.equal(points);

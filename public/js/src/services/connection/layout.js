@@ -36,7 +36,7 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 }
             }
 
-            function arrow(start, end) {
+            function arrow(connection, index, start, end) {
                 var x1 = 0;
                 var y1 = 0;
                 var x2 = end.x - start.x;
@@ -51,6 +51,7 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 if (x2 > 0 && y2 < 0) angle = 90 + angle;
 
                 return {
+                    id: connection.id + '-' + index,
                     angle: angle,
                     x: (start.x + (end.x - start.x) / 2),
                     y: (start.y + (end.y - start.y) / 2)
@@ -104,12 +105,12 @@ angular.module('vumigo.services').factory('connectionLayout', [
                     }
 
                     connection.meta().arrows = [
-                        arrow(start, connection.points[1])
+                        arrow(connection, 0, start, connection.points[1])
                     ];
 
                     if (_.size(connection.routes) > 1) {  // bi-directional
                         var point = connection.points[connection.points.length - 2];
-                        connection.meta().arrows.push(arrow(end, point));
+                        connection.meta().arrows.push(arrow(connection, 1, end, point));
                     }
                 });
 
