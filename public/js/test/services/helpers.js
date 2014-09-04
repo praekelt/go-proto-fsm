@@ -343,7 +343,7 @@ describe('Route', function () {
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    it('should initialise new component', inject(function (Route, Endpoint) {
+    it('should initialise new component', inject(function (BaseComponent, Route, Endpoint) {
         var source = new Endpoint({ id: 'endpoint1' });
         var target = new Endpoint({ id: 'endpoint2' });
 
@@ -353,7 +353,9 @@ describe('Route', function () {
             target: target
         });
 
+        expect(route instanceof BaseComponent).to.be.true;
         expect(route.id).to.equal('route1');
+        expect(route.type).to.equal('route');
         expect(route.source).to.equal(source);
         expect(route.target).to.equal(target);
     }));

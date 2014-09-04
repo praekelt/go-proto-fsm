@@ -4,7 +4,7 @@ describe('connectionLayout', function () {
     /**
      * Helper to compute arrow position and rotation.
      */
-    var arrow = function(connection, index, start, end) {
+    var arrow = function(start, end) {
         var x1 = 0;
         var y1 = 0;
         var x2 = end.x - start.x;
@@ -19,7 +19,6 @@ describe('connectionLayout', function () {
         if (x2 > 0 && y2 < 0) angle = 90 + angle;
 
         return {
-            id: connection.id + '-' + index,
             angle: angle,
             x: (start.x + (end.x - start.x) / 2),
             y: (start.y + (end.y - start.y) / 2)
@@ -164,15 +163,20 @@ describe('connectionLayout', function () {
 
         points.push(end);
 
-        var arrows = [
-            arrow(components['connection1'], 0, points[0], points[1]),
-            arrow(components['connection1'], 1,
-                  points[points.length - 1], points[points.length - 2])
-        ];
-
         expect(components['connection1'].meta().colour).to.deep.equal('red');
         expect(components['connection1'].points).to.deep.equal(points);
-        expect(components['connection1'].meta().arrows).to.deep.equal(arrows);
+
+        expect(components['connection1'].routes[0].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[0], points[1])
+            }
+        });
+
+        expect(components['connection1'].routes[1].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[points.length - 1], points[points.length - 2])
+            }
+        });
 
         // connection2
         connection = components['connection2'];
@@ -213,13 +217,13 @@ describe('connectionLayout', function () {
 
         points.push(end);
 
-        arrows = [
-            arrow(components['connection2'], 0, points[0], points[1])
-        ];
-
         expect(components['connection2'].meta().colour).to.deep.equal('red');
         expect(components['connection2'].points).to.deep.equal(points);
-        expect(components['connection2'].meta().arrows).to.deep.equal(arrows);
+        expect(components['connection2'].routes[0].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[0], points[1])
+            }
+        });
     }));
 
 });

@@ -229,7 +229,7 @@ describe('controlPointComponent', function () {
 
 });
 
-describe('arrowComponent', function () {
+describe('routeComponent', function () {
     var element, componentManager;
 
     beforeEach(module('uuid'));
@@ -237,7 +237,7 @@ describe('arrowComponent', function () {
 
     beforeEach(inject(function (ComponentManager, dragBehavior, channelComponent,
                                 conversationComponent, connectionComponent,
-                                controlPointComponent, arrowComponent) {
+                                controlPointComponent, routeComponent) {
 
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
@@ -333,24 +333,28 @@ describe('arrowComponent', function () {
             .call(controlPoint);
 
         // Draw arrows
-        var arrow = arrowComponent();
+        var route = routeComponent();
 
         svg.selectAll('.arrow')
-            .data(componentManager.getArrows())
-            .call(arrow);
+            .data(componentManager.getRoutes())
+            .call(route);
     }));
 
-    it('should have drawn the arrows', inject(function () {
-        var arrows = element.find('.arrow');
-        expect(arrows).to.have.length(2);
+    it('should have drawn the routes', inject(function () {
+        var routes = element.find('.route');
+        expect(routes).to.have.length(2);
 
-        var datum = arrows.get(0).__data__;
-        expect(arrows.eq(0).attr('transform')).to.equal('translate('
-            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+        var datum = routes.get(0).__data__;
+        var meta = datum._meta;
+        expect(routes.eq(0).attr('transform')).to.equal('translate('
+            + [meta.layout.arrow.x, meta.layout.arrow.y]
+            + ')rotate(' + (meta.layout.arrow.angle - 90) + ')');
 
-        datum = arrows.get(1).__data__;
-        expect(arrows.eq(1).attr('transform')).to.equal('translate('
-            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+        datum = routes.get(1).__data__;
+        meta = datum._meta;
+        expect(routes.eq(1).attr('transform')).to.equal('translate('
+            + [meta.layout.arrow.x, meta.layout.arrow.y]
+            + ')rotate(' + (meta.layout.arrow.angle - 90) + ')');
     }));
 
     it('should rotate the arrow', inject(function () {
@@ -363,10 +367,12 @@ describe('arrowComponent', function () {
             })
             .simulate('dragend');
 
-        var arrows = element.find('.arrow');
-        var datum = arrows.get(0).__data__;
-        expect(arrows.eq(0).attr('transform')).to.equal('translate('
-            + [datum.x, datum.y] + ')rotate(' + (datum.angle - 90) + ')');
+        var routes = element.find('.route');
+        var datum = routes.get(0).__data__;
+        var meta = datum._meta;
+        expect(routes.eq(0).attr('transform')).to.equal('translate('
+            + [meta.layout.arrow.x, meta.layout.arrow.y]
+            + ')rotate(' + (meta.layout.arrow.angle - 90) + ')');
     }));
 
 });
