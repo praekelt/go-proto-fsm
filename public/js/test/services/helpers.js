@@ -343,7 +343,7 @@ describe('Route', function () {
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    it('should initialise new component', inject(function (Route, Endpoint) {
+    it('should initialise new component', inject(function (BaseComponent, Route, Endpoint) {
         var source = new Endpoint({ id: 'endpoint1' });
         var target = new Endpoint({ id: 'endpoint2' });
 
@@ -353,9 +353,26 @@ describe('Route', function () {
             target: target
         });
 
+        expect(route instanceof BaseComponent).to.be.true;
         expect(route.id).to.equal('route1');
+        expect(route.type).to.equal('route');
         expect(route.source).to.equal(source);
         expect(route.target).to.equal(target);
+    }));
+
+    it('should flip direction', inject(function (Route, Endpoint) {
+        var source = new Endpoint({ id: 'endpoint1' });
+        var target = new Endpoint({ id: 'endpoint2' });
+
+        var route = new Route({
+            source: source,
+            target: target
+        });
+
+        route.flip();
+
+        expect(route.source).to.equal(target);
+        expect(route.target).to.equal(source);
     }));
 
 });
@@ -413,11 +430,13 @@ describe('Connection', function () {
         expect(connection.menu).not.to.be.undefined;
 
         var menu = connection.menu;
-        expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('&#xf07e;');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerChangeDirection');
-        expect(menu.items[1].icon).to.equal('&#xf00d;');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
+        expect(menu.items).to.have.length(3);
+        expect(menu.items[0].icon).to.equal('&#xf065;');
+        expect(menu.items[0].action).to.equal('go:campaignDesignerFlipDirection');
+        expect(menu.items[1].icon).to.equal('&#xf066;');
+        expect(menu.items[1].action).to.equal('go:campaignDesignerBiDirectional');
+        expect(menu.items[2].icon).to.equal('&#xf00d;');
+        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
     }));
 
     it('should add route', inject(function (BaseComponent, ConnectableComponent, Endpoint, Route, Connection) {
@@ -499,6 +518,74 @@ describe('Connection', function () {
 
         expect(connection.isConnectedTo([endpoint1, endpoint3])).to.be.true;
         expect(connection.isConnectedTo([endpoint3])).to.be.false;
+    }));
+
+    it('should flip direction', inject(function (ConnectableComponent, Endpoint, Route, Connection) {
+        var component1 = new ConnectableComponent({ id: 'component1' });
+        var endpoint1 = new Endpoint({ id: 'endpoint1' });
+        component1.addEndpoint(endpoint1);
+
+        var component2 = new ConnectableComponent({ id: 'component2' });
+        var endpoint2 = new Endpoint({ id: 'endpoint2' });
+        component2.addEndpoint(endpoint2);
+
+        var connection = new Connection({
+            id: 'connection1',
+            routes: [new Route({
+                id: 'route1',
+                source: endpoint1,
+                target: endpoint2
+            })]
+        });
+
+        connection.flipDirection();
+
+        var expected = [new Route({
+            id: 'route1',
+            source: endpoint2,
+            target: endpoint1
+        })];
+
+        expect(connection.routes).to.deep.equal(expected);
+    }));
+
+    it('should make bi-directional', inject(function (ConnectableComponent, Endpoint, Route, Connection, rfc4122) {
+        var component1 = new ConnectableComponent({ id: 'component1' });
+        var endpoint1 = new Endpoint({ id: 'endpoint1' });
+        component1.addEndpoint(endpoint1);
+
+        var component2 = new ConnectableComponent({ id: 'component2' });
+        var endpoint2 = new Endpoint({ id: 'endpoint2' });
+        component2.addEndpoint(endpoint2);
+
+        var connection = new Connection({
+            id: 'connection1',
+            routes: [new Route({
+                id: 'route1',
+                source: endpoint1,
+                target: endpoint2
+            })]
+        });
+
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('route2');
+
+        connection.biDirectional();
+
+        var expected = [
+            new Route({
+                id: 'route1',
+                source: endpoint1,
+                target: endpoint2
+            }),
+            new Route({
+                id: 'route2',
+                source: endpoint2,
+                target: endpoint1
+            })
+        ];
+
+        expect(connection.routes).to.deep.equal(expected);
     }));
 
 });

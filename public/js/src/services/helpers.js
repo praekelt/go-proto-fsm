@@ -250,15 +250,25 @@ angular.module('vumigo.services').factory('Channel', [
     }
 ]);
 
-angular.module('vumigo.services').factory('Route', ['rfc4122',
-    function (rfc4122) {
+angular.module('vumigo.services').factory('Route', ['BaseComponent',
+    function (BaseComponent) {
 
         function Route(options) {
             options = options || {};
-            this.id = options.id || rfc4122.v4();
+            options.type = 'route';
+            BaseComponent.call(this, options);
             this.source = options.source || null;
             this.target = options.target || null;
         }
+
+        Route.prototype = Object.create(BaseComponent.prototype);
+
+        Route.prototype.flip = function () {
+            var endpoint = this.source;
+            this.source = this.target;
+            this.target = endpoint;
+            return this;
+        };
 
         return Route;
     }
@@ -308,8 +318,12 @@ angular.module('vumigo.services').factory('Connection', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf07e;',
-                        action: 'go:campaignDesignerChangeDirection'
+                        icon: '&#xf065;',
+                        action: 'go:campaignDesignerFlipDirection'
+                    }),
+                    new MenuItem({
+                        icon: '&#xf066;',
+                        action: 'go:campaignDesignerBiDirectional'
                     }),
                     new MenuItem({
                         icon: '&#xf00d;',
@@ -343,6 +357,23 @@ angular.module('vumigo.services').factory('Connection', [
             );
 
             return !_.isEmpty(endpoints);
+        };
+
+        Connection.prototype.flipDirection = function () {
+            if (_.isEmpty(this.routes)) return;
+            this.routes = [_.first(this.routes).flip()];
+            this.points.reverse();
+            return this;
+        };
+
+        Connection.prototype.biDirectional = function () {
+            if (_.isEmpty(this.routes) || _.size(this.routes) > 1) return;
+            var route = _.first(this.routes);
+            this.routes.push(new Route({
+                source: route.target,
+                target: route.source
+            }));
+            return this;
         };
 
         return Connection;
@@ -471,6 +502,16 @@ angular.module('vumigo.services').factory('ComponentManager', [
 
         ComponentManager.prototype.getConnections = function () {
             return _.where(this.components, { type: 'connection' });
+        };
+
+        ComponentManager.prototype.getRoutes = function () {
+            return _.reduce(this.getConnections(), function (routes, connection) {
+                _.forEach(connection.routes, function (route) {
+                    routes.push(route);
+                });
+
+                return routes;
+            }, []);
         };
 
         ComponentManager.prototype.getControlPoints = function () {

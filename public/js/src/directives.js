@@ -13,6 +13,7 @@ directives.directive('goCampaignDesigner', [
     'routerComponent',
     'connectionComponent',
     'controlPointComponent',
+    'routeComponent',
     'menuComponent',
     'ComponentManager',
     'Conversation',
@@ -21,8 +22,8 @@ directives.directive('goCampaignDesigner', [
     'Endpoint',
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
-              connectionComponent, controlPointComponent, menuComponent,
-              ComponentManager, Conversation, Router, Channel, Endpoint) {
+              connectionComponent, controlPointComponent, routeComponent,
+              menuComponent, ComponentManager, Conversation, Router, Channel, Endpoint) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -306,6 +307,16 @@ directives.directive('goCampaignDesigner', [
             $rootScope.$on('go:campaignDesignerRemove', function (event) {
                 $scope.remove();
             });
+
+            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, connection) {
+                connection.flipDirection();
+                $scope.refresh();
+            });
+
+            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, connection) {
+                connection.biDirectional();
+                $scope.refresh();
+            });
         }
 
         /**
@@ -378,6 +389,8 @@ directives.directive('goCampaignDesigner', [
             var controlPoint = controlPointComponent()
                 .drag(controlPointDrag);
 
+            var route = routeComponent();
+
             var menu = menuComponent();
 
             repaint(); // Do initial draw
@@ -410,6 +423,11 @@ directives.directive('goCampaignDesigner', [
                     .data(componentManager.getControlPoints(),
                           function (d) { return d.id; })
                     .call(controlPoint);
+
+                connectionLayer.selectAll('.route')
+                    .data(componentManager.getRoutes(),
+                          function (d) { return d.id; })
+                    .call(route);
 
                 componentLayer.selectAll('.menu')
                     .data(componentManager.getMenus(),

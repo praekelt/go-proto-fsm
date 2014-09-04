@@ -1,6 +1,30 @@
 describe('connectionLayout', function () {
     var components, layout;
 
+    /**
+     * Helper to compute arrow position and rotation.
+     */
+    var arrow = function(start, end) {
+        var x1 = 0;
+        var y1 = 0;
+        var x2 = end.x - start.x;
+        var y2 = -(end.y - start.y);
+
+        var angle = Math.atan(Math.abs(y2 - y1) / Math.abs(x2 - x1))
+            * (180 / Math.PI);
+
+        if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
+        if (x2 < 0 && y2 > 0) angle = 270 + angle;
+        if (x2 <= 0 && y2 <= 0) angle = 270 - angle;
+        if (x2 > 0 && y2 < 0) angle = 90 + angle;
+
+        return {
+            angle: angle,
+            x: (start.x + (end.x - start.x) / 2),
+            y: (start.y + (end.y - start.y) / 2)
+        };
+    };
+
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
@@ -46,6 +70,9 @@ describe('connectionLayout', function () {
                 routes: [new Route({
                     source: null,
                     target: null
+                }), new Route({
+                    source: null,
+                    target: null
                 })]
             }),
             'connection2': new Connection({
@@ -71,6 +98,9 @@ describe('connectionLayout', function () {
 
         components['connection1'].routes[0].source = components['conversation1'].endpoints[0];
         components['connection1'].routes[0].target = components['router1'].endpoints[1];
+
+        components['connection1'].routes[1].source = components['router1'].endpoints[1];
+        components['connection1'].routes[1].target = components['conversation1'].endpoints[0];
 
         components['connection2'].routes[0].source = components['conversation1'].endpoints[0];
         components['connection2'].routes[0].target = components['channel1'].endpoints[0];
@@ -136,6 +166,18 @@ describe('connectionLayout', function () {
         expect(components['connection1'].meta().colour).to.deep.equal('red');
         expect(components['connection1'].points).to.deep.equal(points);
 
+        expect(components['connection1'].routes[0].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[0], points[1])
+            }
+        });
+
+        expect(components['connection1'].routes[1].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[points.length - 1], points[points.length - 2])
+            }
+        });
+
         // connection2
         connection = components['connection2'];
         points = [];
@@ -177,6 +219,11 @@ describe('connectionLayout', function () {
 
         expect(components['connection2'].meta().colour).to.deep.equal('red');
         expect(components['connection2'].points).to.deep.equal(points);
+        expect(components['connection2'].routes[0].meta()).to.deep.equal({
+            layout: {
+                arrow: arrow(points[0], points[1])
+            }
+        });
     }));
 
 });

@@ -36,6 +36,27 @@ angular.module('vumigo.services').factory('connectionLayout', [
                 }
             }
 
+            function arrow(start, end) {
+                var x1 = 0;
+                var y1 = 0;
+                var x2 = end.x - start.x;
+                var y2 = -(end.y - start.y);
+
+                var angle = Math.atan(Math.abs(y2 - y1) / Math.abs(x2 - x1))
+                    * (180 / Math.PI);
+
+                if (x2 >= 0 && y2 >= 0) angle = 90 - angle;
+                if (x2 < 0 && y2 > 0) angle = 270 + angle;
+                if (x2 <= 0 && y2 <= 0) angle = 270 - angle;
+                if (x2 > 0 && y2 < 0) angle = 90 + angle;
+
+                return {
+                    angle: angle,
+                    x: (start.x + (end.x - start.x) / 2),
+                    y: (start.y + (end.y - start.y) / 2)
+                };
+            }
+
             function layout(data) {
                 _.forEach(data, function (connection) {
                     if (_.isEmpty(connection.routes)) return;
@@ -60,9 +81,10 @@ angular.module('vumigo.services').factory('connectionLayout', [
                     }
 
                     // Fix the start and end point to the source and target components
-                    position(connection.points[0], source.component, source);
-                    position(connection.points[connection.points.length - 1],
-                             target.component, target);
+                    var start = connection.points[0];
+                    var end = connection.points[connection.points.length - 1];
+                    position(start, source.component, source);
+                    position(end, target.component, target);
 
                     interpolate(connection.points);
 
@@ -79,6 +101,18 @@ angular.module('vumigo.services').factory('connectionLayout', [
                                 r: pointRadius
                             };
                         }
+                    }
+
+                    // Calculate route arrow position and orientation
+                    connection.routes[0].meta().layout = {
+                        arrow: arrow(start, connection.points[1])
+                    };
+
+                    if (_.size(connection.routes) > 1) {  // bi-directional
+                        var point = connection.points[connection.points.length - 2];
+                        connection.routes[1].meta().layout = {
+                            arrow: arrow(end, point)
+                        };
                     }
                 });
 
