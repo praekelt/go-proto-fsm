@@ -119,25 +119,26 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
     };
 }]);
 
-angular.module('vumigo.services').factory('arrowComponent', [function () {
+angular.module('vumigo.services').factory('routeComponent', [function () {
     return function () {
 
         function enter(selection) {
             selection = selection.append('g')
-                .attr('class', 'component arrow');
+                .attr('class', 'component route');
 
             selection.append('text')
-                .attr('class', 'icon');
+                .attr('class', 'arrow');
         }
 
         function update(selection) {
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y]
-                        + ')rotate(' + (d.angle - 90) + ')';
+                    var layout = d.meta().layout;
+                    return 'translate(' + [layout.arrow.x, layout.arrow.y]
+                        + ')rotate(' + (layout.arrow.angle - 90) + ')';
                 });
 
-            selection.select('.icon')
+            selection.select('.arrow')
                 .html('&#xf04e;');
         }
 
@@ -145,13 +146,13 @@ angular.module('vumigo.services').factory('arrowComponent', [function () {
             selection.remove();
         }
 
-        var arrow = function (selection) {
+        var route = function (selection) {
             enter(selection.enter());
             update(selection);
             exit(selection.exit());
-            return arrow;
+            return route;
         };
 
-        return arrow;
+        return route;
     };
 }]);

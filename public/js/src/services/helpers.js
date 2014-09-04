@@ -250,15 +250,18 @@ angular.module('vumigo.services').factory('Channel', [
     }
 ]);
 
-angular.module('vumigo.services').factory('Route', ['rfc4122',
-    function (rfc4122) {
+angular.module('vumigo.services').factory('Route', ['BaseComponent',
+    function (BaseComponent) {
 
         function Route(options) {
             options = options || {};
-            this.id = options.id || rfc4122.v4();
+            options.type = 'route';
+            BaseComponent.call(this, options);
             this.source = options.source || null;
             this.target = options.target || null;
         }
+
+        Route.prototype = Object.create(BaseComponent.prototype);
 
         Route.prototype.flip = function () {
             var endpoint = this.source;
@@ -501,13 +504,13 @@ angular.module('vumigo.services').factory('ComponentManager', [
             return _.where(this.components, { type: 'connection' });
         };
 
-        ComponentManager.prototype.getArrows = function () {
-            return _.reduce(this.getConnections(), function (arrows, connection) {
-                _.forEach(connection.meta().arrows, function (arrow) {
-                    arrows.push(arrow);
+        ComponentManager.prototype.getRoutes = function () {
+            return _.reduce(this.getConnections(), function (routes, connection) {
+                _.forEach(connection.routes, function (route) {
+                    routes.push(route);
                 });
 
-                return arrows;
+                return routes;
             }, []);
         };
 
