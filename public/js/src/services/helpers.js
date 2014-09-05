@@ -479,7 +479,7 @@ angular.module('vumigo.services').factory('ComponentManager', [
 
             if (sourceEndpoint && targetEndpoint) {
                 var routes = _.filter(this.getRoutes(), function (route) {
-                    return route.source.id == targetEndpoint.id;
+                    return route.source.id == sourceEndpoint.id;
                 });
 
                 if (_.isEmpty(routes)) {
@@ -568,7 +568,7 @@ angular.module('vumigo.services').factory('ComponentManager', [
         ComponentManager.prototype.biDirectional = function (connection) {
             if (connection.type != 'connection'
                 || _.isEmpty(connection.routes)
-                || _.size(this.routes) > 1) return;
+                || _.size(connection.routes) > 1) return;
 
             var route = _.first(connection.routes);
             var source = route.source;
