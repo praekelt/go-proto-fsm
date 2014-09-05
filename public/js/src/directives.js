@@ -308,13 +308,13 @@ directives.directive('goCampaignDesigner', [
                 $scope.remove();
             });
 
-            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, connection) {
-                connection.flipDirection();
+            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, component) {
+                componentManager.flipDirection(component);
                 $scope.refresh();
             });
 
-            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, connection) {
-                connection.biDirectional();
+            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, component) {
+                componentManager.biDirectional(component);
                 $scope.refresh();
             });
         }

@@ -360,14 +360,12 @@ angular.module('vumigo.services').factory('Connection', [
         };
 
         Connection.prototype.flipDirection = function () {
-            if (_.isEmpty(this.routes)) return;
             this.routes = [_.first(this.routes).flip()];
             this.points.reverse();
             return this;
         };
 
         Connection.prototype.biDirectional = function () {
-            if (_.isEmpty(this.routes) || _.size(this.routes) > 1) return;
             var route = _.first(this.routes);
             this.routes.push(new Route({
                 source: route.target,
@@ -480,11 +478,21 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }
 
             if (sourceEndpoint && targetEndpoint) {
-                var connection = this.addComponent(new Connection({
-                    routes: [
-                        new Route({ source: sourceEndpoint, target: targetEndpoint })
-                    ]
-                }));
+                var routes = _.filter(this.getRoutes(), function (route) {
+                    return route.source.id == targetEndpoint.id;
+                });
+
+                if (_.isEmpty(routes)) {
+                    var connection = this.addComponent(new Connection({
+                        routes: [
+                            new Route({ source: sourceEndpoint, target: targetEndpoint })
+                        ]
+                    }));
+
+                } else {
+                    // TODO: Inform the user of the crime they are trying to commit
+                    alert('Not allowed!');
+                }
             }
         };
 
@@ -535,6 +543,48 @@ angular.module('vumigo.services').factory('ComponentManager', [
             layoutConnections(this.getConnections());
             layoutMenus(this.getMenus());
         };
+
+        ComponentManager.prototype.flipDirection = function (connection) {
+            if (connection.type != 'connection'
+                || _.isEmpty(connection.routes)) return;
+
+            var route = _.first(connection.routes);
+            var source = route.source;
+            var target = route.target;
+            var routes = _.filter(this.getRoutes(), function (route) {
+                return route.source.id == target.id
+                    && route.target.id != source.id;
+            });
+
+            if (!_.isEmpty(routes)) {
+                // TODO: Inform the user of the crime they are trying to commit
+                alert('Not allowed!');
+                return;
+            }
+
+            connection.flipDirection();
+        }
+
+        ComponentManager.prototype.biDirectional = function (connection) {
+            if (connection.type != 'connection'
+                || _.isEmpty(connection.routes)
+                || _.size(this.routes) > 1) return;
+
+            var route = _.first(connection.routes);
+            var source = route.source;
+            var target = route.target;
+            var routes = _.filter(this.getRoutes(), function (route) {
+                return route.source.id == target.id;
+            });
+
+            if (!_.isEmpty(routes)) {
+                // TODO: Inform the user of the crime they are trying to commit
+                alert('Not allowed!');
+                return;
+            }
+
+            connection.biDirectional();
+        }
 
         ComponentManager.prototype.load = function (data) {
             _.forEach(data.conversations, function (d) {
