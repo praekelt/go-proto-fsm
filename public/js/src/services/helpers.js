@@ -410,7 +410,7 @@ angular.module('vumigo.services').factory('Connection', [
             });
 
             if (!_.isEmpty(routes)) {
-                alert('Not allowed!');
+                // TODO: Trigger a notification
                 return;
             }
 
@@ -431,7 +431,7 @@ angular.module('vumigo.services').factory('Connection', [
             });
 
             if (!_.isEmpty(routes)) {
-                alert('Not allowed!');
+                // TODO: Trigger a notification
                 return;
             }
 
@@ -561,8 +561,7 @@ angular.module('vumigo.services').factory('ComponentManager', [
                     }));
 
                 } else {
-                    // TODO: Inform the user of the crime they are trying to commit
-                    alert('Not allowed!');
+                    // TODO: Trigger a notification
                 }
             }
         };
