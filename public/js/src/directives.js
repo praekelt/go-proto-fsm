@@ -309,13 +309,25 @@ directives.directive('goCampaignDesigner', [
             });
 
             $rootScope.$on('go:campaignDesignerFlipDirection', function (event, component) {
-                componentManager.flipDirection(component);
-                $scope.refresh();
+                if (component.type == 'connection') {
+                    component.flipDirection();
+                    $scope.refresh();
+
+                } else {
+                    console.error("Expecting 'connection' but got '"
+                                  + component.type + "'");
+                }
             });
 
             $rootScope.$on('go:campaignDesignerBiDirectional', function (event, component) {
-                componentManager.biDirectional(component);
-                $scope.refresh();
+                if (component.type == 'connection') {
+                    component.biDirectional();
+                    $scope.refresh();
+
+                } else {
+                    console.error("Expecting 'connection' but got '"
+                                  + component.type + "'");
+                }
             });
         }
 
