@@ -7,12 +7,19 @@ describe('menuLayout', function () {
     beforeEach(inject(function (Endpoint, Conversation, Channel, Router, Connection, Route,
                                 conversationLayout, routerLayout, channelLayout,
                                 connectionLayout, menuLayout) {
+
+        var endpoint1 = new Endpoint({ id: 'endpoint1', name: 'default' });
+        var endpoint2 = new Endpoint({ uuid: 'endpoint2', name: 'default' });
+        var endpoint3 = new Endpoint({ id: 'endpoint3', name: 'default' });
+        var endpoint4 = new Endpoint({ id: 'endpoint4', name: 'default' });
+        var endpoint5 = new Endpoint({ id: 'endpoint5', name: 'default' });
+
         components = {
             'conversation1': new Conversation({
                 id: 'conversation1',
                 name: "Register",
                 description: "4 Steps",
-                endpoints: [new Endpoint({ id: 'endpoint1', name: 'default' })],
+                endpoints: [endpoint1],
                 colour: '#f82943',
                 x: 220,
                 y: 120
@@ -21,7 +28,7 @@ describe('menuLayout', function () {
                 id: 'channel1',
                 name: "SMS",
                 description: "082 335 29 24",
-                endpoints: [new Endpoint({ uuid: 'endpoint2', name: 'default' })],
+                endpoints: [endpoint2],
                 utilization: 0.4,
                 x: 840,
                 y: 360
@@ -30,19 +37,15 @@ describe('menuLayout', function () {
                 id: 'router1',
                 name: "K",
                 description: "Keyword",
-                endpoints: [
-                    new Endpoint({ id: 'endpoint3', name: 'default' }),
-                    new Endpoint({ id: 'endpoint4', name: 'default' }),
-                    new Endpoint({ id: 'endpoint5', name: 'default' })
-                ],
+                endpoints: [endpoint3, endpoint4, endpoint5],
                 x: 500,
                 y: 220
             }),
             'connection1': new Connection({
                 id: 'connection1',
                 routes: [new Route({
-                    source: null,
-                    target: null
+                    source: endpoint1,
+                    target: endpoint4
                 })]
             })
         };
@@ -58,9 +61,6 @@ describe('menuLayout', function () {
         _.forEach(components['router1'].endpoints, function (endpoint) {
             endpoint.component = components['router1'];
         });
-
-        components['connection1'].routes[0].source = components['conversation1'].endpoints[0];
-        components['connection1'].routes[0].target = components['router1'].endpoints[1];
 
         conversationLayout()([components['conversation1']]);
         routerLayout()([components['router1']]);
