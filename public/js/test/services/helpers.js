@@ -588,6 +588,56 @@ describe('Connection', function () {
         expect(connection.routes).to.deep.equal(expected);
     }));
 
+    it('should restrict endpoint to single outgoing route', inject(function (ConnectableComponent, Endpoint, Route, Connection) {
+        var component1 = new ConnectableComponent({ id: 'component1' });
+        var endpoint1 = new Endpoint({ id: 'endpoint1' });
+        component1.addEndpoint(endpoint1);
+
+        var component2 = new ConnectableComponent({ id: 'component2' });
+        var endpoint2 = new Endpoint({ id: 'endpoint2' });
+        component2.addEndpoint(endpoint2);
+
+        var component3 = new ConnectableComponent({ id: 'component3' });
+        var endpoint3 = new Endpoint({ id: 'endpoint3' });
+        component3.addEndpoint(endpoint3);
+
+        var connection1 = new Connection({
+            id: 'connection1',
+            routes: [new Route({
+                id: 'route1',
+                source: endpoint1,
+                target: endpoint2
+            })]
+        });
+
+        var connection2 = new Connection({
+            id: 'connection2',
+            routes: [new Route({
+                id: 'route2',
+                source: endpoint2,
+                target: endpoint3
+            })]
+        });
+
+        connection1.flipDirection();
+
+        var expected = [new Route({
+            id: 'route1',
+            source: endpoint1,
+            target: endpoint2
+        })];
+
+        expect(connection1.routes).to.deep.equal(expected);
+
+        expected = [new Route({
+            id: 'route2',
+            source: endpoint2,
+            target: endpoint3
+        })];
+
+        expect(connection2.routes).to.deep.equal(expected);
+    }));
+
 });
 
 describe('ComponentManager', function () {
@@ -700,7 +750,11 @@ describe('ComponentManager', function () {
         var componentManager = new ComponentManager(data);
         expect(componentManager.components['conversation1']).not.to.be.empty;
 
+        var component = componentManager.components['conversation1'];
+        sinon.stub(component, 'beforeRemove');
+
         componentManager.removeComponent('conversation1');
+        expect(component.beforeRemove.calledWith()).to.be.true;
         expect(componentManager.components['conversation1']).to.be.undefined;
         expect(componentManager.getConnections()).to.be.empty;
     }));
