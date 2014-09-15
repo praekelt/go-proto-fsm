@@ -10,7 +10,7 @@ describe('goCampaignDesigner', function () {
 
     beforeEach(inject(function ($rootScope, $compile) {
         element = angular.element(
-            '<go-campaign-designer data-data="data" data-reset="reset()">' +
+            '<go-campaign-designer data-data="data">' +
             '</go-campaign-designer>');
 
         scope = $rootScope;
@@ -69,13 +69,6 @@ describe('goCampaignDesigner', function () {
                 source: {uuid: 'endpoint1'},
                 target: {uuid: 'endpoint6'}
             }]
-        };
-
-        scope.reset = function () {
-            scope.data.conversations = [];
-            scope.data.channels = [];
-            scope.data.routers = [];
-            scope.data.routing_entries = [];
         };
 
         $compile(element)(scope);
@@ -217,4 +210,231 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.channel')).to.have.length(0);
         expect(element.find('.connection')).to.have.length(0);
     });
+
+    it('should open conversation add dialog', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        element.find('.nav .btn-add-conversation').click();  // open modal
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $nameField = $modal.find('input#field-name');
+        expect($nameField).to.have.length(1);
+        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        expect($descriptionField).to.have.length(1);
+        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
+
+        var $colourField = $modal.find('input#field-colour');
+        expect($colourField).to.have.length(1);
+        expect($colourField.attr('data-ng-model')).to.equal('data.colour');
+
+        var $okButton = $modal.find('button.btn-primary');
+        expect($okButton).to.have.length(1);
+        expect($okButton.text()).to.equal("OK");
+        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+
+        var $cancelButton = $modal.find('button.btn-warning');
+        expect($cancelButton).to.have.length(1);
+        expect($cancelButton.text()).to.equal("Cancel");
+        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
+    it('should add new conversation', inject(function (rfc4122, Endpoint) {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('conversation3');
+        stub.onCall(1).returns('endpoint8');
+
+        element.find('.nav .btn-add-conversation').click();  // open modal
+
+        var $nameField = $('.modal-dialog').find('input#field-name');
+        $nameField.scope().data.name = "Conversation 3";
+
+        var $descriptionField = $('.modal-dialog').find('textarea#field-description');
+        $descriptionField.scope().data.description = "Test conversation";
+
+        var $colourField = $('.modal-dialog').find('input#field-colour');
+        $colourField.scope().data.colour = "#000000";
+
+        $('.modal-dialog').find('button.btn-primary').click();  // click OK
+        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+
+        var conversations = element.find('g.layer.components g.conversation');
+        expect(conversations).to.have.length(3);
+
+        var datum = conversations.get(2).__data__;
+        expect(datum.id).to.equal("conversation3");
+        expect(datum.name).to.equal("Conversation 3");
+        expect(datum.description).to.equal("Test conversation");
+        expect(datum.endpoints).to.have.length(1);
+        expect(datum.endpoints[0].id).to.equal("endpoint8");
+        expect(datum.endpoints[0].name).to.equal("default");
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
+    it('should open channel add dialog', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        element.find('.nav .btn-add-channel').click();  // open modal
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $nameField = $modal.find('input#field-name');
+        expect($nameField).to.have.length(1);
+        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        expect($descriptionField).to.have.length(1);
+        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
+
+        var $okButton = $modal.find('button.btn-primary');
+        expect($okButton).to.have.length(1);
+        expect($okButton.text()).to.equal("OK");
+        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+
+        var $cancelButton = $modal.find('button.btn-warning');
+        expect($cancelButton).to.have.length(1);
+        expect($cancelButton.text()).to.equal("Cancel");
+        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
+    it('should add new channel', inject(function (rfc4122, Endpoint) {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('channel3');
+        stub.onCall(1).returns('endpoint8');
+
+        element.find('.nav .btn-add-channel').click();  // open modal
+
+        var $nameField = $('.modal-dialog').find('input#field-name');
+        $nameField.scope().data.name = "Channel 3";
+
+        var $descriptionField = $('.modal-dialog').find('textarea#field-description');
+        $descriptionField.scope().data.description = "Test channel";
+
+        $('.modal-dialog').find('button.btn-primary').click();  // click OK
+        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+
+        var channels = element.find('g.layer.components g.channel');
+        expect(channels).to.have.length(3);
+
+        var datum = channels.get(2).__data__;
+        expect(datum.id).to.equal("channel3");
+        expect(datum.name).to.equal("Channel 3");
+        expect(datum.description).to.equal("Test channel");
+        expect(datum.endpoints).to.have.length(1);
+        expect(datum.endpoints[0].id).to.equal("endpoint8");
+        expect(datum.endpoints[0].name).to.equal("default");
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
+    it('should open router add dialog', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        element.find('.nav .btn-add-router').click();  // open modal
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $nameField = $modal.find('input#field-name');
+        expect($nameField).to.have.length(1);
+        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        expect($descriptionField).to.have.length(1);
+        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
+
+        var $endpointField = $modal.find('input#field-endpoint-0');
+        expect($endpointField).to.have.length(1);
+        expect($endpointField.attr('data-ng-model')).to.equal('endpoint.name');
+
+        var $okButton = $modal.find('button.btn-primary');
+        expect($okButton).to.have.length(1);
+        expect($okButton.text()).to.equal("OK");
+        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+
+        var $cancelButton = $modal.find('button.btn-warning');
+        expect($cancelButton).to.have.length(1);
+        expect($cancelButton.text()).to.equal("Cancel");
+        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
+    it('should add new router', inject(function (rfc4122, Endpoint) {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(0).returns('endpoint8');
+        stub.onCall(1).returns('endpoint9');
+        stub.onCall(2).returns('endpoint10');
+        stub.onCall(3).returns('router2');
+
+        element.find('.nav .btn-add-router').click();  // open modal
+
+        var $nameField = $('.modal-dialog').find('input#field-name');
+        $nameField.scope().data.name = "Router 2";
+
+        var $descriptionField = $('.modal-dialog').find('textarea#field-description');
+        $descriptionField.scope().data.description = "Test router";
+
+        var $endpointField = $('.modal-dialog').find('input#field-endpoint-0');
+        $endpointField.scope().data.endpoints = [{
+            name: "Keyword 1"
+        }];
+
+        $('.modal-dialog').find('button.btn-primary').click();  // click OK
+        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+
+        var routers = element.find('g.layer.components g.router');
+        expect(routers).to.have.length(2);
+
+        var datum = routers.get(1).__data__;
+        expect(datum.id).to.equal("router2");
+        expect(datum.name).to.equal("Router 2");
+        expect(datum.description).to.equal("Test router");
+        expect(datum.endpoints).to.have.length(3);
+        expect(datum.endpoints[0].id).to.equal("endpoint8");
+        expect(datum.endpoints[0].name).to.equal("default");
+        expect(datum.endpoints[0].accepts).to.deep.equal(['conversation']);
+        expect(datum.endpoints[1].id).to.equal("endpoint9");
+        expect(datum.endpoints[1].name).to.equal("Keyword 1");
+        expect(datum.endpoints[1].accepts).to.deep.equal(['conversation']);
+        expect(datum.endpoints[2].id).to.equal("endpoint10");
+        expect(datum.endpoints[2].name).to.equal("default");
+        expect(datum.endpoints[2].accepts).to.deep.equal(['channel']);
+
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    }));
+
 });
