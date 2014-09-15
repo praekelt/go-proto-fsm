@@ -9,7 +9,7 @@ describe('menuLayout', function () {
                                 connectionLayout, menuLayout) {
 
         var endpoint1 = new Endpoint({ id: 'endpoint1', name: 'default' });
-        var endpoint2 = new Endpoint({ uuid: 'endpoint2', name: 'default' });
+        var endpoint2 = new Endpoint({ id: 'endpoint2', name: 'default' });
         var endpoint3 = new Endpoint({ id: 'endpoint3', name: 'default' });
         var endpoint4 = new Endpoint({ id: 'endpoint4', name: 'default' });
         var endpoint5 = new Endpoint({ id: 'endpoint5', name: 'default' });

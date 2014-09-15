@@ -314,11 +314,7 @@ directives.directive('goCampaignDesigner', [
                     $scope.refresh();
 
                 } else {
-                    var error = "Expecting 'connection' but got '"
-                        + component.type + "'";
-
-                    console.error(error);
-                    alert(error);
+                    // TODO: Trigger an error
                 }
             });
 
@@ -328,11 +324,7 @@ directives.directive('goCampaignDesigner', [
                     $scope.refresh();
 
                 } else {
-                    var error = "Expecting 'connection' but got '"
-                        + component.type + "'";
-
-                    console.error(error);
-                    alert(error);
+                    // TODO: Trigger an error
                 }
             });
         }
