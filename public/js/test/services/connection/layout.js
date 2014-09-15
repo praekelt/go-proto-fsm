@@ -31,14 +31,18 @@ describe('connectionLayout', function () {
     beforeEach(inject(function (Endpoint, Conversation, Channel, Router, Connection, Route,
                                 conversationLayout, channelLayout, routerLayout, connectionLayout,
                                 dragBehavior) {
+
+        var endpoint1 = new Endpoint({ id: 'endpoint1', name: 'default', accepts: ['channel', 'router'] });
+        var endpoint2 = new Endpoint({ id: 'endpoint2', name: 'default', accepts: ['conversation', 'router'] });
+        var endpoint3 = new Endpoint({ id: 'endpoint3', name: 'default', accepts: ['channel'] });
+        var endpoint4 = new Endpoint({ id: 'endpoint4', name: 'default', accepts: ['conversation'] });
+
         components = {
             'conversation1': new Conversation({
                 id: 'conversation1',
                 name: "Conversation 1",
                 description: "",
-                endpoints: [
-                    new Endpoint({ id: 'endpoint1', name: 'default', accepts: ['channel', 'router'] })
-                ],
+                endpoints: [endpoint1],
                 colour: 'red',
                 x: 100,
                 y: 100
@@ -47,9 +51,7 @@ describe('connectionLayout', function () {
                 id: 'channel1',
                 name: "Channel 1",
                 description: "",
-                endpoints: [
-                    new Endpoint({ uuid: 'endpoint2', name: 'default', accepts: ['conversation', 'router'] })
-                ],
+                endpoints: [endpoint2],
                 utilization: 0.4,
                 x: 200,
                 y: 200
@@ -58,28 +60,25 @@ describe('connectionLayout', function () {
                 id: 'router1',
                 name: "Router 1",
                 description: "",
-                endpoints: [
-                    new Endpoint({ id: 'endpoint3', name: 'default', accepts: ['channel'] }),
-                    new Endpoint({ id: 'endpoint4', name: 'default', accepts: ['conversation'] })
-                ],
+                endpoints: [endpoint3, endpoint4],
                 x: 300,
                 y: 200
             }),
             'connection1': new Connection({
                 id: 'connection1',
                 routes: [new Route({
-                    source: null,
-                    target: null
+                    source: endpoint1,
+                    target: endpoint4
                 }), new Route({
-                    source: null,
-                    target: null
+                    source: endpoint4,
+                    target: endpoint1
                 })]
             }),
             'connection2': new Connection({
                 id: 'connection2',
                 routes: [new Route({
-                    source: null,
-                    target: null
+                    source: endpoint2,
+                    target: endpoint3
                 })]
             })
         };
@@ -95,15 +94,6 @@ describe('connectionLayout', function () {
         _.forEach(components['router1'].endpoints, function (endpoint) {
             endpoint.component = components['router1'];
         });
-
-        components['connection1'].routes[0].source = components['conversation1'].endpoints[0];
-        components['connection1'].routes[0].target = components['router1'].endpoints[1];
-
-        components['connection1'].routes[1].source = components['router1'].endpoints[1];
-        components['connection1'].routes[1].target = components['conversation1'].endpoints[0];
-
-        components['connection2'].routes[0].source = components['conversation1'].endpoints[0];
-        components['connection2'].routes[0].target = components['channel1'].endpoints[0];
 
         conversationLayout()([components['conversation1']]);
         routerLayout()([components['router1']]);
@@ -184,8 +174,8 @@ describe('connectionLayout', function () {
 
         start = new ControlPoint({
             id: connection.points[0].id,
-            x: 100,
-            y: 100
+            x: 200,
+            y: 200
         });
         start.meta().layout = { r: 0 };
         start.meta().visible = false;
@@ -196,9 +186,8 @@ describe('connectionLayout', function () {
         end.meta().layout = { r: 0 };
         end.meta().visible = false;
 
-        var channel = components['channel1'];
-        end.x = channel.x;
-        end.y = channel.y;
+        end.x = router.x + router.getEndpoints('channel')[0].meta().layout.x;
+        end.y = router.y + router.getEndpoints('channel')[0].meta().layout.y;
 
         points.push(start);
 
@@ -217,7 +206,6 @@ describe('connectionLayout', function () {
 
         points.push(end);
 
-        expect(components['connection2'].meta().colour).to.deep.equal('red');
         expect(components['connection2'].points).to.deep.equal(points);
         expect(components['connection2'].routes[0].meta()).to.deep.equal({
             layout: {

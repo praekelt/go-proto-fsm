@@ -308,14 +308,24 @@ directives.directive('goCampaignDesigner', [
                 $scope.remove();
             });
 
-            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, connection) {
-                connection.flipDirection();
-                $scope.refresh();
+            $rootScope.$on('go:campaignDesignerFlipDirection', function (event, component) {
+                if (component.type == 'connection') {
+                    component.flipDirection();
+                    $scope.refresh();
+
+                } else {
+                    // TODO: Trigger an error
+                }
             });
 
-            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, connection) {
-                connection.biDirectional();
-                $scope.refresh();
+            $rootScope.$on('go:campaignDesignerBiDirectional', function (event, component) {
+                if (component.type == 'connection') {
+                    component.biDirectional();
+                    $scope.refresh();
+
+                } else {
+                    // TODO: Trigger an error
+                }
             });
         }
 
