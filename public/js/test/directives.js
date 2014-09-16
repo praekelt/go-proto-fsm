@@ -75,6 +75,12 @@ describe('goCampaignDesigner', function () {
         scope.$digest();
     }));
 
+    afterEach(function () {
+        // Clean up DOM
+        $('div#campaign-designer').remove();
+        $('div#modal-backdrop, div.modal').remove();
+    });
+
     it('should have created element with id campaign-designer', function () {
         expect(element.attr('id')).to.equal('campaign-designer');
     });
@@ -242,10 +248,6 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
         expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
     it('should add new conversation', inject(function (rfc4122, Endpoint) {
@@ -279,10 +281,6 @@ describe('goCampaignDesigner', function () {
         expect(datum.endpoints).to.have.length(1);
         expect(datum.endpoints[0].id).to.equal("endpoint8");
         expect(datum.endpoints[0].name).to.equal("default");
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
     it('should open channel add dialog', inject(function () {
@@ -312,10 +310,6 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
         expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
     it('should add new channel', inject(function (rfc4122, Endpoint) {
@@ -346,10 +340,6 @@ describe('goCampaignDesigner', function () {
         expect(datum.endpoints).to.have.length(1);
         expect(datum.endpoints[0].id).to.equal("endpoint8");
         expect(datum.endpoints[0].name).to.equal("default");
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
     it('should open router add dialog', inject(function () {
@@ -383,10 +373,6 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
         expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
     it('should add new router', inject(function (rfc4122, Endpoint) {
@@ -431,10 +417,6 @@ describe('goCampaignDesigner', function () {
         expect(datum.endpoints[2].id).to.equal("endpoint10");
         expect(datum.endpoints[2].name).to.equal("default");
         expect(datum.endpoints[2].accepts).to.deep.equal(['channel']);
-
-        // Clean up DOM
-        $('div#campaign-designer').remove();
-        $('div#modal-backdrop, div.modal').remove();
     }));
 
 });
