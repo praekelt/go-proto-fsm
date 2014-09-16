@@ -7,6 +7,9 @@ angular.module('vumigo.services').factory('BaseComponent', ['rfc4122',
             this.type = options.type;
         }
 
+        BaseComponent.prototype.beforeRemove = function () {
+        };
+
         BaseComponent.prototype.meta = function () {
             if (_.isUndefined(this._meta)) this._meta = {};
             return this._meta;
@@ -67,9 +70,32 @@ angular.module('vumigo.services').factory('Endpoint', ['BaseComponent',
             this.component = options.component || null;
             this.name = options.name || "default";
             this.accepts = options.accepts || [];  // by default accept connections from all component types
+            this.connections = [];
         }
 
         Endpoint.prototype = Object.create(BaseComponent.prototype);
+
+        Endpoint.prototype.addConnection = function (connection) {
+            if (!_.contains(this.connections, connection)) {
+                this.connections.push(connection);
+            }
+        };
+
+        Endpoint.prototype.removeConnection = function (connectionToRemove) {
+            _.remove(this.connections, function (connection) {
+                return connection.id == connectionToRemove.id;
+            });
+        };
+
+        Endpoint.prototype.getRoutes = function () {
+            var routes = _.reduce(this.connections, function (routes, connection) {
+                return routes.concat(connection.routes);
+            }, []);
+
+            return _.uniq(routes, function (route) {
+                return route.id;
+            });
+        };
 
         Endpoint.prototype.acceptsConnectionsFrom = function (componentType) {
             return _.isEmpty(this.accepts)
@@ -303,7 +329,8 @@ angular.module('vumigo.services').factory('Connection', [
             options.type = 'connection';
             BaseComponent.call(this, options);
 
-            this.routes = options.routes || [];
+            this.routes = [];
+            _.forEach(options.routes, this.addRoute, this);
 
             if (_.isArray(options.points)) {
                 this.points = options.points;
@@ -335,8 +362,19 @@ angular.module('vumigo.services').factory('Connection', [
 
         Connection.prototype = Object.create(BaseComponent.prototype);
 
+        Connection.prototype.beforeRemove = function () {
+            BaseComponent.prototype.beforeRemove.call(this);
+
+            if (_.isEmpty(this.routes)) return;
+            var route = _.first(this.routes);
+            route.source.removeConnection(this);
+            route.target.removeConnection(this);
+        };
+
         Connection.prototype.addRoute = function (route) {
             this.routes.push(route);
+            route.source.addConnection(this);
+            route.target.addConnection(this);
         };
 
         Connection.prototype.getEndpoints = function () {
@@ -361,18 +399,47 @@ angular.module('vumigo.services').factory('Connection', [
 
         Connection.prototype.flipDirection = function () {
             if (_.isEmpty(this.routes)) return;
-            this.routes = [_.first(this.routes).flip()];
+
+            var route = _.first(this.routes);
+            var source = route.source;
+            var target = route.target;
+
+            var routes = _.filter(target.getRoutes(), function (route) {
+                return route.source.id == target.id
+                    && route.target.id != source.id;
+            });
+
+            if (!_.isEmpty(routes)) {
+                // TODO: Trigger a notification
+                return;
+            }
+
+            this.routes = [route.flip()];
             this.points.reverse();
             return this;
         };
 
         Connection.prototype.biDirectional = function () {
             if (_.isEmpty(this.routes) || _.size(this.routes) > 1) return;
+
             var route = _.first(this.routes);
-            this.routes.push(new Route({
+            var source = route.source;
+            var target = route.target;
+
+            var routes = _.filter(target.getRoutes(), function (route) {
+                return route.source.id == target.id;
+            });
+
+            if (!_.isEmpty(routes)) {
+                // TODO: Trigger a notification
+                return;
+            }
+
+            this.addRoute(new Route({
                 source: route.target,
                 target: route.source
             }));
+
             return this;
         };
 
@@ -438,10 +505,12 @@ angular.module('vumigo.services').factory('ComponentManager', [
                 });
 
                 _.forEach(connectionsToRemove, function (connection) {
+                    this.components[connection.id].beforeRemove();
                     delete this.components[connection.id];
                 }, this);
             };
 
+            this.components[componentToRemove.id].beforeRemove();
             delete this.components[componentToRemove.id];
         };
 
@@ -480,11 +549,20 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }
 
             if (sourceEndpoint && targetEndpoint) {
-                var connection = this.addComponent(new Connection({
-                    routes: [
-                        new Route({ source: sourceEndpoint, target: targetEndpoint })
-                    ]
-                }));
+                var routes = _.filter(this.getRoutes(), function (route) {
+                    return route.source.id == sourceEndpoint.id;
+                });
+
+                if (_.isEmpty(routes)) {
+                    var connection = this.addComponent(new Connection({
+                        routes: [
+                            new Route({ source: sourceEndpoint, target: targetEndpoint })
+                        ]
+                    }));
+
+                } else {
+                    // TODO: Trigger a notification
+                }
             }
         };
 

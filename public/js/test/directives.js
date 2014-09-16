@@ -136,7 +136,7 @@ describe('goCampaignDesigner', function () {
         expect(isolateScope.connectPressed).to.equal(false);
         expect(element.find('path.connection')).to.have.length(1);
 
-        var conversation = element.find('.conversation').eq(0);
+        var conversation = element.find('.conversation').eq(1);
         var channel = element.find('.channel').eq(0);
 
         conversation.d3().simulate('dragstart');
