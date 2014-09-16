@@ -73,30 +73,18 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new conversation details.
              */
             $scope.addConversation = function () {
-
-                var add = function (data) {
+                $modal.open({
+                    templateUrl: '/templates/conversation_add_modal.html',
+                    size: 'md',
+                    controller: ['$scope', function ($scope) {
+                        $scope.data = {};
+                    }]
+                }).result.then(function (data) {
                     $scope.newComponent = new Conversation({
                         name: data.name,
                         description: data.description,
                         colour: data.colour
                     });
-                };
-
-                var modalInstance = $modal.open({
-                    templateUrl: '/templates/conversation_add_modal.html',
-                    size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-                        $scope.data = {};
-
-                        $scope.ok = function () {
-                            add($scope.data);
-                            $modalInstance.close();
-                        };
-
-                        $scope.cancel = function () {
-                            $modalInstance.dismiss('cancel');
-                        };
-                    }]
                 });
             };
 
@@ -104,29 +92,17 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new channel details.
              */
             $scope.addChannel = function () {
-
-                var add = function (data) {
+                $modal.open({
+                    templateUrl: '/templates/channel_add_modal.html',
+                    size: 'md',
+                    controller: ['$scope', function ($scope) {
+                        $scope.data = {};
+                    }]
+                }).result.then(function (data) {
                     $scope.newComponent = new Channel({
                         name: data.name,
                         description: data.description
                     });
-                };
-
-                var modalInstance = $modal.open({
-                    templateUrl: '/templates/channel_add_modal.html',
-                    size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-                        $scope.data = {};
-
-                        $scope.ok = function () {
-                            add($scope.data);
-                            $modalInstance.close();
-                        };
-
-                        $scope.cancel = function () {
-                            $modalInstance.dismiss('cancel');
-                        };
-                    }]
                 });
             };
 
@@ -134,34 +110,10 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new router details.
              */
             $scope.addRouter = function () {
-                var add = function (data) {
-                    var options = {
-                        name: data.name,
-                        description: data.description
-                    };
-
-                    var endpoints = _.map(_.filter(data.endpoints, 'name'),
-                        function (endpoint) {
-                            return new Endpoint({
-                                name: endpoint.name,
-                                accepts: ['conversation']
-                            })
-                        });
-
-                    if (!_.isEmpty(endpoints)) {
-                        endpoints.push(new Endpoint({
-                            accepts: ['channel']
-                        }));
-                        options.endpoints = endpoints;
-                    }
-
-                    $scope.newComponent = new Router(options);
-                };
-
-                var modalInstance = $modal.open({
+                $modal.open({
                     templateUrl: '/templates/router_add_modal.html',
                     size: 'md',
-                    controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+                    controller: ['$scope', function ($scope) {
                         $scope.data = {
                             endpoints: [{ name: "" }]
                         };
@@ -173,16 +125,33 @@ directives.directive('goCampaignDesigner', [
                         $scope.removeEndpoint = function (index) {
                             $scope.data.endpoints.splice(index, 1);
                         };
-
-                        $scope.ok = function () {
-                            add($scope.data);
-                            $modalInstance.close();
-                        };
-
-                        $scope.cancel = function () {
-                            $modalInstance.dismiss('cancel');
-                        };
                     }]
+                }).result.then(function (data) {
+                    var options = {
+                        name: data.name,
+                        description: data.description
+                    };
+
+                    // Add default conversation endpoint
+                    var endpoints = [new Endpoint({
+                        accepts: ['conversation']
+                    })];
+
+                    _.forEach(_.filter(data.endpoints, 'name'), function (endpoint) {
+                        endpoints.push(new Endpoint({
+                            name: endpoint.name,
+                            accepts: ['conversation']
+                        }));
+                    });
+
+                    // Add default channel endpoint
+                    endpoints.push(new Endpoint({
+                        accepts: ['channel']
+                    }));
+
+                    options.endpoints = endpoints;
+
+                    $scope.newComponent = new Router(options);
                 });
             };
 
