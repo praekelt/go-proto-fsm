@@ -139,7 +139,7 @@ angular.module('vumigo.services').factory('routeComponent', [function () {
                 });
 
             selection.select('.arrow')
-                .html('&#xf04e;');
+                .text('\uf04e');
         }
 
         function exit(selection) {

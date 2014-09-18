@@ -179,11 +179,11 @@ angular.module('vumigo.services').factory('Conversation', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf0c1;',
+                        icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
-                        icon: '&#xf00d;',
+                        icon: '\uf00d',
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -219,11 +219,11 @@ angular.module('vumigo.services').factory('Router', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf0c1;',
+                        icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
-                        icon: '&#xf00d;',
+                        icon: '\uf00d',
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -259,11 +259,11 @@ angular.module('vumigo.services').factory('Channel', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf0c1;',
+                        icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
-                        icon: '&#xf00d;',
+                        icon: '\uf00d',
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -345,15 +345,15 @@ angular.module('vumigo.services').factory('Connection', [
                 component: this,
                 items: [
                     new MenuItem({
-                        icon: '&#xf065;',
+                        icon: '\uf065',
                         action: 'go:campaignDesignerFlipDirection'
                     }),
                     new MenuItem({
-                        icon: '&#xf066;',
+                        icon: '\uf066',
                         action: 'go:campaignDesignerBiDirectional'
                     }),
                     new MenuItem({
-                        icon: '&#xf00d;',
+                        icon: '\uf00d',
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
