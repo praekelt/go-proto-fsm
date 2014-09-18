@@ -68,7 +68,7 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
                     .attr('height', function (d) { return d.meta().layout.height; });
 
                 selection.selectAll('text')
-                    .html(function (d) {
+                    .text(function (d) {
                         return d.icon;
                     })
                     .attr('x', function (d) { return d.meta().layout.text.x; })

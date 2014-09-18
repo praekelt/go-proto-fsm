@@ -255,9 +255,9 @@ describe('Conversation', function () {
 
         var menu = conversation.menu;
         expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('&#xf0c1;');
+        expect(menu.items[0].icon).to.equal('\uf0c1');
         expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('&#xf00d;');
+        expect(menu.items[1].icon).to.equal('\uf00d');
         expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
     }));
 
@@ -293,9 +293,9 @@ describe('Router', function () {
 
         var menu = router.menu;
         expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('&#xf0c1;');
+        expect(menu.items[0].icon).to.equal('\uf0c1');
         expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('&#xf00d;');
+        expect(menu.items[1].icon).to.equal('\uf00d');
         expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
     }));
 
@@ -330,9 +330,9 @@ describe('Channel', function () {
 
         var menu = channel.menu;
         expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('&#xf0c1;');
+        expect(menu.items[0].icon).to.equal('\uf0c1');
         expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('&#xf00d;');
+        expect(menu.items[1].icon).to.equal('\uf00d');
         expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
     }));
 
@@ -431,11 +431,11 @@ describe('Connection', function () {
 
         var menu = connection.menu;
         expect(menu.items).to.have.length(3);
-        expect(menu.items[0].icon).to.equal('&#xf065;');
+        expect(menu.items[0].icon).to.equal('\uf065');
         expect(menu.items[0].action).to.equal('go:campaignDesignerFlipDirection');
-        expect(menu.items[1].icon).to.equal('&#xf066;');
+        expect(menu.items[1].icon).to.equal('\uf066');
         expect(menu.items[1].action).to.equal('go:campaignDesignerBiDirectional');
-        expect(menu.items[2].icon).to.equal('&#xf00d;');
+        expect(menu.items[2].icon).to.equal('\uf00d');
         expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
     }));
 
