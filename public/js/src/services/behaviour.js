@@ -107,7 +107,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                 var selection = d3.select(this);
 
                 if (dragEnabled) {
-                    selection.classed('dragging', true);
+                    selection
+                        .classed('dragging', true)
+                        .style('filter', 'url(#shadow)');
                 }
 
                 if (selectEnabled) {
@@ -158,7 +160,9 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
              */
             function dragended() {
                 if (dragEnabled) {
-                    d3.select(this).classed('dragging', false);
+                    d3.select(this)
+                        .classed('dragging', false)
+                        .style('filter', null);
                 }
             }
 
