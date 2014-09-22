@@ -52,8 +52,8 @@ angular.module('vumigo.services').factory('connectionLayout', [
 
                 return {
                     angle: angle,
-                    x: (start.x + (end.x - start.x) / 2),
-                    y: (start.y + (end.y - start.y) / 2)
+                    x: (start.x + (end.x - start.x) / 4),
+                    y: (start.y + (end.y - start.y) / 4)
                 };
             }
 
