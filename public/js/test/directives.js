@@ -204,7 +204,9 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.nav .btn-add-router')).to.have.length(1);
         expect(element.find('.nav .btn-add-channel')).to.have.length(1);
         expect(element.find('.nav .btn-remove')).to.have.length(1);
+        expect(element.find('.nav .btn-remove').parent().hasClass('hidden')).to.be.true;
         expect(element.find('.nav .btn-connect')).to.have.length(1);
+        expect(element.find('.nav .btn-connect').parent().hasClass('hidden')).to.be.true;
         expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
     });
