@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body">
     <form name="form">
-        <div class="form-group" ng-class="{ 'has-error': form.name.$invalid && form.name.$dirty }">
+        <div class="form-group required" ng-class="{ 'has-error': form.name.$invalid && form.name.$dirty }">
             <label for="field-name">Name</label>
             <input id="field-name" type="text" name="name" class="form-control"
                    data-ng-model="data.name" />
