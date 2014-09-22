@@ -118,7 +118,7 @@ describe('goCampaignDesigner', function () {
         expect(connections).to.have.length(1);
 
         var controlPoints = element.find('g.layer.connections g.control-point');
-        expect(controlPoints).to.have.length(5);
+        expect(controlPoints).to.have.length(2);
     });
 
     it('should allow component to be selected', function () {

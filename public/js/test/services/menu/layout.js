@@ -118,12 +118,13 @@ describe('menuLayout', function () {
             expect(item.meta()).to.deep.equal(expected);
         });
 
-        var point = components['connection1'].points[2];
+        var point1 = components['connection1'].points[0];
+        var point2 = components['connection1'].points[1];
         expected = {
             active: false,
             layout: {
-                x: point.x,
-                y: point.y + 20
+                x: point1.x + (point2.x - point1.x) / 2,
+                y: point1.y + ((point2.y - point1.y) / 2) + 20
             }
         };
 

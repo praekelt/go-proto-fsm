@@ -426,7 +426,7 @@ describe('Connection', function () {
         expect(connection.id).to.equal('connection1');
         expect(connection.type).to.equal('connection');
         expect(connection.routes).to.have.length(1);
-        expect(connection.points).to.have.length(5);
+        expect(connection.points).to.have.length(2);
         expect(connection.menu).not.to.be.undefined;
 
         var menu = connection.menu;
@@ -802,9 +802,8 @@ describe('ComponentManager', function () {
         expect(_.pluck(connections, 'type')).to.deep.equal(['connection']);
 
         var points = componentManager.getControlPoints();
-        expect(points).to.have.length(5);
+        expect(points).to.have.length(2);
         expect(_.pluck(points, 'type')).to.deep.equal([
-            'control point', 'control point', 'control point',
             'control point', 'control point']);
 
         var menus = componentManager.getMenus();
