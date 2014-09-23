@@ -439,15 +439,10 @@ directives.directive('goCampaignDesigner', [
             $rootScope.$on('go:campaignDesignerClick', clicked);
 
             d3.select('body').on('keydown', function () {
-                switch (d3.event.keyCode) {
-                    case 27:  // Esc
-                        scope.$apply(function () {
-                            scope.clearSelection();
-                        });
-                        break;
-                    default:
-                        // do nothing
-                        break;
+                if (d3.event.keyCode == 27) {  // Esc
+                    scope.$apply(function () {
+                        scope.clearSelection();
+                    });
                 }
             });
         }
