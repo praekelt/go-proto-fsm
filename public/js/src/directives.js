@@ -128,8 +128,7 @@ directives.directive('goCampaignDesigner', [
                     }]
                 }).result.then(function (data) {
                     var options = {
-                        name: data.name,
-                        description: data.description
+                        name: data.name
                     };
 
                     // Add default conversation endpoint
