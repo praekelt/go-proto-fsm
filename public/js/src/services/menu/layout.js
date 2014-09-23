@@ -1,6 +1,6 @@
 
-angular.module('vumigo.services').factory('menuLayout', [
-    function () {
+angular.module('vumigo.services').factory('menuLayout', ['componentUtils',
+    function (componentUtils) {
         return function () {
             var menuItemWidth = 32;
             var menuItemHeight = 32;
@@ -43,27 +43,10 @@ angular.module('vumigo.services').factory('menuLayout', [
                             break;
 
                         case 'connection':
-                            var x, y;
-                            if (menu.component.points.length > 2) {
-                                var point = menu.component.points[
-                                    Math.floor(menu.component.points.length / 2)];
-
-                                x = point.x;
-                                y = point.y;
-
-                            } else {
-                                x = menu.component.points[0].x
-                                    + (menu.component.points[1].x
-                                       - menu.component.points[0].x) / 2,
-
-                                y = menu.component.points[0].y
-                                    + (menu.component.points[1].y
-                                       - menu.component.points[0].y) / 2
-                            }
-
+                            var point = componentUtils.midpoint(menu.component.points);
                             meta.layout = {
-                                x: x,
-                                y: y + menuYOffset
+                                x: point.x,
+                                y: point.y + menuYOffset
                             };
                             break;
 

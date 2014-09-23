@@ -203,3 +203,19 @@ describe('boundingBox', function () {
     }));
 
 });
+
+describe('componentUtils', function () {
+
+    beforeEach(module('vumigo.services'));
+
+    it('should determine midpoint', inject(function (componentUtils) {
+        var points = [{x: 10, y: 10}, {x: 50, y: 50}, {x: 30, y: 30}];
+        var midpoint = componentUtils.midpoint(points);
+        expect(midpoint).to.deep.equal({x: 50, y: 50});
+
+        points = [{x: 10, y: 10}, {x: 30, y: 30}];
+        midpoint = componentUtils.midpoint(points);
+        expect(midpoint).to.deep.equal({x: 20, y: 20});
+    }));
+
+});

@@ -236,3 +236,28 @@ angular.module('vumigo.services').factory('boundingBox', [function () {
         return boundingBox;
     };
 }]);
+
+angular.module('vumigo.services').factory('componentUtils', [function () {
+
+    function midpoint(points) {
+        if (_.isEmpty(points)) return {x: 0, y: 0};
+
+        if (points.length > 2) {
+            var point = points[Math.floor(points.length / 2)];
+            return {
+                x: point.x,
+                y: point.y
+            };
+
+        } else {
+            return {
+                x: points[0].x + (points[1].x - points[0].x) / 2,
+                y: points[0].y + (points[1].y - points[0].y) / 2
+            }
+        }
+    }
+
+    return {
+        midpoint: midpoint
+    };
+}]);
