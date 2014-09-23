@@ -147,6 +147,8 @@ describe('goCampaignDesigner', function () {
 
         conversation.d3().simulate('dragstart');
         element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
+
         expect(isolateScope.connectPressed).to.equal(true);
         channel.d3().simulate('dragstart');
 
@@ -167,7 +169,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation.get(0).__data__;
 
         conversation.d3().simulate('dragstart');
-        element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation.d3().simulate('dragstart');
 
@@ -188,7 +190,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation2.get(0).__data__;
 
         conversation1.d3().simulate('dragstart');
-        element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation2.d3().simulate('dragstart');
 
@@ -203,10 +205,6 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.nav .btn-add-conversation')).to.have.length(1);
         expect(element.find('.nav .btn-add-router')).to.have.length(1);
         expect(element.find('.nav .btn-add-channel')).to.have.length(1);
-        expect(element.find('.nav .btn-remove')).to.have.length(1);
-        expect(element.find('.nav .btn-remove').parent().hasClass('hidden')).to.be.true;
-        expect(element.find('.nav .btn-connect')).to.have.length(1);
-        expect(element.find('.nav .btn-connect').parent().hasClass('hidden')).to.be.true;
         expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
     });
