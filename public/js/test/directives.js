@@ -356,10 +356,6 @@ describe('goCampaignDesigner', function () {
         expect($nameField).to.have.length(1);
         expect($nameField.attr('data-ng-model')).to.equal('data.name');
 
-        var $descriptionField = $modal.find('textarea#field-description');
-        expect($descriptionField).to.have.length(1);
-        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
-
         var $endpointField = $modal.find('input#field-endpoint-0');
         expect($endpointField).to.have.length(1);
         expect($endpointField.attr('data-ng-model')).to.equal('endpoint.name');
@@ -389,9 +385,6 @@ describe('goCampaignDesigner', function () {
         var $nameField = $('.modal-dialog').find('input#field-name');
         $nameField.scope().data.name = "Router 2";
 
-        var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test router";
-
         var $endpointField = $('.modal-dialog').find('input#field-endpoint-0');
         $endpointField.scope().data.endpoints = [{
             name: "Keyword 1"
@@ -406,7 +399,6 @@ describe('goCampaignDesigner', function () {
         var datum = routers.get(1).__data__;
         expect(datum.id).to.equal("router2");
         expect(datum.name).to.equal("Router 2");
-        expect(datum.description).to.equal("Test router");
         expect(datum.endpoints).to.have.length(3);
         expect(datum.endpoints[0].id).to.equal("endpoint8");
         expect(datum.endpoints[0].name).to.equal("default");
