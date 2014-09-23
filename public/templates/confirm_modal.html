@@ -1,7 +1,7 @@
 <div class="modal-header">
-    <h3 class="modal-title">Are you sure?</h3>
+    <h3 class="modal-title">Are you sure you want to delete<span data-ng-if="component.name"> "{{ component.name }}"</span><span data-ng-if="!component.name"> selected {{ component.type }}</span>?</h3>
 </div>
 <div class="modal-body">
-    <button class="btn btn-danger" ng-click="yes()">Yes</button>
-    <button class="btn btn-warning" ng-click="no()">No</button>
+    <button class="btn btn-danger" ng-click="$close()">Yes</button>
+    <button class="btn btn-warning" ng-click="$dismiss('no')">No</button>
 </div>
