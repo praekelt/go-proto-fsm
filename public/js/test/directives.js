@@ -121,7 +121,7 @@ describe('goCampaignDesigner', function () {
         expect(controlPoints).to.have.length(5);
     });
 
-    it('should allow component to be selected', function () {
+    it('should allow component to be selected and deselected', function () {
         var isolateScope = element.isolateScope();
 
         var component = element.find('.component.conversation').eq(0);
@@ -133,6 +133,10 @@ describe('goCampaignDesigner', function () {
         component.d3().simulate('dragstart');
         expect(isolateScope.selectedComponentId).to.equal(datum.id);
         expect(datum.meta().selected).to.equal(true);
+
+        element.find('.container').d3().simulate('mousedown');
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(datum.meta().selected).to.equal(false);
     });
 
     it('should allow components to be connected', function () {
@@ -269,7 +273,7 @@ describe('goCampaignDesigner', function () {
         $colourField.scope().data.colour = "#000000";
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var conversations = element.find('g.layer.components g.conversation');
         expect(conversations).to.have.length(3);
@@ -328,7 +332,7 @@ describe('goCampaignDesigner', function () {
         $descriptionField.scope().data.description = "Test channel";
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var channels = element.find('g.layer.components g.channel');
         expect(channels).to.have.length(3);
@@ -391,7 +395,7 @@ describe('goCampaignDesigner', function () {
         }];
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var routers = element.find('g.layer.components g.router');
         expect(routers).to.have.length(2);

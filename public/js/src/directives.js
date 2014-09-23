@@ -61,8 +61,8 @@ directives.directive('goCampaignDesigner', [
             $scope.newComponent = null;
 
             $scope.clearSelection = function () {
-                $scope.selectedComponent = null;
-                $scope.selectedEndpoint = null;
+                $scope.selectedComponentId = null;
+                $scope.selectedEndpointId = null;
                 $scope.connectPressed = false;
                 $scope.newComponent = null;
 
@@ -421,18 +421,29 @@ directives.directive('goCampaignDesigner', [
                 buildCanvas.zoom('out');
             };
 
-            function drop(event, coordinates) {
+            function clicked(event, coordinates) {
                 if (scope.newComponent) {
                     scope.newComponent.x = coordinates[0];
                     scope.newComponent.y = coordinates[1];
                     componentManager.addComponent(scope.newComponent);
                     scope.newComponent = null;
                     repaint();
+
+                } else {
+                    scope.clearSelection();
                 }
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
-            $rootScope.$on('go:campaignDesignerClick', drop);
+            $rootScope.$on('go:campaignDesignerClick', clicked);
+
+            d3.select('body').on('keydown', function () {
+                if (d3.event.keyCode == 27) {  // Esc
+                    scope.$apply(function () {
+                        scope.clearSelection();
+                    });
+                }
+            });
         }
 
         return {

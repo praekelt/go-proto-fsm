@@ -101,6 +101,7 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
              */
             function dragstarted() {
                 if (d3.event.sourceEvent) {
+                    d3.event.sourceEvent.preventDefault();
                     d3.event.sourceEvent.stopPropagation();
                 }
 
