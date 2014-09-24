@@ -254,11 +254,13 @@ describe('Conversation', function () {
         expect(conversation.menu).not.to.be.undefined;
 
         var menu = conversation.menu;
-        expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('\uf0c1');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('\uf00d');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
+        expect(menu.items).to.have.length(3);
+        expect(menu.items[0].icon).to.equal('\uf040');
+        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
+        expect(menu.items[1].icon).to.equal('\uf0c1');
+        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
+        expect(menu.items[2].icon).to.equal('\uf00d');
+        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
     }));
 
 });
@@ -292,11 +294,13 @@ describe('Router', function () {
         expect(router.menu).not.to.be.undefined;
 
         var menu = router.menu;
-        expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('\uf0c1');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('\uf00d');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
+        expect(menu.items).to.have.length(3);
+        expect(menu.items[0].icon).to.equal('\uf040');
+        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
+        expect(menu.items[1].icon).to.equal('\uf0c1');
+        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
+        expect(menu.items[2].icon).to.equal('\uf00d');
+        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
     }));
 
 });
@@ -329,11 +333,13 @@ describe('Channel', function () {
         expect(channel.menu).not.to.be.undefined;
 
         var menu = channel.menu;
-        expect(menu.items).to.have.length(2);
-        expect(menu.items[0].icon).to.equal('\uf0c1');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[1].icon).to.equal('\uf00d');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerRemove');
+        expect(menu.items).to.have.length(3);
+        expect(menu.items[0].icon).to.equal('\uf040');
+        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
+        expect(menu.items[1].icon).to.equal('\uf0c1');
+        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
+        expect(menu.items[2].icon).to.equal('\uf00d');
+        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
     }));
 
 });

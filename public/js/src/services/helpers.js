@@ -179,6 +179,10 @@ angular.module('vumigo.services').factory('Conversation', [
                 component: this,
                 items: [
                     new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
+                    new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
@@ -219,6 +223,10 @@ angular.module('vumigo.services').factory('Router', [
                 component: this,
                 items: [
                     new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
+                    new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
@@ -258,6 +266,10 @@ angular.module('vumigo.services').factory('Channel', [
             this.menu = new Menu({
                 component: this,
                 items: [
+                    new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
                     new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'

@@ -151,7 +151,7 @@ describe('goCampaignDesigner', function () {
 
         conversation.d3().simulate('dragstart');
         element.find('.btn-connect').click();
-        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
 
         expect(isolateScope.connectPressed).to.equal(true);
         channel.d3().simulate('dragstart');
@@ -173,7 +173,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation.get(0).__data__;
 
         conversation.d3().simulate('dragstart');
-        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation.d3().simulate('dragstart');
 
@@ -194,7 +194,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation2.get(0).__data__;
 
         conversation1.d3().simulate('dragstart');
-        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation2.d3().simulate('dragstart');
 
