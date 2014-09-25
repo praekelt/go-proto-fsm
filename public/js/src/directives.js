@@ -73,18 +73,37 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new conversation details.
              */
             $scope.addConversation = function () {
+                $scope.openConversationForm();
+            };
+
+            $scope.openConversationForm = function (conversation) {
                 $modal.open({
-                    templateUrl: '/templates/conversation_add_modal.html',
+                    templateUrl: '/templates/conversation_form_modal.html',
                     size: 'md',
                     controller: ['$scope', function ($scope) {
+                        $scope.conversation = conversation;
                         $scope.data = {};
+
+                        if (conversation) {
+                            $scope.data.name = conversation.name;
+                            $scope.data.description = conversation.description;
+                            $scope.data.colour = conversation.colour;
+                        }
                     }]
                 }).result.then(function (data) {
-                    $scope.newComponent = new Conversation({
-                        name: data.name,
-                        description: data.description,
-                        colour: data.colour
-                    });
+                    if (conversation) {
+                        conversation.name = data.name;
+                        conversation.description = data.description;
+                        conversation.colour = data.colour;
+                        $scope.refresh();
+
+                    } else {
+                        $scope.newComponent = new Conversation({
+                            name: data.name,
+                            description: data.description,
+                            colour: data.colour
+                        });
+                    }
                 });
             };
 
@@ -92,17 +111,34 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new channel details.
              */
             $scope.addChannel = function () {
+                $scope.openChannelForm();
+            };
+
+            $scope.openChannelForm = function (channel) {
                 $modal.open({
-                    templateUrl: '/templates/channel_add_modal.html',
+                    templateUrl: '/templates/channel_form_modal.html',
                     size: 'md',
                     controller: ['$scope', function ($scope) {
+                        $scope.channel = channel;
                         $scope.data = {};
+
+                        if (channel) {
+                            $scope.data.name = channel.name;
+                            $scope.data.description = channel.description;
+                        }
                     }]
                 }).result.then(function (data) {
-                    $scope.newComponent = new Channel({
-                        name: data.name,
-                        description: data.description
-                    });
+                    if (channel) {
+                        channel.name = data.name;
+                        channel.description = data.description;
+                        $scope.refresh();
+
+                    } else {
+                        $scope.newComponent = new Channel({
+                            name: data.name,
+                            description: data.description
+                        });
+                    }
                 });
             };
 
@@ -110,48 +146,99 @@ directives.directive('goCampaignDesigner', [
              * Open modal dialog and capture new router details.
              */
             $scope.addRouter = function () {
+                $scope.openRouterForm();
+            };
+
+            $scope.openRouterForm = function (router) {
                 $modal.open({
-                    templateUrl: '/templates/router_add_modal.html',
+                    templateUrl: '/templates/router_form_modal.html',
                     size: 'md',
                     controller: ['$scope', function ($scope) {
+                        $scope.router = router;
                         $scope.data = {
-                            endpoints: [{ name: "" }]
+                            endpoints: [{ name: "", editable: true }]
                         };
 
+                        if (router) {
+                            $scope.data.name = router.name;
+                            $scope.data.endpoints =  _.map(router.endpoints, function (endpoint) {
+                                var editable = endpoint.acceptsConnectionsFrom('conversation')
+                                    && endpoint.name != 'default';
+                                return {
+                                    id: endpoint.id,
+                                    name: endpoint.name,
+                                    editable: editable
+                                };
+                            });
+                        }
+
                         $scope.addEndpoint = function () {
-                            $scope.data.endpoints.push({ name: "" });
+                            $scope.data.endpoints.push({ name: "", editable: true });
                         };
 
                         $scope.removeEndpoint = function (index) {
                             $scope.data.endpoints.splice(index, 1);
                         };
+
+                        $scope.isEditable = function (endpoint) {
+                            console.log(endpoint);
+                            return endpoint.editable;
+                        };
                     }]
                 }).result.then(function (data) {
-                    var options = {
-                        name: data.name
-                    };
+                    if (router) {
 
-                    // Add default conversation endpoint
-                    var endpoints = [new Endpoint({
-                        accepts: ['conversation']
-                    })];
+                    } else {
+                        var options = {
+                            name: data.name
+                        };
 
-                    _.forEach(_.filter(data.endpoints, 'name'), function (endpoint) {
-                        endpoints.push(new Endpoint({
-                            name: endpoint.name,
+                        // Add default conversation endpoint
+                        var endpoints = [new Endpoint({
                             accepts: ['conversation']
+                        })];
+
+                        _.forEach(_.filter(data.endpoints, 'name'), function (endpoint) {
+                            endpoints.push(new Endpoint({
+                                name: endpoint.name,
+                                accepts: ['conversation']
+                            }));
+                        });
+
+                        // Add default channel endpoint
+                        endpoints.push(new Endpoint({
+                            accepts: ['channel']
                         }));
-                    });
 
-                    // Add default channel endpoint
-                    endpoints.push(new Endpoint({
-                        accepts: ['channel']
-                    }));
+                        options.endpoints = endpoints;
 
-                    options.endpoints = endpoints;
-
-                    $scope.newComponent = new Router(options);
+                        $scope.newComponent = new Router(options);
+                    }
                 });
+            };
+
+            $scope.edit = function () {
+                if ($scope.selectedComponentId) {
+                    var component = componentManager.getComponent($scope.selectedComponentId);
+                    switch (component.type) {
+                        case 'conversation':
+                            $scope.openConversationForm(component);
+                            break;
+
+                        case 'router':
+                            $scope.openRouterForm(component);
+                            break;
+
+                        case 'channel':
+                            $scope.openChannelForm(component);
+                            break;
+
+                        default:
+                            console.log("Unexpected component type: "
+                                        + component.type);
+                            break;
+                    }
+                }
             };
 
             /**
@@ -266,6 +353,10 @@ directives.directive('goCampaignDesigner', [
                 } else {
                     $scope.selectedEndpointId = null;
                 }
+            });
+
+            $rootScope.$on('go:campaignDesignerEdit', function (event) {
+                $scope.edit();
             });
 
             $rootScope.$on('go:campaignDesignerConnect', function (event) {
