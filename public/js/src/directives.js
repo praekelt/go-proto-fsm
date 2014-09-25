@@ -206,7 +206,7 @@ directives.directive('goCampaignDesigner', [
                         };
 
                         _.forEach(_.filter(data.endpoints, 'name'), function (d) {
-                            endpoints.push(new Endpoint({
+                            options.endpoints.push(new Endpoint({
                                 name: d.name,
                                 accepts: ['conversation']
                             }));

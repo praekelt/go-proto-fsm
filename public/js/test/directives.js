@@ -246,12 +246,12 @@ describe('goCampaignDesigner', function () {
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
-        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+        expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
     it('should add new conversation', inject(function (rfc4122, Endpoint) {
@@ -308,12 +308,12 @@ describe('goCampaignDesigner', function () {
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
-        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+        expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
     it('should add new channel', inject(function (rfc4122, Endpoint) {
@@ -367,12 +367,12 @@ describe('goCampaignDesigner', function () {
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
         expect($cancelButton.text()).to.equal("Cancel");
-        expect($cancelButton.attr('ng-click')).to.equal("$dismiss('cancel')");
+        expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
     it('should add new router', inject(function (rfc4122, Endpoint) {
@@ -380,9 +380,9 @@ describe('goCampaignDesigner', function () {
 
         var stub = sinon.stub(rfc4122, 'v4');
         stub.onCall(0).returns('endpoint8');
-        stub.onCall(1).returns('endpoint9');
-        stub.onCall(2).returns('endpoint10');
-        stub.onCall(3).returns('router2');
+        stub.onCall(1).returns('router2');
+        stub.onCall(2).returns('endpoint9');
+        stub.onCall(3).returns('endpoint10');
 
         element.find('.nav .btn-add-router').click();  // open modal
 
@@ -405,10 +405,10 @@ describe('goCampaignDesigner', function () {
         expect(datum.name).to.equal("Router 2");
         expect(datum.endpoints).to.have.length(3);
         expect(datum.endpoints[0].id).to.equal("endpoint8");
-        expect(datum.endpoints[0].name).to.equal("default");
+        expect(datum.endpoints[0].name).to.equal("Keyword 1");
         expect(datum.endpoints[0].accepts).to.deep.equal(['conversation']);
         expect(datum.endpoints[1].id).to.equal("endpoint9");
-        expect(datum.endpoints[1].name).to.equal("Keyword 1");
+        expect(datum.endpoints[1].name).to.equal("default");
         expect(datum.endpoints[1].accepts).to.deep.equal(['conversation']);
         expect(datum.endpoints[2].id).to.equal("endpoint10");
         expect(datum.endpoints[2].name).to.equal("default");
