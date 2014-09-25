@@ -70,12 +70,8 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
-             * Open modal dialog and capture new conversation details.
+             * Open conversation form modal dialog.
              */
-            $scope.addConversation = function () {
-                $scope.openConversationForm();
-            };
-
             $scope.openConversationForm = function (conversation) {
                 $modal.open({
                     templateUrl: '/templates/conversation_form_modal.html',
@@ -108,12 +104,8 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
-             * Open modal dialog and capture new channel details.
+             * Open channel form modal dialog.
              */
-            $scope.addChannel = function () {
-                $scope.openChannelForm();
-            };
-
             $scope.openChannelForm = function (channel) {
                 $modal.open({
                     templateUrl: '/templates/channel_form_modal.html',
@@ -143,12 +135,8 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
-             * Open modal dialog and capture new router details.
+             * Open router form modal dialog.
              */
-            $scope.addRouter = function () {
-                $scope.openRouterForm();
-            };
-
             $scope.openRouterForm = function (router) {
                 $modal.open({
                     templateUrl: '/templates/router_form_modal.html',
@@ -156,61 +144,73 @@ directives.directive('goCampaignDesigner', [
                     controller: ['$scope', function ($scope) {
                         $scope.router = router;
                         $scope.data = {
-                            endpoints: [{ name: "", editable: true }]
+                            endpoints: [{ name: "" }]
                         };
 
                         if (router) {
                             $scope.data.name = router.name;
-                            $scope.data.endpoints =  _.map(router.endpoints, function (endpoint) {
-                                var editable = endpoint.acceptsConnectionsFrom('conversation')
-                                    && endpoint.name != 'default';
+
+                            var endpoints = _.reject(router.endpoints, function (endpoint) {
+                                return _.isEqual(endpoint.name, 'default');
+                            });
+
+                            $scope.data.endpoints =  _.map(endpoints, function (endpoint) {
                                 return {
                                     id: endpoint.id,
                                     name: endpoint.name,
-                                    editable: editable
+                                    connected: !_.isEmpty(endpoint.connections)
                                 };
                             });
                         }
 
-                        $scope.addEndpoint = function () {
-                            $scope.data.endpoints.push({ name: "", editable: true });
+                        $scope.addEndpoint = function (form) {
+                            $scope.data.endpoints.push({ name: "" });
+                            form.$setDirty();
                         };
 
-                        $scope.removeEndpoint = function (index) {
+                        $scope.removeEndpoint = function (form, index) {
                             $scope.data.endpoints.splice(index, 1);
-                        };
-
-                        $scope.isEditable = function (endpoint) {
-                            console.log(endpoint);
-                            return endpoint.editable;
+                            form.$setDirty();
                         };
                     }]
                 }).result.then(function (data) {
                     if (router) {
+                        router.name = data.name;
 
-                    } else {
-                        var options = {
-                            name: data.name
-                        };
-
-                        // Add default conversation endpoint
-                        var endpoints = [new Endpoint({
-                            accepts: ['conversation']
-                        })];
-
-                        _.forEach(_.filter(data.endpoints, 'name'), function (endpoint) {
-                            endpoints.push(new Endpoint({
-                                name: endpoint.name,
-                                accepts: ['conversation']
+                        router.endpoints = _.remove(router.endpoints, function (endpoint) {
+                            if (_.isEqual(endpoint.name, 'default')) return true;
+                            return !_.isUndefined(_.find(data.endpoints, function (d) {
+                                return _.isEqual(d.id, endpoint.id);
                             }));
                         });
 
-                        // Add default channel endpoint
-                        endpoints.push(new Endpoint({
-                            accepts: ['channel']
-                        }));
+                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
+                            if (_.isUndefined(d.id)) {
+                                router.addEndpoint(new Endpoint({
+                                    name: d.name,
+                                    accepts: ['conversation']
+                                }));
 
-                        options.endpoints = endpoints;
+                            } else {
+                                var endpoint = router.getEndpoint(d.id);
+                                endpoint.name = d.name;
+                            }
+                        });
+
+                        $scope.refresh();
+
+                    } else {
+                        var options = {
+                            name: data.name,
+                            endpoints: []
+                        };
+
+                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
+                            endpoints.push(new Endpoint({
+                                name: d.name,
+                                accepts: ['conversation']
+                            }));
+                        });
 
                         $scope.newComponent = new Router(options);
                     }
