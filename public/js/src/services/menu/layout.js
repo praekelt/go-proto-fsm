@@ -49,7 +49,7 @@ angular.module('vumigo.services').factory('menuLayout', ['goUtils',
                                 point = menu.component.points[index];
 
                             } else {
-                                var point = goUtils.midpoint(
+                                point = goUtils.midpoint(
                                     menu.component.points[0], menu.component.points[1]);
                             }
 
