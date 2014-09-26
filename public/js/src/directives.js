@@ -61,8 +61,8 @@ directives.directive('goCampaignDesigner', [
             $scope.newComponent = null;
 
             $scope.clearSelection = function () {
-                $scope.selectedComponent = null;
-                $scope.selectedEndpoint = null;
+                $scope.selectedComponentId = null;
+                $scope.selectedEndpointId = null;
                 $scope.connectPressed = false;
                 $scope.newComponent = null;
 
@@ -128,8 +128,7 @@ directives.directive('goCampaignDesigner', [
                     }]
                 }).result.then(function (data) {
                     var options = {
-                        name: data.name,
-                        description: data.description
+                        name: data.name
                     };
 
                     // Add default conversation endpoint
@@ -167,26 +166,17 @@ directives.directive('goCampaignDesigner', [
              * Remove the selected component after prompting the user to confirm.
              */
             $scope.remove = function () {
-                if ($scope.selectedComponentId) {
-
-                    var removeComponent = function () {
-                        componentManager.removeComponent($scope.selectedComponentId);
-                        $scope.clearSelection();
-                    };
-
-                    var modalInstance = $modal.open({
+                var componentId = $scope.selectedComponentId;
+                if (componentId) {
+                    $modal.open({
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
-                        controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-                            $scope.yes = function () {
-                                removeComponent();
-                                $modalInstance.close();
-                            };
-
-                            $scope.no = function () {
-                                $modalInstance.dismiss('cancel');
-                            };
+                        controller: ['$scope', function ($scope) {
+                            $scope.component = componentManager.getComponent(componentId);
                         }]
+                    }).result.then(function (data) {
+                        componentManager.removeComponent(componentId);
+                        $scope.clearSelection();
                     });
                 }
             };
@@ -422,18 +412,31 @@ directives.directive('goCampaignDesigner', [
                 buildCanvas.zoom('out');
             };
 
-            function drop(event, coordinates) {
+            function clicked(event, coordinates) {
                 if (scope.newComponent) {
                     scope.newComponent.x = coordinates[0];
                     scope.newComponent.y = coordinates[1];
                     componentManager.addComponent(scope.newComponent);
                     scope.newComponent = null;
                     repaint();
+
+                } else {
+                    scope.clearSelection();
                 }
             }
 
             $rootScope.$on('go:campaignDesignerRepaint', repaint);
-            $rootScope.$on('go:campaignDesignerClick', drop);
+            $rootScope.$on('go:campaignDesignerClick', clicked);
+
+            d3.select('body').on('keydown', function () {
+                scope.$apply(function () {
+                    if (d3.event.keyCode == 27) {  // Esc
+                        scope.clearSelection();
+                    } else if (d3.event.keyCode == 46) {  // Delete
+                        scope.remove();
+                    }
+                });
+            });
         }
 
         return {

@@ -136,13 +136,14 @@ angular.module('vumigo.services').factory('canvasBuilder', [
                 container
                     .on('mousedown', function () {
                         d3.select(this).classed('dragging', true);
-                    })
-                    .on('mouseup', function () {
-                        d3.select(this).classed('dragging', false);
+
                         var coordinates = d3.mouse(this);
                         $rootScope.$apply(function () {
                             $rootScope.$emit('go:campaignDesignerClick', coordinates);
                         });
+                    })
+                    .on('mouseup', function () {
+                        d3.select(this).classed('dragging', false);
                     })
                     .call(zoom);
 

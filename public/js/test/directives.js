@@ -121,7 +121,7 @@ describe('goCampaignDesigner', function () {
         expect(controlPoints).to.have.length(2);
     });
 
-    it('should allow component to be selected', function () {
+    it('should allow component to be selected and deselected', function () {
         var isolateScope = element.isolateScope();
 
         var component = element.find('.component.conversation').eq(0);
@@ -133,6 +133,10 @@ describe('goCampaignDesigner', function () {
         component.d3().simulate('dragstart');
         expect(isolateScope.selectedComponentId).to.equal(datum.id);
         expect(datum.meta().selected).to.equal(true);
+
+        element.find('.container').d3().simulate('mousedown');
+        expect(isolateScope.selectedComponentId).to.equal(null);
+        expect(datum.meta().selected).to.equal(false);
     });
 
     it('should allow components to be connected', function () {
@@ -147,6 +151,8 @@ describe('goCampaignDesigner', function () {
 
         conversation.d3().simulate('dragstart');
         element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
+
         expect(isolateScope.connectPressed).to.equal(true);
         channel.d3().simulate('dragstart');
 
@@ -167,7 +173,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation.get(0).__data__;
 
         conversation.d3().simulate('dragstart');
-        element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation.d3().simulate('dragstart');
 
@@ -188,7 +194,7 @@ describe('goCampaignDesigner', function () {
         var datum = conversation2.get(0).__data__;
 
         conversation1.d3().simulate('dragstart');
-        element.find('.btn-connect').click();
+        element.find('.menu.active > .menu-item:first').d3().simulate('mousedown');
         expect(isolateScope.connectPressed).to.equal(true);
         conversation2.d3().simulate('dragstart');
 
@@ -203,8 +209,6 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.nav .btn-add-conversation')).to.have.length(1);
         expect(element.find('.nav .btn-add-router')).to.have.length(1);
         expect(element.find('.nav .btn-add-channel')).to.have.length(1);
-        expect(element.find('.nav .btn-remove')).to.have.length(1);
-        expect(element.find('.nav .btn-connect')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-in')).to.have.length(1);
         expect(element.find('.nav .btn-zoom-out')).to.have.length(1);
     });
@@ -269,7 +273,7 @@ describe('goCampaignDesigner', function () {
         $colourField.scope().data.colour = "#000000";
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var conversations = element.find('g.layer.components g.conversation');
         expect(conversations).to.have.length(3);
@@ -328,7 +332,7 @@ describe('goCampaignDesigner', function () {
         $descriptionField.scope().data.description = "Test channel";
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var channels = element.find('g.layer.components g.channel');
         expect(channels).to.have.length(3);
@@ -355,10 +359,6 @@ describe('goCampaignDesigner', function () {
         var $nameField = $modal.find('input#field-name');
         expect($nameField).to.have.length(1);
         expect($nameField.attr('data-ng-model')).to.equal('data.name');
-
-        var $descriptionField = $modal.find('textarea#field-description');
-        expect($descriptionField).to.have.length(1);
-        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
 
         var $endpointField = $modal.find('input#field-endpoint-0');
         expect($endpointField).to.have.length(1);
@@ -389,16 +389,13 @@ describe('goCampaignDesigner', function () {
         var $nameField = $('.modal-dialog').find('input#field-name');
         $nameField.scope().data.name = "Router 2";
 
-        var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test router";
-
         var $endpointField = $('.modal-dialog').find('input#field-endpoint-0');
         $endpointField.scope().data.endpoints = [{
             name: "Keyword 1"
         }];
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
-        element.find('.container').d3().simulate('mouseup');  // select position on canvas
+        element.find('.container').d3().simulate('mousedown');  // select position on canvas
 
         var routers = element.find('g.layer.components g.router');
         expect(routers).to.have.length(2);
@@ -406,7 +403,6 @@ describe('goCampaignDesigner', function () {
         var datum = routers.get(1).__data__;
         expect(datum.id).to.equal("router2");
         expect(datum.name).to.equal("Router 2");
-        expect(datum.description).to.equal("Test router");
         expect(datum.endpoints).to.have.length(3);
         expect(datum.endpoints[0].id).to.equal("endpoint8");
         expect(datum.endpoints[0].name).to.equal("default");
@@ -417,6 +413,74 @@ describe('goCampaignDesigner', function () {
         expect(datum.endpoints[2].id).to.equal("endpoint10");
         expect(datum.endpoints[2].name).to.equal("default");
         expect(datum.endpoints[2].accepts).to.deep.equal(['channel']);
+    }));
+
+    it('should delete component', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        var conversations = element.find('.conversation');
+        expect(conversations).to.have.length(2);
+
+        var conversation = conversations.eq(0);
+        var datum = conversation.get(0).__data__;
+        conversation.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $title = $modal.find('.modal-title');
+        expect($title).to.have.length(1);
+        expect($title.text()).to.equal("Are you sure you want to delete \"Register\"?");
+
+        var $yesButton = $modal.find('button.btn-danger');
+        expect($yesButton).to.have.length(1);
+        expect($yesButton.text()).to.equal("Yes");
+        expect($yesButton.attr('ng-click')).to.equal('$close()');
+
+        var $noButton = $modal.find('button.btn-warning');
+        expect($noButton).to.have.length(1);
+        expect($noButton.text()).to.equal("No");
+        expect($noButton.attr('ng-click')).to.equal("$dismiss('no')");
+
+        $yesButton.click();
+        expect(element.find('.conversation')).to.have.length(1);
+    }));
+
+    it('should delete connection', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(3)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $title = $modal.find('.modal-title');
+        expect($title).to.have.length(1);
+        expect($title.text()).to.equal("Are you sure you want to delete selected connection?");
+
+        var $yesButton = $modal.find('button.btn-danger');
+        expect($yesButton).to.have.length(1);
+        expect($yesButton.text()).to.equal("Yes");
+        expect($yesButton.attr('ng-click')).to.equal('$close()');
+
+        var $noButton = $modal.find('button.btn-warning');
+        expect($noButton).to.have.length(1);
+        expect($noButton.text()).to.equal("No");
+        expect($noButton.attr('ng-click')).to.equal("$dismiss('no')");
+
+        $yesButton.click();
+        expect(element.find('.connection')).to.have.length(0);
     }));
 
 });
