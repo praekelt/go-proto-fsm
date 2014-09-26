@@ -234,8 +234,7 @@ directives.directive('goCampaignDesigner', [
                             break;
 
                         default:
-                            console.log("Unexpected component type: "
-                                        + component.type);
+                            // TODO: Emit error signal
                             break;
                     }
                 }
