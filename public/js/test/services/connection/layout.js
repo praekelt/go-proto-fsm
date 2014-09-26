@@ -20,8 +20,8 @@ describe('connectionLayout', function () {
 
         return {
             angle: angle,
-            x: (start.x + (end.x - start.x) / 2),
-            y: (start.y + (end.y - start.y) / 2)
+            x: (start.x + (end.x - start.x) / 4),
+            y: (start.y + (end.y - start.y) / 4)
         };
     };
 
@@ -109,7 +109,7 @@ describe('connectionLayout', function () {
         ]);
 
         var pointRadius = 5;
-        var numberOfPoints = 5;
+        var numberOfPoints = 0;
 
         // connection1
         var connection = components['connection1'];

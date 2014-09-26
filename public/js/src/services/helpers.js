@@ -322,7 +322,7 @@ angular.module('vumigo.services').factory('ControlPoint', [
 angular.module('vumigo.services').factory('Connection', [
     'BaseComponent', 'Route', 'ControlPoint', 'Menu', 'MenuItem',
     function (BaseComponent, Route, ControlPoint, Menu, MenuItem) {
-        var numberOfPoints = 3;
+        var numberOfPoints = 0;  // number of draggable control points
 
         function Connection(options) {
             options = options || {};
