@@ -179,6 +179,10 @@ angular.module('vumigo.services').factory('Conversation', [
                 component: this,
                 items: [
                     new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
+                    new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
                     }),
@@ -210,14 +214,39 @@ angular.module('vumigo.services').factory('Router', [
             this.x = options.x || 0;
             this.y = options.y || 0;
 
-            this.addEndpoints(options.endpoints || [
-                new Endpoint({ accepts: ['conversation'] }),
-                new Endpoint({ accepts: ['channel'] })
-            ]);
+            var endpoints = options.endpoints || [];
+
+            var endpoint = _.find(endpoints, function (endpoint) {
+                return _.isEqual(endpoint.name, 'default')
+                    && endpoint.acceptsConnectionsFrom('conversation');
+            });
+
+            if (_.isUndefined(endpoint)) {
+                endpoints.push(new Endpoint({
+                    accepts: ['conversation']
+                }));
+            }
+
+            endpoint = _.find(endpoints, function (endpoint) {
+                return _.isEqual(endpoint.name, 'default')
+                    && endpoint.acceptsConnectionsFrom('channel');
+            });
+
+            if (_.isUndefined(endpoint)) {
+                endpoints.push(new Endpoint({
+                    accepts: ['channel']
+                }));
+            }
+
+            this.addEndpoints(endpoints);
 
             this.menu = new Menu({
                 component: this,
                 items: [
+                    new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
                     new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
@@ -258,6 +287,10 @@ angular.module('vumigo.services').factory('Channel', [
             this.menu = new Menu({
                 component: this,
                 items: [
+                    new MenuItem({
+                        icon: '\uf040',
+                        action: 'go:campaignDesignerEdit'
+                    }),
                     new MenuItem({
                         icon: '\uf0c1',
                         action: 'go:campaignDesignerConnect'
@@ -636,17 +669,9 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }, this);
 
             _.forEach(data.routers, function (d) {
-                var router = this.addComponent(new Router({
-                    id: d.uuid,
-                    name: d.name,
-                    description: d.description,
-                    x: d.x,
-                    y: d.y,
-                    endpoints: []
-                }));
-
+                var endpoints = [];
                 _.forEach(d.conversation_endpoints, function (d) {
-                    router.addEndpoint(new Endpoint({
+                    endpoints.push(new Endpoint({
                         id: d.uuid,
                         name: d.name,
                         accepts: ['conversation']
@@ -654,12 +679,21 @@ angular.module('vumigo.services').factory('ComponentManager', [
                 });
 
                 _.forEach(d.channel_endpoints, function (d) {
-                    router.addEndpoint(new Endpoint({
+                    endpoints.push(new Endpoint({
                         id: d.uuid,
                         name: d.name,
                         accepts: ['channel']
                     }));
                 });
+
+                this.addComponent(new Router({
+                    id: d.uuid,
+                    name: d.name,
+                    description: d.description,
+                    x: d.x,
+                    y: d.y,
+                    endpoints: endpoints
+                }));
             }, this);
 
             _.forEach(data.channels, function (d) {
