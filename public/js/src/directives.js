@@ -252,26 +252,17 @@ directives.directive('goCampaignDesigner', [
              * Remove the selected component after prompting the user to confirm.
              */
             $scope.remove = function () {
-                if ($scope.selectedComponentId) {
-
-                    var removeComponent = function () {
-                        componentManager.removeComponent($scope.selectedComponentId);
-                        $scope.clearSelection();
-                    };
-
-                    var modalInstance = $modal.open({
+                var componentId = $scope.selectedComponentId;
+                if (componentId) {
+                    $modal.open({
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
-                        controller: ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-                            $scope.yes = function () {
-                                removeComponent();
-                                $modalInstance.close();
-                            };
-
-                            $scope.no = function () {
-                                $modalInstance.dismiss('cancel');
-                            };
+                        controller: ['$scope', function ($scope) {
+                            $scope.component = componentManager.getComponent(componentId);
                         }]
+                    }).result.then(function (data) {
+                        componentManager.removeComponent(componentId);
+                        $scope.clearSelection();
                     });
                 }
             };
@@ -528,11 +519,13 @@ directives.directive('goCampaignDesigner', [
             $rootScope.$on('go:campaignDesignerClick', clicked);
 
             d3.select('body').on('keydown', function () {
-                if (d3.event.keyCode == 27) {  // Esc
-                    scope.$apply(function () {
+                scope.$apply(function () {
+                    if (d3.event.keyCode == 27) {  // Esc
                         scope.clearSelection();
-                    });
-                }
+                    } else if (d3.event.keyCode == 46) {  // Delete
+                        scope.remove();
+                    }
+                });
             });
         }
 

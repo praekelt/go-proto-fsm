@@ -118,7 +118,7 @@ describe('goCampaignDesigner', function () {
         expect(connections).to.have.length(1);
 
         var controlPoints = element.find('g.layer.connections g.control-point');
-        expect(controlPoints).to.have.length(5);
+        expect(controlPoints).to.have.length(2);
     });
 
     it('should allow component to be selected and deselected', function () {
@@ -482,6 +482,74 @@ describe('goCampaignDesigner', function () {
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
 
         expect(datum.name).to.equal("T");
+    }));
+
+    it('should delete component', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        var conversations = element.find('.conversation');
+        expect(conversations).to.have.length(2);
+
+        var conversation = conversations.eq(0);
+        var datum = conversation.get(0).__data__;
+        conversation.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(3)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $title = $modal.find('.modal-title');
+        expect($title).to.have.length(1);
+        expect($title.text()).to.equal("Are you sure you want to delete \"Register\"?");
+
+        var $yesButton = $modal.find('button.btn-danger');
+        expect($yesButton).to.have.length(1);
+        expect($yesButton.text()).to.equal("Yes");
+        expect($yesButton.attr('data-ng-click')).to.equal('$close()');
+
+        var $noButton = $modal.find('button.btn-warning');
+        expect($noButton).to.have.length(1);
+        expect($noButton.text()).to.equal("No");
+        expect($noButton.attr('data-ng-click')).to.equal("$dismiss('no')");
+
+        $yesButton.click();
+        expect(element.find('.conversation')).to.have.length(1);
+    }));
+
+    it('should delete connection', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        expect($('.modal-dialog')).to.have.length(0);
+
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(3)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        expect($modal).to.have.length(1);
+
+        var $title = $modal.find('.modal-title');
+        expect($title).to.have.length(1);
+        expect($title.text()).to.equal("Are you sure you want to delete selected connection?");
+
+        var $yesButton = $modal.find('button.btn-danger');
+        expect($yesButton).to.have.length(1);
+        expect($yesButton.text()).to.equal("Yes");
+        expect($yesButton.attr('data-ng-click')).to.equal('$close()');
+
+        var $noButton = $modal.find('button.btn-warning');
+        expect($noButton).to.have.length(1);
+        expect($noButton.text()).to.equal("No");
+        expect($noButton.attr('data-ng-click')).to.equal("$dismiss('no')");
+
+        $yesButton.click();
+        expect(element.find('.connection')).to.have.length(0);
     }));
 
 });

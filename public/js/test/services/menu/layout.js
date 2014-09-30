@@ -70,7 +70,7 @@ describe('menuLayout', function () {
         layout = menuLayout();
     }));
 
-    it('should compute menu layout', inject(function () {
+    it('should compute menu layout', inject(function (goUtils) {
         layout(_.pluck(_.filter(components, 'menu'), 'menu'));
 
         var expected = {
@@ -118,12 +118,14 @@ describe('menuLayout', function () {
             expect(item.meta()).to.deep.equal(expected);
         });
 
-        var point = components['connection1'].points[2];
+        var point1 = components['connection1'].points[0];
+        var point2 = components['connection1'].points[1];
+        var midpoint = goUtils.midpoint(point1, point2);
         expected = {
             active: false,
             layout: {
-                x: point.x,
-                y: point.y + 20
+                x: midpoint.x,
+                y: midpoint.y + 20
             }
         };
 

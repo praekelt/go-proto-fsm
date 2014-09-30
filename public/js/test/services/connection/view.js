@@ -81,7 +81,7 @@ describe('connectionComponent', function () {
         var connections = element.find('.layer.connections .connection');
         expect(connections).to.have.length(1);
 
-        expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L200,200');
+        expect(connections.eq(0).attr('d')).to.equal('M100,100L200,200');
         expect(connections.eq(0).attr('class').indexOf('selected')).not.to.equal(-1);
 
         var component = componentManager.getComponent('channel1')
@@ -95,7 +95,7 @@ describe('connectionComponent', function () {
             .call(connection);
 
         expect(connections).to.have.length(1);
-        expect(connections.eq(0).attr('d')).to.equal('M100,100L125,125L150,150L175,175L300,300');
+        expect(connections.eq(0).attr('d')).to.equal('M100,100L300,300');
     }));
 
 });
@@ -203,17 +203,14 @@ describe('controlPointComponent', function () {
 
     it('should have drawn the control points', inject(function () {
         var controlPoints = element.find('.control-point');
-        expect(controlPoints).to.have.length(5);
+        expect(controlPoints).to.have.length(2);
         expect(controlPoints.eq(0).find('circle').eq(0).attr('r')).to.equal('0');
-        expect(controlPoints.eq(1).find('circle').eq(0).attr('r')).to.equal('5');
-        expect(controlPoints.eq(2).find('circle').eq(0).attr('r')).to.equal('5');
-        expect(controlPoints.eq(3).find('circle').eq(0).attr('r')).to.equal('5');
-        expect(controlPoints.eq(4).find('circle').eq(0).attr('r')).to.equal('0');
+        expect(controlPoints.eq(1).find('circle').eq(0).attr('r')).to.equal('0');
     }));
 
     it('control points should be draggable', inject(function () {
         var controlPoints = element.find('.control-point');
-        expect(controlPoints.eq(1).attr('transform')).to.equal('translate(125,125)');
+        expect(controlPoints.eq(1).attr('transform')).to.equal('translate(200,200)');
 
         controlPoints.eq(1)
             .d3()
