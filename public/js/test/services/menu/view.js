@@ -17,10 +17,12 @@ describe('menuComponent', function () {
             items: [
                 new MenuItem({
                     icon: 'icon1',
+                    title: 'Action1',
                     action: 'go:action1'
                 }),
                 new MenuItem({
                     icon: 'icon2',
+                    title: 'Action2',
                     action: 'go:action2'
                 })
             ],
@@ -60,6 +62,10 @@ describe('menuComponent', function () {
         expect(text.eq(0).attr('x')).to.equal('10');
         expect(text.eq(0).attr('dy')).to.equal('20');
         expect(text.eq(0).text()).to.equal('icon1');
+
+        var title = item.find('title');
+        expect(title).to.have.length(1);
+        expect(title.eq(0).text()).to.equal('Action1');
     }));
 
     it('should trigger action on click', inject(function () {
