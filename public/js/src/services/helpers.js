@@ -117,6 +117,7 @@ angular.module('vumigo.services').factory('MenuItem', [
 
             this.menu = options.menu || null;
             this.icon = options.icon || '';
+            this.title = options.title || '';
             this.action = options.action || '';
         }
 
@@ -180,14 +181,17 @@ angular.module('vumigo.services').factory('Conversation', [
                 items: [
                     new MenuItem({
                         icon: '\uf040',
+                        title: "Edit conversation",
                         action: 'go:campaignDesignerEdit'
                     }),
                     new MenuItem({
                         icon: '\uf0c1',
+                        title: "Connect conversation",
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
                         icon: '\uf00d',
+                        title: "Delete conversation",
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -245,14 +249,17 @@ angular.module('vumigo.services').factory('Router', [
                 items: [
                     new MenuItem({
                         icon: '\uf040',
+                        title: "Edit router",
                         action: 'go:campaignDesignerEdit'
                     }),
                     new MenuItem({
                         icon: '\uf0c1',
+                        title: "Connect router",
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
                         icon: '\uf00d',
+                        title: "Delete router",
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -289,14 +296,17 @@ angular.module('vumigo.services').factory('Channel', [
                 items: [
                     new MenuItem({
                         icon: '\uf040',
+                        title: "Edit channel",
                         action: 'go:campaignDesignerEdit'
                     }),
                     new MenuItem({
                         icon: '\uf0c1',
+                        title: "Connect channel",
                         action: 'go:campaignDesignerConnect'
                     }),
                     new MenuItem({
                         icon: '\uf00d',
+                        title: "Delete channel",
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
@@ -379,14 +389,17 @@ angular.module('vumigo.services').factory('Connection', [
                 items: [
                     new MenuItem({
                         icon: '\uf065',
+                        title: "Reverse connection",
                         action: 'go:campaignDesignerFlipDirection'
                     }),
                     new MenuItem({
                         icon: '\uf066',
+                        title: "Bi-directional connection",
                         action: 'go:campaignDesignerBiDirectional'
                     }),
                     new MenuItem({
                         icon: '\uf00d',
+                        title: "Delete connection",
                         action: 'go:campaignDesignerRemove'
                     })
                 ],
