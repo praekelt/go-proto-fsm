@@ -17,8 +17,8 @@ angular.module('vumigo.services').factory('menuLayout', ['goUtils',
                     switch (menu.component.type) {
                         case 'conversation':
                             meta.layout = {
-                                x: menu.component.x,
-                                y: menu.component.y
+                                x: menu.component.x(),
+                                y: menu.component.y()
                                     + menu.component.meta().layout.outer.r
                                     + menuYOffset
                             };
@@ -26,8 +26,8 @@ angular.module('vumigo.services').factory('menuLayout', ['goUtils',
 
                         case 'router':
                             meta.layout = {
-                                x: menu.component.x,
-                                y: menu.component.y
+                                x: menu.component.x(),
+                                y: menu.component.y()
                                     + menu.component.meta().layout.r
                                     + menuYOffset
                             };
@@ -35,28 +35,35 @@ angular.module('vumigo.services').factory('menuLayout', ['goUtils',
 
                         case 'channel':
                             meta.layout = {
-                                x: menu.component.x,
-                                y: menu.component.y
+                                x: menu.component.x(),
+                                y: menu.component.y()
                                     + menu.component.meta().layout.outer.r
                                     + menuYOffset
                             };
                             break;
 
                         case 'connection':
-                            var point;
-                            if (menu.component.points.length > 2) {
-                                var index = Math.floor(menu.component.points.length / 2);
-                                point = menu.component.points[index];
+                            var points = menu.component.points();
+                            if (points.length > 2) {
+                                var index = Math.floor(points.length / 2);
+                                meta.layout = {
+                                    x: points[index].x(),
+                                    y: points[index].y() + menuYOffset
+                                };
 
                             } else {
-                                point = goUtils.midpoint(
-                                    menu.component.points[0], menu.component.points[1]);
-                            }
+                                var midpoint = goUtils.midpoint(
+                                    points[0].x(),
+                                    points[0].y(),
+                                    points[1].x(),
+                                    points[1].y()
+                                );
 
-                            meta.layout = {
-                                x: point.x,
-                                y: point.y + menuYOffset
-                            };
+                                meta.layout = {
+                                    x: midpoint.x,
+                                    y: midpoint.y + menuYOffset
+                                };
+                            }
                             break;
 
                         default:

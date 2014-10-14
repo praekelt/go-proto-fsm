@@ -5,119 +5,33 @@ angular.module('vumigo.services').factory('BaseComponent', ['rfc4122',
             options = options || {};
             this.id = options.id || rfc4122.v4();
             this.type = options.type;
+            this.manager = options.manager;
         }
-
-        BaseComponent.prototype.beforeRemove = function () {
-        };
 
         BaseComponent.prototype.meta = function () {
             if (_.isUndefined(this._meta)) this._meta = {};
             return this._meta;
         };
 
+        BaseComponent.prototype.delete = function () {
+            return true;
+        };
+
         return BaseComponent;
     }
 ]);
 
-angular.module('vumigo.services').factory('ConnectableComponent', ['BaseComponent',
-    function (BaseComponent) {
-
-        function ConnectableComponent(options) {
-            BaseComponent.call(this, options);
-            this.endpoints = [];
-        }
-
-        ConnectableComponent.prototype = Object.create(BaseComponent.prototype);
-
-        ConnectableComponent.prototype.addEndpoint = function (endpoint) {
-            endpoint.component = this;
-            this.endpoints.push(endpoint);
-        };
-
-        ConnectableComponent.prototype.addEndpoints = function (endpoints) {
-            _.forEach(endpoints, this.addEndpoint, this);
-        };
-
-        ConnectableComponent.prototype.getEndpoint = function (id) {
-            return _.find(this.endpoints, function (endpoint) {
-                return endpoint.id == id;
-            });
-        };
-
-        ConnectableComponent.prototype.getEndpoints = function (componentType) {
-            if (_.isEmpty(componentType)) {
-                return this.endpoints;
-            }
-
-            return _.filter(this.endpoints, function (endpoint) {
-                return _.isEmpty(endpoint.accepts)
-                    || _.contains(endpoint.accepts, componentType);
-            });
-        };
-
-        return ConnectableComponent;
-    }
-]);
-
-angular.module('vumigo.services').factory('Endpoint', ['BaseComponent',
-    function (BaseComponent) {
-
-        function Endpoint(options) {
-            options = options || {};
-            options.type = 'endpoint';
-            BaseComponent.call(this, options);
-
-            this.component = options.component || null;
-            this.name = options.name || "default";
-            this.accepts = options.accepts || [];  // by default accept connections from all component types
-            this.connections = [];
-        }
-
-        Endpoint.prototype = Object.create(BaseComponent.prototype);
-
-        Endpoint.prototype.addConnection = function (connection) {
-            if (!_.contains(this.connections, connection)) {
-                this.connections.push(connection);
-            }
-        };
-
-        Endpoint.prototype.removeConnection = function (connectionToRemove) {
-            _.remove(this.connections, function (connection) {
-                return connection.id == connectionToRemove.id;
-            });
-        };
-
-        Endpoint.prototype.getRoutes = function () {
-            var routes = _.reduce(this.connections, function (routes, connection) {
-                return routes.concat(connection.routes);
-            }, []);
-
-            return _.uniq(routes, function (route) {
-                return route.id;
-            });
-        };
-
-        Endpoint.prototype.acceptsConnectionsFrom = function (componentType) {
-            return _.isEmpty(this.accepts)
-                || _.contains(this.accepts, componentType);
-        };
-
-        return Endpoint;
-    }
-]);
-
-angular.module('vumigo.services').factory('MenuItem', [
-    'BaseComponent',
+angular.module('vumigo.services').factory('MenuItem', ['BaseComponent',
     function (BaseComponent) {
 
         function MenuItem(options) {
             options = options || {};
-            options.type = 'menu item';
+            options.type = 'menu_item';
             BaseComponent.call(this, options);
 
-            this.menu = options.menu || null;
-            this.icon = options.icon || '';
-            this.action = options.action || '';
+            this.menu = options.menu;
+            this.icon = options.icon;
+            this.event = options.event;
         }
 
         MenuItem.prototype = Object.create(BaseComponent.prototype);
@@ -126,8 +40,7 @@ angular.module('vumigo.services').factory('MenuItem', [
     }
 ]);
 
-angular.module('vumigo.services').factory('Menu', [
-    'BaseComponent',
+angular.module('vumigo.services').factory('Menu', ['BaseComponent',
     function (BaseComponent) {
 
         function Menu(options) {
@@ -135,128 +48,323 @@ angular.module('vumigo.services').factory('Menu', [
             options.type = 'menu';
             BaseComponent.call(this, options);
 
-            this.component = options.component || null;
-            this.items = [];
-
-            this.addItems(options.items || []);
+            this.component = options.component;
+            this.items = options.items || [];
         }
 
         Menu.prototype = Object.create(BaseComponent.prototype);
 
-        Menu.prototype.addItem = function (item) {
-            item.menu = this;
-            this.items.push(item);
-        };
+        Menu.prototype.addItem = function (icon, event) {
+            var item = this.manager.createComponent({
+                type: 'menu_item',
+                menu: this,
+                icon: icon,
+                event: event
+            });
 
-        Menu.prototype.addItems = function (items) {
-            _.forEach(items, this.addItem, this);
+            this.items.push(item);
         };
 
         return Menu;
     }
 ]);
 
+angular.module('vumigo.services').factory('RoutingComponent', [
+    'BaseComponent', 'Menu', 'MenuItem',
+    function (BaseComponent, Menu, MenuItem) {
+
+        var actions = {
+            'edit': {
+                icon: '\uf040',
+                event: 'go:campaignDesignerEdit'
+            },
+            'connect': {
+                icon: '\uf0c1',
+                event: 'go:campaignDesignerConnect'
+            },
+            'flipDirection': {
+                icon: '\uf065',
+                event: 'go:campaignDesignerFlipDirection'
+            },
+            'biDirectional': {
+                icon: '\uf066',
+                event: 'go:campaignDesignerBiDirectional'
+            },
+            'delete': {
+                icon: '\uf00d',
+                event: 'go:campaignDesignerRemove'
+            }
+        };
+
+        function RoutingComponent(options) {
+            options = options || {};
+            BaseComponent.call(this, options);
+
+            this.data = options.data;
+
+            if (!_.isEmpty(options.actions)) {
+                this.menu = this.manager.createComponent({
+                    type: 'menu',
+                    component: this
+                });
+
+                _.forEach(options.actions, function (name) {
+                    var action = actions[name];
+                    this.menu.addItem(action.icon, action.event);
+                }, this);
+            }
+        }
+
+        RoutingComponent.prototype = Object.create(BaseComponent.prototype);
+
+        RoutingComponent.prototype.datum = function () {
+            return null;
+        };
+
+        RoutingComponent.prototype.layout = function () {
+            return null;
+        };
+
+        return RoutingComponent;
+    }
+]);
+
+angular.module('vumigo.services').factory('Endpoint', [
+    'RoutingComponent',
+    function (RoutingComponent) {
+
+        function Endpoint(options) {
+            options = options || {};
+            RoutingComponent.call(this, options);
+
+            this.component = options.component;
+
+            var data = this.data.routing_table
+                .components[this.component.id]
+                .endpoints;
+
+            if (!_.has(data, this.id)) {
+                data[this.id] = {
+                    type: this.type,
+                    uuid: this.id,
+                    name: options.name || "default"
+                }
+            }
+        }
+
+        Endpoint.prototype = Object.create(RoutingComponent.prototype);
+
+        Endpoint.prototype.datum = function () {
+            return this.data.routing_table
+                .components[this.component.id]
+                .endpoints[this.id];
+        };
+
+        Endpoint.prototype.name = function (name) {
+            if (!arguments.length) return this.datum().name;
+            this.datum().name = name;
+            return this;
+        };
+
+        return Endpoint;
+    }
+]);
+
+angular.module('vumigo.services').factory('ConnectableComponent', [
+    'RoutingComponent',
+    function (RoutingComponent) {
+
+        function ConnectableComponent(options) {
+            options = options || {};
+            RoutingComponent.call(this, options);
+
+            var datum = this.datum();
+            if (!_.isEmpty(datum)) {
+                _.forEach(datum.endpoints, function (data, id) {
+                    this.manager.createComponent({
+                        id: id,
+                        type: data.type,
+                        component: this
+                    });
+                }, this);
+            }
+        }
+
+        ConnectableComponent.prototype = Object.create(RoutingComponent.prototype);
+
+        ConnectableComponent.prototype.datum = function () {
+            return this.data.routing_table.components[this.id];
+        };
+
+        ConnectableComponent.prototype.layout = function () {
+            return this.data.layout.components[this.id];
+        };
+
+        ConnectableComponent.prototype.endpoints = function (type) {
+            var endpoints = _.map(this.datum().endpoints, function (data) {
+                return this.manager.getComponentById(data.uuid);
+            }, this);
+
+            if (type) {
+                return _.filter(endpoints, { type: type });
+            } else {
+                return endpoints;
+            }
+        };
+
+        ConnectableComponent.prototype.name = function (name) {
+            if (!arguments.length) return this.datum().name;
+            this.datum().name = name;
+            return this;
+        };
+
+        ConnectableComponent.prototype.description = function (description) {
+            if (!arguments.length) return this.datum().description;
+            this.datum().description = description;
+            return this;
+        };
+
+        ConnectableComponent.prototype.x = function (x) {
+            if (!arguments.length) return this.layout().x;
+            this.layout().x = x;
+            return this;
+        };
+
+        ConnectableComponent.prototype.y = function (y) {
+            if (!arguments.length) return this.layout().y;
+            this.layout().y = y;
+            return this;
+        };
+
+        return ConnectableComponent;
+    }
+]);
+
+angular.module('vumigo.services').factory('Channel', [
+    'ConnectableComponent',
+    function (ConnectableComponent) {
+
+        function Channel(options) {
+            options = options || {};
+            options.type = 'channel';
+            options.actions = ['edit', 'connect', 'delete'];
+            ConnectableComponent.call(this, options);
+
+            if (!_.has(this.data.routing_table.components, this.id)) {
+                this.data.routing_table.components[this.id] = {
+                    type: this.type,
+                    uuid: this.id,
+                    tag: [],
+                    name: options.name || "",
+                    description: options.description || "",
+                    utilization: options.utilization || 0,
+                    endpoints: {}
+                };
+
+                this.data.layout.components[this.id] = {
+                    x: 0,
+                    y: 0
+                };
+
+                this.manager.createComponent({
+                    type: 'channel_endpoint',
+                    component: this
+                });
+            }
+        }
+
+        Channel.prototype = Object.create(ConnectableComponent.prototype);
+
+        Channel.prototype.utilization = function (utilization) {
+            if (!arguments.length) return this.datum().utilization;
+            this.datum().utilization = utilization;
+            return this;
+        };
+
+        return Channel;
+    }
+]);
+
 angular.module('vumigo.services').factory('Conversation', [
-    'ConnectableComponent', 'Endpoint', 'Menu', 'MenuItem',
-    function (ConnectableComponent, Endpoint, Menu, MenuItem) {
+    'ConnectableComponent',
+    function (ConnectableComponent) {
 
         function Conversation(options) {
             options = options || {};
             options.type = 'conversation';
+            options.actions = ['edit', 'connect', 'delete'];
             ConnectableComponent.call(this, options);
 
-            this.name = options.name || "";
-            this.description = options.description || "";
-            this.x = options.x || 0;
-            this.y = options.y || 0;
-            this.colour = options.colour || 'LightGray';
+            if (!_.has(this.data.routing_table.components, this.id)) {
+                this.data.routing_table.components[this.id] = {
+                    type: this.type,
+                    conversation_type: options.conversation_type || "",
+                    uuid: this.id,
+                    name: options.name || "",
+                    description: options.description || "",
+                    endpoints: {}
+                };
 
-            this.addEndpoints(options.endpoints || [
-                new Endpoint({ accepts: ['channel', 'router'] })
-            ]);
+                this.data.layout.components[this.id] = {
+                    x: 0,
+                    y: 0,
+                    colour: 'white'
+                };
 
-            this.menu = new Menu({
-                component: this,
-                items: [
-                    new MenuItem({
-                        icon: '\uf040',
-                        action: 'go:campaignDesignerEdit'
-                    }),
-                    new MenuItem({
-                        icon: '\uf0c1',
-                        action: 'go:campaignDesignerConnect'
-                    }),
-                    new MenuItem({
-                        icon: '\uf00d',
-                        action: 'go:campaignDesignerRemove'
-                    })
-                ],
-            });
+                this.manager.createComponent({
+                    type: 'conversation_endpoint',
+                    component: this
+                });
+            }
         }
 
         Conversation.prototype = Object.create(ConnectableComponent.prototype);
+
+        Conversation.prototype.colour = function (colour) {
+            if (!arguments.length) return this.layout().colour;
+            this.layout().colour = colour;
+            return this;
+        };
 
         return Conversation;
     }
 ]);
 
 angular.module('vumigo.services').factory('Router', [
-    'ConnectableComponent', 'Endpoint', 'Menu', 'MenuItem',
-    function (ConnectableComponent, Endpoint, Menu, MenuItem) {
+    'ConnectableComponent',
+    function (ConnectableComponent) {
 
         function Router(options) {
             options = options || {};
             options.type = 'router';
+            options.actions = ['edit', 'connect', 'delete'];
             ConnectableComponent.call(this, options);
 
-            this.name = options.name || "";
-            this.description = options.description || "";
-            this.x = options.x || 0;
-            this.y = options.y || 0;
+            if (!_.has(this.data.routing_table.components, this.id)) {
+                this.data.routing_table.components[this.id] = {
+                    type: this.type,
+                    router_type: options.router_type || "",
+                    uuid: this.id,
+                    name: options.name || "",
+                    description: options.description || "",
+                    endpoints: {}
+                };
 
-            var endpoints = options.endpoints || [];
+                this.data.layout.components[this.id] = {
+                    x: 0,
+                    y: 0
+                };
 
-            var endpoint = _.find(endpoints, function (endpoint) {
-                return _.isEqual(endpoint.name, 'default')
-                    && endpoint.acceptsConnectionsFrom('conversation');
-            });
+                this.manager.createComponent({
+                    type: 'channel_endpoint',
+                    component: this
+                });
 
-            if (_.isUndefined(endpoint)) {
-                endpoints.push(new Endpoint({
-                    accepts: ['conversation']
-                }));
+                this.manager.createComponent({
+                    type: 'conversation_endpoint',
+                    component: this
+                });
             }
-
-            endpoint = _.find(endpoints, function (endpoint) {
-                return _.isEqual(endpoint.name, 'default')
-                    && endpoint.acceptsConnectionsFrom('channel');
-            });
-
-            if (_.isUndefined(endpoint)) {
-                endpoints.push(new Endpoint({
-                    accepts: ['channel']
-                }));
-            }
-
-            this.addEndpoints(endpoints);
-
-            this.menu = new Menu({
-                component: this,
-                items: [
-                    new MenuItem({
-                        icon: '\uf040',
-                        action: 'go:campaignDesignerEdit'
-                    }),
-                    new MenuItem({
-                        icon: '\uf0c1',
-                        action: 'go:campaignDesignerConnect'
-                    }),
-                    new MenuItem({
-                        icon: '\uf00d',
-                        action: 'go:campaignDesignerRemove'
-                    })
-                ],
-            });
         }
 
         Router.prototype = Object.create(ConnectableComponent.prototype);
@@ -265,67 +373,50 @@ angular.module('vumigo.services').factory('Router', [
     }
 ]);
 
-angular.module('vumigo.services').factory('Channel', [
-    'ConnectableComponent', 'Endpoint', 'Menu', 'MenuItem',
-    function (ConnectableComponent, Endpoint, Menu, MenuItem) {
-
-        function Channel(options) {
-            options = options || {};
-            options.type = 'channel';
-            ConnectableComponent.call(this, options);
-
-            this.name = options.name || "";
-            this.description = options.description || "";
-            this.x = options.x || 0;
-            this.y = options.y || 0;
-            this.utilization = options.utilization || 0;
-
-            this.addEndpoints(options.endpoints || [
-                new Endpoint({ accepts: ['conversation', 'router'] })
-            ]);
-
-            this.menu = new Menu({
-                component: this,
-                items: [
-                    new MenuItem({
-                        icon: '\uf040',
-                        action: 'go:campaignDesignerEdit'
-                    }),
-                    new MenuItem({
-                        icon: '\uf0c1',
-                        action: 'go:campaignDesignerConnect'
-                    }),
-                    new MenuItem({
-                        icon: '\uf00d',
-                        action: 'go:campaignDesignerRemove'
-                    })
-                ],
-            });
-        }
-
-        Channel.prototype = Object.create(ConnectableComponent.prototype);
-
-        return Channel;
-    }
-]);
-
-angular.module('vumigo.services').factory('Route', ['BaseComponent',
-    function (BaseComponent) {
+angular.module('vumigo.services').factory('Route', [
+    'RoutingComponent',
+    function (RoutingComponent) {
 
         function Route(options) {
             options = options || {};
             options.type = 'route';
-            BaseComponent.call(this, options);
-            this.source = options.source || null;
-            this.target = options.target || null;
+            RoutingComponent.call(this, options);
+
+            if (!_.has(this.data.routing_table.routing, this.id)) {
+                this.id = options.source.id + ':' + options.target.id;
+
+                this.data.routing_table.routing[this.id] = {
+                    source: options.source.id,
+                    target: options.target.id
+                };
+
+                this.data.layout.routing[this.id] = options.connection.id;
+            }
         }
 
-        Route.prototype = Object.create(BaseComponent.prototype);
+        Route.prototype = Object.create(RoutingComponent.prototype);
 
-        Route.prototype.flip = function () {
-            var endpoint = this.source;
-            this.source = this.target;
-            this.target = endpoint;
+        Route.prototype.datum = function () {
+            return this.data.routing_table.routing[this.id];
+        };
+
+        Route.prototype.layout = function () {
+            return this.data.layout.routing[this.id];
+        };
+
+        Route.prototype.source = function (source) {
+            if (!arguments.length) {
+                return this.manager.getComponentById(this.datum().source);
+            }
+            this.datum().source = _.isString(source) ? source : source.id;
+            return this;
+        };
+
+        Route.prototype.target = function (target) {
+            if (!arguments.length) {
+                return this.manager.getComponentById(this.datum().target);
+            }
+            this.datum().target = _.isString(target) ? target : target.id;
             return this;
         };
 
@@ -334,145 +425,123 @@ angular.module('vumigo.services').factory('Route', ['BaseComponent',
 ]);
 
 angular.module('vumigo.services').factory('ControlPoint', [
-    'BaseComponent',
-    function (BaseComponent) {
+    'RoutingComponent',
+    function (RoutingComponent) {
 
         function ControlPoint(options) {
             options = options || {};
-            options.type = 'control point';
-            BaseComponent.call(this, options);
+            options.type = 'control_point';
+            RoutingComponent.call(this, options);
 
-            this.x = options.x;
-            this.y = options.y;
+            this.connection = options.connection;
+
+            if (_.isUndefined(options.index)) {
+                var data = this.data.layout
+                    .connections[this.connection.id].path;
+
+                data.push({ x: 0, y: 0 });
+                this.id = this.connection.id + ':' + data.length - 1;
+
+            } else {
+                this.id = this.connection.id + ':' + options.index;
+            }
         }
 
-        ControlPoint.prototype = Object.create(BaseComponent.prototype);
+        ControlPoint.prototype = Object.create(RoutingComponent.prototype);
+
+        ControlPoint.prototype.index = function () {
+            var arr = this.id.split(':');
+            if (arr.length > 1) return parseInt(arr[1]);
+            return 0;
+        };
+
+        ControlPoint.prototype.layout = function () {
+            return this.data.layout
+                .connections[this.connection.id]
+                .path[this.index()];
+        };
+
+        ControlPoint.prototype.x = function (x) {
+            if (!arguments.length) return this.layout().x;
+            this.layout().x = x;
+            return this;
+        };
+
+        ControlPoint.prototype.y = function (y) {
+            if (!arguments.length) return this.layout().y;
+            this.layout().y = y;
+            return this;
+        };
 
         return ControlPoint;
     }
 ]);
 
 angular.module('vumigo.services').factory('Connection', [
-    'BaseComponent', 'Route', 'ControlPoint', 'Menu', 'MenuItem',
-    function (BaseComponent, Route, ControlPoint, Menu, MenuItem) {
-        var numberOfPoints = 0;  // number of draggable control points
+    'RoutingComponent',
+    function (RoutingComponent) {
 
         function Connection(options) {
             options = options || {};
             options.type = 'connection';
-            BaseComponent.call(this, options);
+            options.actions = ['flipDirection', 'biDirectional', 'delete'];
+            RoutingComponent.call(this, options);
 
-            this.routes = [];
-            _.forEach(options.routes, this.addRoute, this);
+            if (!_.has(this.data.layout.connections, this.id)) {
+                var source = options.source;
+                var target = options.target;
 
-            if (_.isArray(options.points)) {
-                this.points = options.points;
-            } else {
-                this.points = [];
-                for (var i = 0; i < numberOfPoints + 2; i++) {
-                    this.points.push(new ControlPoint());
-                }
+                var endpoints = {};
+                endpoints[source.id] = source.component.id;
+                endpoints[target.id] = target.component.id;
+
+                this.data.layout.connections[this.id] = {
+                    endpoints: endpoints,
+                    path: [{
+                        x: source.component.x(),
+                        y: source.component.y(),
+                    }, {
+                        x: target.component.x(),
+                        y: target.component.y()
+                    }],
+                    colour: 'grey'
+                };
             }
 
-            this.menu = new Menu({
-                component: this,
-                items: [
-                    new MenuItem({
-                        icon: '\uf065',
-                        action: 'go:campaignDesignerFlipDirection'
-                    }),
-                    new MenuItem({
-                        icon: '\uf066',
-                        action: 'go:campaignDesignerBiDirectional'
-                    }),
-                    new MenuItem({
-                        icon: '\uf00d',
-                        action: 'go:campaignDesignerRemove'
-                    })
-                ],
-            });
+            // Create `ControlPoint` components
+            _.forEach(this.layout().path, function (data, index) {
+                this.manager.createComponent({
+                    type: 'control_point',
+                    connection: this,
+                    index: index
+                });
+            }, this);
         }
 
-        Connection.prototype = Object.create(BaseComponent.prototype);
+        Connection.prototype = Object.create(RoutingComponent.prototype);
 
-        Connection.prototype.beforeRemove = function () {
-            BaseComponent.prototype.beforeRemove.call(this);
-
-            if (_.isEmpty(this.routes)) return;
-            var route = _.first(this.routes);
-            route.source.removeConnection(this);
-            route.target.removeConnection(this);
+        Connection.prototype.layout = function () {
+            return this.data.layout.connections[this.id];
         };
 
-        Connection.prototype.addRoute = function (route) {
-            this.routes.push(route);
-            route.source.addConnection(this);
-            route.target.addConnection(this);
+        Connection.prototype.points = function () {
+            return _.map(this.layout().path, function (data, index) {
+                return this.manager.getComponentById(this.id + ':' + index);
+            }, this);
         };
 
-        Connection.prototype.getEndpoints = function () {
-            var endpoints = _.reduce(this.routes, function (endpoints, route) {
-                endpoints.push(route.source, route.target);
-                return endpoints;
-            }, []);
-
-            return _.uniq(endpoints, function (endpoint) {
-                return endpoint.id;
-            });
+        Connection.prototype.routes = function () {
+            var endpoints = _.keys(this.layout().endpoints);
+            var routes = [
+                this.manager.getComponentById(endpoints[0] + ':' + endpoints[1]),
+                this.manager.getComponentById(endpoints[1] + ':' + endpoints[0])
+            ];
+            return _.filter(routes);
         };
 
-        Connection.prototype.isConnectedTo = function (endpoints) {
-            endpoints = _.intersection(
-                _.pluck(this.getEndpoints(), 'id'),
-                _.pluck(endpoints, 'id')
-            );
-
-            return !_.isEmpty(endpoints);
-        };
-
-        Connection.prototype.flipDirection = function () {
-            if (_.isEmpty(this.routes)) return;
-
-            var route = _.first(this.routes);
-            var source = route.source;
-            var target = route.target;
-
-            var routes = _.filter(target.getRoutes(), function (route) {
-                return route.source.id == target.id
-                    && route.target.id != source.id;
-            });
-
-            if (!_.isEmpty(routes)) {
-                // TODO: Trigger a notification
-                return;
-            }
-
-            this.routes = [route.flip()];
-            this.points.reverse();
-            return this;
-        };
-
-        Connection.prototype.biDirectional = function () {
-            if (_.isEmpty(this.routes) || _.size(this.routes) > 1) return;
-
-            var route = _.first(this.routes);
-            var source = route.source;
-            var target = route.target;
-
-            var routes = _.filter(target.getRoutes(), function (route) {
-                return route.source.id == target.id;
-            });
-
-            if (!_.isEmpty(routes)) {
-                // TODO: Trigger a notification
-                return;
-            }
-
-            this.addRoute(new Route({
-                source: route.target,
-                target: route.source
-            }));
-
+        Connection.prototype.colour = function (colour) {
+            if (!arguments.length) return this.layout().colour;
+            this.layout().colour = colour;
             return this;
         };
 
@@ -482,11 +551,11 @@ angular.module('vumigo.services').factory('Connection', [
 
 angular.module('vumigo.services').factory('ComponentManager', [
     'Endpoint', 'Conversation', 'Router', 'Channel', 'Route', 'Connection',
-    'conversationLayout', 'routerLayout', 'channelLayout', 'connectionLayout',
-    'menuLayout',
+    'ControlPoint', 'Menu', 'MenuItem', 'conversationLayout', 'routerLayout',
+    'channelLayout', 'connectionLayout', 'menuLayout',
     function (Endpoint, Conversation, Router, Channel, Route, Connection,
-              conversationLayout, routerLayout, channelLayout, connectionLayout,
-              menuLayout) {
+              ControlPoint, Menu, MenuItem, conversationLayout, routerLayout,
+              channelLayout, connectionLayout, menuLayout) {
 
         var layoutConversations = conversationLayout();
         var layoutRouters = routerLayout();
@@ -495,56 +564,103 @@ angular.module('vumigo.services').factory('ComponentManager', [
         var layoutMenus = menuLayout();
 
         function ComponentManager(data) {
+            this.data = data;
             this.components = {};
 
-            if (data) {
-                this.load(data);
-            }
+            // Create `Channel`, `Conversation` and `Router` components
+            _.forEach(data.routing_table.components, function (data, id) {
+                this.createComponent({
+                    id: id,
+                    type: data.type
+                });
+            }, this);
+
+            // Create `Route` components
+            _.forEach(this.data.routing_table.routing, function (data, id) {
+                this.createComponent({
+                    id: id,
+                    type: 'route'
+                });
+            }, this);
+
+            // Create `Connection` components
+            _.forEach(data.layout.connections, function (data, id) {
+                this.createComponent({
+                    id: id,
+                    type: 'connection'
+                });
+            }, this);
         }
 
         ComponentManager.prototype.reset = function () {
+            this.data.routing_table.components = {};
+            this.data.routing_table.routing = {};
+            this.data.layout.components = {};
+            this.data.layout.routing = {};
+            this.data.layout.connections = {};
+
             this.components = {};
+        };
+
+        ComponentManager.prototype.createComponent = function (options) {
+            options = options || {};
+            options.manager = this;
+            options.data = this.data;
+
+            var component;
+            switch (options.type) {
+                case 'channel':
+                    component = new Channel(options);
+                    break;
+                case 'conversation':
+                    component = new Conversation(options);
+                    break;
+                case 'router':
+                    component = new Router(options);
+                    break;
+                case 'channel_endpoint':
+                case 'conversation_endpoint':
+                    component = new Endpoint(options);
+                    break;
+                case 'route':
+                    component = new Route(options);
+                    break;
+                case 'connection':
+                    component = new Connection(options);
+                    break;
+                case 'control_point':
+                    component = new ControlPoint(options);
+                    break;
+                case 'menu':
+                    component = new Menu(options);
+                    break;
+                case 'menu_item':
+                    component = new MenuItem(options);
+                    break;
+                default:
+                    // TODO: Unknown component type; trigger error
+                    return;
+            }
+            this.addComponent(component);
+            return component;
         };
 
         ComponentManager.prototype.addComponent = function (component) {
             this.components[component.id] = component;
-            return component;
         };
 
-        ComponentManager.prototype.getComponent = function (id) {
+        ComponentManager.prototype.getComponentById = function (id) {
             return this.components[id];
         };
 
-        ComponentManager.prototype.getEndpoint = function (id) {
-            var endpoints = _.reduce(_.values(this.components), function (endpoints, component) {
-                _.forEach(component.endpoints, function (endpoint) {
-                    endpoints[endpoint.id] = endpoint;
-                });
-
-                return endpoints;
-            }, {});
-
-            return endpoints[id];
+        ComponentManager.prototype.findComponents = function (props) {
+            return _.where(this.components, props);
         };
 
-        ComponentManager.prototype.removeComponent = function (id) {
-            var componentToRemove = this.getComponent(id);
-            if (_.isUndefined(componentToRemove)) return;
-
-            if (!_.isEmpty(componentToRemove.endpoints)) {
-                var connectionsToRemove = _.filter(_.values(this.components), function (component) {
-                    return !_.isEmpty(component.routes)
-                        && component.isConnectedTo(componentToRemove.endpoints);
-                });
-
-                _.forEach(connectionsToRemove, function (connection) {
-                    this.components[connection.id].beforeRemove();
-                    delete this.components[connection.id];
-                }, this);
-            };
-
-            this.components[componentToRemove.id].beforeRemove();
-            delete this.components[componentToRemove.id];
+        ComponentManager.prototype.deleteComponent = function (id) {
+            var component = this.getComponentById(id);
+            if (_.isUndefined(component)) return;
+            if (component.delete()) delete this.components[id];
         };
 
         ComponentManager.prototype.connectComponents = function (
@@ -553,45 +669,55 @@ angular.module('vumigo.services').factory('ComponentManager', [
             if (!sourceComponent || !targetComponent
                 || sourceComponent.type == targetComponent.type) return;
 
-            if (!sourceEndpoint && !_.isEmpty(sourceComponent.endpoints)) {
+            var endpoints = sourceComponent.endpoints();
+            if (!sourceEndpoint && !_.isEmpty(endpoints)) {
                 if (['conversation', 'channel'].indexOf(sourceComponent.type) != -1) {
-                    sourceEndpoint = sourceComponent.endpoints[0];
+                    sourceEndpoint = endpoints[0];
 
                 } else if (sourceComponent.type == 'router') {
                     if (targetComponent.type == 'conversation') {
-                        sourceEndpoint = sourceComponent.getEndpoints('conversation')[0];
+                        sourceEndpoint = sourceComponent.endpoints('conversation_endpoint')[0];
 
                     } else if (targetComponent.type == 'channel') {
-                        sourceEndpoint = sourceComponent.getEndpoints('channel')[0];
+                        sourceEndpoint = sourceComponent.endpoints('channel_endpoint')[0];
                     }
                 }
             }
 
-            if (!targetEndpoint && !_.isEmpty(targetComponent.endpoints)) {
+            endpoints = targetComponent.endpoints();
+            if (!targetEndpoint && !_.isEmpty(endpoints)) {
                 if (['conversation', 'channel'].indexOf(targetComponent.type) != -1) {
-                    targetEndpoint = targetComponent.endpoints[0];
+                    targetEndpoint = endpoints[0];
 
-                } else if (targetEndpoint.type == 'router') {
+                } else if (targetComponent.type == 'router') {
                     if (sourceEndpoint.type == 'conversation') {
-                        targetEndpoint = targetComponent.getEndpoints('conversation')[0];
+                        targetEndpoint = targetComponent.endpoints('conversation_endpoint')[0];
 
                     } else if (sourceEndpoint.type == 'channel') {
-                        targetEndpoint = targetComponent.getEndpoints('channel')[0];
+                        targetEndpoint = targetComponent.endpoints('channel_endpoint')[0];
                     }
                 }
             }
 
             if (sourceEndpoint && targetEndpoint) {
-                var routes = _.filter(this.getRoutes(), function (route) {
-                    return route.source.id == sourceEndpoint.id;
-                });
+                var routes = _.filter(this.findComponents({ type: 'route' }),
+                    function (route) {
+                        return route.source().id == sourceEndpoint.id;
+                    });
 
                 if (_.isEmpty(routes)) {
-                    var connection = this.addComponent(new Connection({
-                        routes: [
-                            new Route({ source: sourceEndpoint, target: targetEndpoint })
-                        ]
-                    }));
+                    var connection = this.createComponent({
+                        type: 'connection',
+                        source: sourceEndpoint,
+                        target: targetEndpoint
+                    });
+
+                    this.createComponent({
+                        type: 'route',
+                        source: sourceEndpoint,
+                        target: targetEndpoint,
+                        connection: connection
+                    });
 
                 } else {
                     // TODO: Trigger a notification
@@ -599,153 +725,12 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }
         };
 
-        ComponentManager.prototype.getConversations = function () {
-            return _.where(this.components, { type: 'conversation' });
-        };
-
-        ComponentManager.prototype.getRouters = function () {
-            return _.where(this.components, { type: 'router' });
-        };
-
-        ComponentManager.prototype.getChannels = function () {
-            return _.where(this.components, { type: 'channel' });
-        };
-
-        ComponentManager.prototype.getConnections = function () {
-            return _.where(this.components, { type: 'connection' });
-        };
-
-        ComponentManager.prototype.getRoutes = function () {
-            return _.reduce(this.getConnections(), function (routes, connection) {
-                _.forEach(connection.routes, function (route) {
-                    routes.push(route);
-                });
-
-                return routes;
-            }, []);
-        };
-
-        ComponentManager.prototype.getControlPoints = function () {
-            return _.reduce(this.getConnections(), function (points, connection) {
-                _.forEach(connection.points, function (point) {
-                    points.push(point);
-                });
-
-                return points;
-            }, []);
-        };
-
-        ComponentManager.prototype.getMenus = function () {
-            return _.pluck(_.filter(this.components, 'menu'), 'menu');
-        };
-
         ComponentManager.prototype.layoutComponents = function () {
-            layoutConversations(this.getConversations());
-            layoutRouters(this.getRouters());
-            layoutChannels(this.getChannels());
-            layoutConnections(this.getConnections());
-            layoutMenus(this.getMenus());
-        };
-
-        ComponentManager.prototype.load = function (data) {
-            _.forEach(data.conversations, function (d) {
-                var conversation = this.addComponent(new Conversation({
-                    id: d.uuid,
-                    name: d.name,
-                    description: d.description,
-                    x: d.x,
-                    y: d.y,
-                    colour: d.colour,
-                    endpoints: []
-                }));
-
-                _.forEach(d.endpoints, function (d) {
-                    conversation.addEndpoint(new Endpoint({
-                        id: d.uuid,
-                        name: d.name,
-                        accepts: ['channel', 'router']
-                    }));
-                });
-            }, this);
-
-            _.forEach(data.routers, function (d) {
-                var endpoints = [];
-                _.forEach(d.conversation_endpoints, function (d) {
-                    endpoints.push(new Endpoint({
-                        id: d.uuid,
-                        name: d.name,
-                        accepts: ['conversation']
-                    }));
-                });
-
-                _.forEach(d.channel_endpoints, function (d) {
-                    endpoints.push(new Endpoint({
-                        id: d.uuid,
-                        name: d.name,
-                        accepts: ['channel']
-                    }));
-                });
-
-                this.addComponent(new Router({
-                    id: d.uuid,
-                    name: d.name,
-                    description: d.description,
-                    x: d.x,
-                    y: d.y,
-                    endpoints: endpoints
-                }));
-            }, this);
-
-            _.forEach(data.channels, function (d) {
-                var channel = this.addComponent(new Channel({
-                    id: d.uuid,
-                    name: d.name,
-                    description: d.description,
-                    x: d.x,
-                    y: d.y,
-                    utilization: d.utilization,
-                    endpoints: []
-                }));
-
-                _.forEach(d.endpoints, function (d) {
-                    channel.addEndpoint(new Endpoint({
-                        id: d.uuid,
-                        name: d.name,
-                        accepts: ['conversation', 'router']
-                    }));
-                });
-            }, this);
-
-            var getConnectionForEndpoints = _.bind(function (sourceId, targetId) {
-                return _.find(this.getConnections(), function (connection) {
-                    var routes = _.filter(connection.routes, function (route) {
-                        return (route.source.id == sourceId
-                                    && route.target.id == targetId)
-                                || (route.target.id == sourceId
-                                    && route.source.id == targetId);
-                    });
-
-                    return !_.isEmpty(routes);
-                });
-            }, this);
-
-            _.forEach(data.routing_entries, function (d) {
-                var connection = getConnectionForEndpoints(
-                    d.source.uuid, d.target.uuid);
-
-                if (_.isUndefined(connection)) {
-                    connection = this.addComponent(new Connection());
-                }
-
-                connection.addRoute(new Route({
-                    id: d.uuid,
-                    source: this.getEndpoint(d.source.uuid),
-                    target: this.getEndpoint(d.target.uuid)
-                }));
-            }, this);
-        };
-
-        ComponentManager.prototype.data = function () {
+            layoutChannels(this.findComponents({ type: 'channel' }));
+            layoutRouters(this.findComponents({ type: 'router' }));
+            layoutConversations(this.findComponents({ type: 'conversation' }));
+            layoutConnections(this.findComponents({ type: 'connection' }));
+            layoutMenus(this.findComponents({ type: 'menu' }));
         };
 
         return ComponentManager;

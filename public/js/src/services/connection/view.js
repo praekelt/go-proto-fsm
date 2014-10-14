@@ -13,8 +13,8 @@ angular.module('vumigo.services').factory('connectionComponent', [
                 if (dragBehavior) selection.call(dragBehavior);
 
                 var line = d3.svg.line()
-                    .x(function (d) { return d.x; })
-                    .y(function (d) { return d.y; })
+                    .x(function (d) { return d.x(); })
+                    .y(function (d) { return d.y(); })
                     .interpolate('linear');
 
                 selection
@@ -22,7 +22,7 @@ angular.module('vumigo.services').factory('connectionComponent', [
                         return d.meta().selected;
                     })
                     .attr('d', function (d) {
-                        return line(d.points);
+                        return line(d.points());
                     })
                     .style('stroke', function (d) { return d.meta().colour });
             }
@@ -77,7 +77,7 @@ angular.module('vumigo.services').factory('controlPointComponent', [function () 
 
             selection
                 .attr('transform', function (d) {
-                    return 'translate(' + [d.x, d.y] + ')';
+                    return 'translate(' + [d.x(), d.y()] + ')';
                 })
                 .classed('active', function (d) {
                     return d.meta().visible;

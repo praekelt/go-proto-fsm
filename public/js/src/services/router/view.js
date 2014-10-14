@@ -29,7 +29,7 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection
                     .attr('transform', function (d) {
-                        return 'translate(' + [d.x, d.y] + ')';
+                        return 'translate(' + [d.x(), d.y()] + ')';
                     })
                     .classed('selected', function (d) {
                         return d.meta().selected;
@@ -42,20 +42,20 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                     .style('font-size', function (d) {
                         return d.meta().layout.r;
                     })
-                    .text(function (d) { return d.name; });
+                    .text(function (d) { return d.name(); });
 
                 selection.select('.pins-conversation')
                     .attr('transform', function (d) {
                         return 'translate(' + [-d.meta().layout.r, 0] + ')';
                     })
                     .selectAll('.pin')
-                        .data(function(d) { return d.getEndpoints('conversation'); },
+                        .data(function(d) { return d.endpoints('conversation_endpoint'); },
                               function(d) { return d.id; })
                         .call(conversationPin);
 
                 selection.select('.pins-channel')
                     .selectAll('.pin')
-                        .data(function(d) { return d.getEndpoints('channel'); },
+                        .data(function(d) { return d.endpoints('channel_endpoint'); },
                               function(d) { return d.id; })
                         .call(channelPin);
 
@@ -137,7 +137,7 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.select('.name')
                     .attr('x', function (d) { return d.meta().layout.name.x; })
-                    .text(function (d) { return d.name; });
+                    .text(function (d) { return d.name(); });
             }
 
             function exit(selection) {
@@ -192,7 +192,7 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
 
                 selection.select('.name')
                     .attr('x', function (d) { return d.meta().layout.name.x; })
-                    .text(function (d) { return d.name; });
+                    .text(function (d) { return d.name(); });
             }
 
             function exit(selection) {

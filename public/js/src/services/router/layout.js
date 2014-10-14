@@ -8,7 +8,7 @@ angular.module('vumigo.services').factory('routerLayout', [
             var pinTextOffset = 10;
 
             function pins(router) {
-                var endpoints = router.getEndpoints('conversation');
+                var endpoints = router.endpoints('conversation_endpoint');
                 angular.forEach(endpoints, function (pin, i) {
                     var meta = pin.meta();
                     meta.layout = {
@@ -21,7 +21,7 @@ angular.module('vumigo.services').factory('routerLayout', [
                     };
                 });
 
-                endpoints = router.getEndpoints('channel');
+                endpoints = router.endpoints('channel_endpoint');
                 angular.forEach(endpoints, function (pin) {
                     var meta = pin.meta();
                     meta.layout = {
@@ -37,7 +37,7 @@ angular.module('vumigo.services').factory('routerLayout', [
 
             function layout(data) {
                 angular.forEach(data, function (router) {
-                    var endpoints = router.getEndpoints('conversation');
+                    var endpoints = router.endpoints('conversation_endpoint');
                     var size = Math.max(minSize, endpoints.length * pinGap);
                     var radius = Math.sqrt(2.0 * Math.pow(size, 2)) / 2.0;
 

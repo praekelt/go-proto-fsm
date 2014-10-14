@@ -240,10 +240,10 @@ angular.module('vumigo.services').factory('boundingBox', [function () {
 
 angular.module('vumigo.services').factory('goUtils', [function () {
 
-    function midpoint(point1, point2) {
+    function midpoint(x1, y1, x2, y2) {
         return {
-            x: point1.x + (point2.x - point1.x) / 2,
-            y: point1.y + (point2.y - point1.y) / 2
+            x: x1 + (x2 - x1) / 2,
+            y: y1 + (y2 - y1) / 2
         }
     }
 
