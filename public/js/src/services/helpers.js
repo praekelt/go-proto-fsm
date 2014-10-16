@@ -109,14 +109,16 @@ angular.module('vumigo.services').factory('RoutingComponent', [
         RoutingComponent.prototype = Object.create(BaseComponent.prototype);
 
         RoutingComponent.prototype.initialize = function (options) {
+            this.actions = options.actions;
+
             // Create a `Menu` for the given actions
-            if (!_.isEmpty(options.actions)) {
+            if (!_.isEmpty(this.actions)) {
                 this.menu = this.manager.createComponent({
                     type: 'menu',
                     component: this
                 });
 
-                _.forEach(options.actions, function (name) {
+                _.forEach(this.actions, function (name) {
                     var action = actions[name];
                     this.menu.addItem(action.icon, action.event);
                 }, this);
@@ -194,8 +196,8 @@ angular.module('vumigo.services').factory('Endpoint', [
 ]);
 
 angular.module('vumigo.services').factory('ConnectableComponent', [
-    'RoutingComponent',
-    function (RoutingComponent) {
+    'RoutingComponent', 'GoError',
+    function (RoutingComponent, GoError) {
 
         function ConnectableComponent(options) {
             options = options || {};
@@ -487,8 +489,8 @@ angular.module('vumigo.services').factory('Route', [
 ]);
 
 angular.module('vumigo.services').factory('ControlPoint', [
-    'RoutingComponent',
-    function (RoutingComponent) {
+    'RoutingComponent', 'GoError',
+    function (RoutingComponent, GoError) {
 
         function ControlPoint(options) {
             options = options || {};
