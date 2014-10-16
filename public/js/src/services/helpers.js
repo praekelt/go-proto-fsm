@@ -643,11 +643,27 @@ angular.module('vumigo.services').factory('ComponentManager', [
         var layoutMenus = menuLayout();
 
         function ComponentManager(data) {
-            this.data = data;
+            if (!arguments.length) {
+                this.data = {
+                    routing_table: {
+                        components: {},
+                        routing: {}
+                    },
+                    layout: {
+                        components: {},
+                        routing: {},
+                        connections: {}
+                    }
+                };
+
+            } else {
+                this.data = data;
+            }
+
             this.components = {};
 
             // Create `Channel`, `Conversation` and `Router` components
-            _.forEach(data.routing_table.components, function (data, id) {
+            _.forEach(this.data.routing_table.components, function (data, id) {
                 this.createComponent({
                     id: id,
                     type: data.type
@@ -663,7 +679,7 @@ angular.module('vumigo.services').factory('ComponentManager', [
             }, this);
 
             // Create `Connection` components
-            _.forEach(data.layout.connections, function (data, id) {
+            _.forEach(this.data.layout.connections, function (data, id) {
                 this.createComponent({
                     id: id,
                     type: 'connection'
