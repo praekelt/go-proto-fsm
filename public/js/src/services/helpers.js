@@ -133,14 +133,14 @@ angular.module('vumigo.services').factory('RoutingComponent', [
         };
 
         /**
-         * Return a the component data.
+         * Return the component data.
          */
         RoutingComponent.prototype.datum = function () {
             return null;
         };
 
         /**
-         * Return a the component layout.
+         * Return the component layout.
          */
         RoutingComponent.prototype.layout = function () {
             return null;
@@ -472,7 +472,7 @@ angular.module('vumigo.services').factory('Route', [
             if (!arguments.length) {
                 return this.manager.getComponentById(this.datum().source);
             }
-            this.datum().source = _.isString(source) ? source : source.id;
+            this.datum().source = source.id;
             return this;
         };
 
@@ -480,7 +480,7 @@ angular.module('vumigo.services').factory('Route', [
             if (!arguments.length) {
                 return this.manager.getComponentById(this.datum().target);
             }
-            this.datum().target = _.isString(target) ? target : target.id;
+            this.datum().target = target.id;
             return this;
         };
 
