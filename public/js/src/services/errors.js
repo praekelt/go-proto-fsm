@@ -3,7 +3,9 @@ angular.module('vumigo.services').factory('GoError', [
 
         function GoError(message) {
             Error.call(this);
-            Error.captureStackTrace(this, GoError);
+            if (Error.captureStackTrace) {
+                Error.captureStackTrace(this, GoError);
+            }
             this.message = message;
         }
 
