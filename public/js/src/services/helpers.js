@@ -129,7 +129,7 @@ angular.module('vumigo.services').factory('RoutingComponent', [
          * Throw a `GoError` if the component is in an invalid state.
          */
         RoutingComponent.prototype.validate = function () {
-            if (_.isEmpty(this.data)) throw GoError("Component data is empty");
+            if (_.isEmpty(this.data)) throw new GoError("Component data is empty");
         };
 
         /**
@@ -223,7 +223,7 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
 
         ConnectableComponent.prototype.validate = function () {
             RoutingComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().name)) throw GoError("Component name is empty");
+            if (_.isEmpty(this.datum().name)) throw new GoError("Component name is empty");
         };
 
         ConnectableComponent.prototype.datum = function () {
@@ -324,8 +324,8 @@ angular.module('vumigo.services').factory('Channel', [
 ]);
 
 angular.module('vumigo.services').factory('Conversation', [
-    'ConnectableComponent',
-    function (ConnectableComponent) {
+    'ConnectableComponent', 'GoError',
+    function (ConnectableComponent, GoError) {
 
         function Conversation(options) {
             options = options || {};
@@ -365,7 +365,7 @@ angular.module('vumigo.services').factory('Conversation', [
         Conversation.prototype.validate = function () {
             ConnectableComponent.prototype.validate.call(this);
             if (_.isEmpty(this.datum().conversation_type)) {
-                throw GoError("Conversation type is empty");
+                throw new GoError("Conversation type is empty");
             }
         };
 
@@ -380,8 +380,8 @@ angular.module('vumigo.services').factory('Conversation', [
 ]);
 
 angular.module('vumigo.services').factory('Router', [
-    'ConnectableComponent',
-    function (ConnectableComponent) {
+    'ConnectableComponent', 'GoError',
+    function (ConnectableComponent, GoError) {
 
         function Router(options) {
             options = options || {};
@@ -425,7 +425,7 @@ angular.module('vumigo.services').factory('Router', [
         Router.prototype.validate = function () {
             ConnectableComponent.prototype.validate.call(this);
             if (_.isEmpty(this.datum().router_type)) {
-                throw GoError("Router type is empty");
+                throw new GoError("Router type is empty");
             }
         };
 
@@ -510,7 +510,7 @@ angular.module('vumigo.services').factory('ControlPoint', [
                     .connections[this.connection.id].path;
 
                 data.push({ x: 0, y: 0 });
-                this.id = this.connection.id + ':' + data.length - 1;
+                this.id = this.connection.id + ':' + new String(data.length - 1);
 
             } else {
                 this.id = this.connection.id + ':' + options.index;
@@ -522,7 +522,7 @@ angular.module('vumigo.services').factory('ControlPoint', [
 
             var parts = this.id.split(':');
             if (parts.length != 2 || _.isNaN(parseInt(parts[1]))) {
-                throw GoError("Invalid control point id: " + this.id);
+                throw new GoError("Invalid control point id: " + this.id);
             }
         };
 

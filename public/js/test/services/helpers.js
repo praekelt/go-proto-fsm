@@ -245,6 +245,32 @@ describe('Endpoint', function () {
         expect(endpoint.name()).to.equal('default');
     }));
 
+    it('should create new component', inject(function (ConnectableComponent, Endpoint) {
+        var component = new ConnectableComponent({
+            id: 'component1',
+            type: 'channel',
+            manager: manager,
+            data: data
+        });
+
+        var endpoint = new Endpoint({
+            id: 'endpoint2',
+            type: 'conversation_endpoint',
+            name: 'test_endpoint',
+            manager: manager,
+            data: data,
+            component: component
+        });
+
+        var d = data.routing_table.components['component1'].endpoints['endpoint2'];
+        var expected = {
+            type: 'conversation_endpoint',
+            uuid: 'endpoint2',
+            name: 'test_endpoint'
+        };
+        expect(d).to.deep.equal(expected);
+    }));
+
 });
 
 describe('ConnectableComponent', function () {
@@ -393,6 +419,41 @@ describe('Channel', function () {
         expect(channel.utilization()).to.equal(0.5);
     }));
 
+    it('should create new component', inject(function (Channel, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint4');
+
+        var channel = new Channel({
+            id: 'channel2',
+            data: data,
+            manager: manager,
+            name: "Channel 2",
+            description: "Test channel",
+            utilization: 0.1
+        });
+
+        var d = data.routing_table.components['channel2'];
+        var expected = {
+            type: 'channel',
+            uuid: 'channel2',
+            tag: [],
+            name: "Channel 2",
+            description: 'Test channel',
+            utilization: 0.1,
+            endpoints: {
+                'endpoint4': {
+                    type: 'channel_endpoint',
+                    uuid: 'endpoint4',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['channel2'];
+        expect(d).to.deep.equal({ x: 0, y: 0 });
+    }));
+
 });
 
 describe('Conversation', function () {
@@ -453,6 +514,54 @@ describe('Conversation', function () {
         expect(conversation.y()).to.equal(0);
         expect(conversation.colour()).to.equal('white');
         expect(conversation.actions).to.deep.equal(['edit', 'connect', 'delete']);
+    }));
+
+    it('should create new component', inject(function (Conversation, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint2');
+
+        var channel = new Conversation({
+            id: 'conversation2',
+            data: data,
+            manager: manager,
+            conversation_type: 'bulk-message',
+            name: "Conversation 2",
+            description: "Test conversation"
+        });
+
+        var d = data.routing_table.components['conversation2'];
+        var expected = {
+            type: 'conversation',
+            conversation_type: 'bulk-message',
+            uuid: 'conversation2',
+            name: "Conversation 2",
+            description: "Test conversation",
+            endpoints: {
+                'endpoint2': {
+                    type: 'conversation_endpoint',
+                    uuid: 'endpoint2',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['conversation2'];
+        expect(d).to.deep.equal({ x: 0, y: 0, colour: 'white' });
+    }));
+
+    it('should validate new component', inject(function (Conversation, GoError) {
+        var fn = function () {
+            new Conversation({
+                id: 'conversation2',
+                data: data,
+                manager: manager,
+                name: "Conversation 2",
+                description: "Test conversation"
+            });
+        };
+
+        expect(fn).to.throw(GoError, /Conversation type is empty/);
     }));
 
 });
@@ -518,6 +627,60 @@ describe('Router', function () {
         expect(router.x()).to.equal(0);
         expect(router.y()).to.equal(0);
         expect(router.actions).to.deep.equal(['edit', 'connect', 'delete']);
+    }));
+
+    it('should create new component', inject(function (Router, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint7');
+        stub.onCall(5).returns('endpoint8');
+
+        var router = new Router({
+            id: 'router2',
+            router_type: 'keyword',
+            data: data,
+            manager: manager,
+            name: "Router 2",
+            description: "Test router"
+        });
+
+        var d = data.routing_table.components['router2'];
+        var expected = {
+            type: 'router',
+            router_type: 'keyword',
+            uuid: 'router2',
+            name: 'Router 2',
+            description: 'Test router',
+            endpoints: {
+                'endpoint7': {
+                    type: 'channel_endpoint',
+                    uuid: 'endpoint7',
+                    name: 'default'
+                },
+                'endpoint8': {
+                    type: 'conversation_endpoint',
+                    uuid: 'endpoint8',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['router2'];
+        expect(d).to.deep.equal({ x: 0, y: 0 });
+    }));
+
+    it('should validate new component', inject(function (Router, GoError) {
+        var fn = function () {
+            new Router({
+                id: 'router2',
+                data: data,
+                manager: manager,
+                name: "Router 2",
+                description: "Test router"
+            });
+        };
+
+        expect(fn).to.throw(GoError, /Router type is empty/);
     }));
 
 });
@@ -609,9 +772,7 @@ describe('Route', function () {
         var route = new Route({
             id: 'endpoint1:endpoint2',
             manager: manager,
-            data: data,
-            source: 'endpoint1',
-            target: 'endpoint2'
+            data: data
         });
 
         expect(route instanceof RoutingComponent).to.be.true;
@@ -619,6 +780,27 @@ describe('Route', function () {
         expect(route.type).to.equal('route');
         expect(route.source()).to.equal(manager.getComponentById('endpoint1'));
         expect(route.target()).to.equal(manager.getComponentById('endpoint2'));
+    }));
+
+    it('should create new component', inject(function (Route) {
+        var route = new Route({
+            id: 'endpoint2:endpoint1',
+            manager: manager,
+            data: data,
+            source: manager.getComponentById('endpoint2'),
+            target: manager.getComponentById('endpoint1'),
+            connection: manager.getComponentById('connection1')
+        });
+
+        var d = data.routing_table.routing['endpoint2:endpoint1'];
+        var expected = {
+            source: 'endpoint2',
+            target: 'endpoint1'
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.routing['endpoint2:endpoint1'];
+        expect(d).to.equal('connection1');
     }));
 
 });
@@ -722,6 +904,40 @@ describe('ControlPoint', function () {
         expect(point.y()).to.equal(360);
     }));
 
+    it('should create new component', inject(function (ControlPoint) {
+        var connection = manager.getComponentById('connection1');
+
+        var point = new ControlPoint({
+            manager: manager,
+            data: data,
+            connection: connection
+        });
+
+        var d = data.layout
+                .connections['connection1']
+                .path[2];
+
+        expect(d).to.deep.equal({ x: 0, y: 0 });
+    }));
+
+    it('should validate new component', inject(function (ControlPoint, GoError) {
+        var connection = manager.getComponentById('connection1');
+
+        var fn = function () {
+            var point = new ControlPoint({
+                manager: manager,
+                data: data,
+                connection: connection,
+                index: 0
+            });
+
+            point.id = "invalid_id";
+            point.validate();
+        };
+
+        expect(fn).to.throw(GoError, /Invalid control point id/);
+    }));
+
 });
 
 describe('Connection', function () {
@@ -761,6 +977,25 @@ describe('Connection', function () {
                                 name: 'default'
                             }
                         }
+                    },
+                    'router1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'router1',
+                        name: 'K',
+                        description: 'Keyword',
+                        endpoints: {
+                            'endpoint3': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint3',
+                                name: 'default'
+                            },
+                            'endpoint4': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint4',
+                                name: 'default'
+                            }
+                        }
                     }
                 },
                 routing: {
@@ -780,6 +1015,10 @@ describe('Connection', function () {
                         x: 220,
                         y: 120,
                         colour: '#f82943'
+                    },
+                    'router1': {
+                        x: 220,
+                        y: 500,
                     }
                 },
                 routing: {
@@ -826,6 +1065,33 @@ describe('Connection', function () {
             manager.getComponentById('endpoint1:endpoint2'),
         ]);
         expect(connection.colour()).to.equal('#f82943');
+    }));
+
+    it('should create new component', inject(function (Connection) {
+        var connection = new Connection({
+            id: 'connection2',
+            manager: manager,
+            data: data,
+            source: manager.getComponentById('endpoint2'),
+            target: manager.getComponentById('endpoint4')
+        });
+
+        var d = data.layout.connections['connection2'];
+        var expected = {
+            endpoints: {
+                'endpoint2': 'conversation1',
+                'endpoint4': 'router1'
+            },
+            path: [{
+                x: 220,
+                y: 120,
+            }, {
+                x: 220,
+                y: 500
+            }],
+            colour: 'grey'
+        };
+        expect(d).to.deep.equal(expected);
     }));
 
 });
