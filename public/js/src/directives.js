@@ -28,7 +28,7 @@ directives.directive('goCampaignDesigner', [
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
-        var componentManager = new ComponentManager();
+        var componentManager = null;
 
         /**
          * Directive controller constructor.
@@ -53,7 +53,7 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Initialise the component manager
-            componentManager.load($scope.data);
+            componentManager = new ComponentManager($scope.data);
 
             $scope.selectedComponentId = null;
             $scope.selectedEndpointId = null;
@@ -295,13 +295,13 @@ directives.directive('goCampaignDesigner', [
                 var oldComponent = null;
                 var oldEndpoint = null;
                 if (oldValue.id) {
-                    oldComponent = componentManager.getComponent(oldValue.id);
+                    oldComponent = componentManager.getComponentById(oldValue.id);
                     if (oldComponent) {
                         oldComponent.meta().selected = false;
 
                         // If the selected component had a selected endpoint, unselect it
                         if (oldValue.endpointId) {
-                            oldEndpoint = componentManager.getEndpoint(oldValue.endpointId);
+                            oldEndpoint = componentManager.getComponentById(oldValue.endpointId);
                             oldEndpoint.meta().selected = false;
                         }
                     }
@@ -309,13 +309,13 @@ directives.directive('goCampaignDesigner', [
 
                 // If a new component has been selected update its metadata
                 if (newValue.id) {
-                    var component = componentManager.getComponent(newValue.id);
+                    var component = componentManager.getComponentById(newValue.id);
                     component.meta().selected = true;
 
                     // If the user selected a specific endpoint update it metadata
                     var endpoint = null;
                     if (newValue.endpointId) {
-                        endpoint = componentManager.getEndpoint(newValue.endpointId);
+                        endpoint = componentManager.getComponentById(newValue.endpointId);
                         endpoint.meta().selected = true;
                     }
 
@@ -459,37 +459,37 @@ directives.directive('goCampaignDesigner', [
                 componentManager.layoutComponents();
 
                 componentLayer.selectAll('.conversation')
-                    .data(componentManager.getConversations(),
+                    .data(componentManager.findComponents({ type: 'conversation' }),
                           function (d) { return d.id; })
                     .call(conversation);
 
                 componentLayer.selectAll('.router')
-                    .data(componentManager.getRouters(),
+                    .data(componentManager.findComponents({ type: 'router' }),
                           function (d) { return d.id; })
                     .call(router);
 
                 componentLayer.selectAll('.channel')
-                    .data(componentManager.getChannels(),
+                    .data(componentManager.findComponents({ type: 'channel' }),
                           function (d) { return d.id; })
                     .call(channel);
 
                 connectionLayer.selectAll('.connection')
-                    .data(componentManager.getConnections(),
+                    .data(componentManager.findComponents({ type: 'connection' }),
                           function (d) { return d.id; })
                     .call(connection);
 
                 connectionLayer.selectAll('.control-point')
-                    .data(componentManager.getControlPoints(),
+                    .data(componentManager.findComponents({ type: 'control_point' }),
                           function (d) { return d.id; })
                     .call(controlPoint);
 
                 connectionLayer.selectAll('.route')
-                    .data(componentManager.getRoutes(),
+                    .data(componentManager.findComponents({ type: 'route' }),
                           function (d) { return d.id; })
                     .call(route);
 
                 componentLayer.selectAll('.menu')
-                    .data(componentManager.getMenus(),
+                    .data(componentManager.findComponents({ type: 'menu' }),
                           function (d) { return d.id; })
                     .call(menu);
             }

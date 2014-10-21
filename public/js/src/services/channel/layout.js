@@ -9,7 +9,7 @@ angular.module('vumigo.services').factory('channelLayout', [
             function layout(data) {
                 angular.forEach(data, function (channel) {
                     var outerRadius = innerRadius
-                        + maxOuterRadius * channel.utilization;
+                        + maxOuterRadius * channel.utilization();
 
                     var textX = innerRadius / 2.0 + textOffset;
 

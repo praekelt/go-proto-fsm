@@ -1,83 +1,137 @@
 describe('menuLayout', function () {
-    var components, layout;
+    var data, manager, layout;
 
     beforeEach(module('vumigo.services'));
     beforeEach(module('uuid'));
 
-    beforeEach(inject(function (Endpoint, Conversation, Channel, Router, Connection, Route,
-                                conversationLayout, routerLayout, channelLayout,
-                                connectionLayout, menuLayout) {
+    beforeEach(inject(function (ComponentManager, conversationLayout, routerLayout,
+                                channelLayout, connectionLayout, menuLayout) {
 
-        var endpoint1 = new Endpoint({ id: 'endpoint1', name: 'default' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2', name: 'default' });
-        var endpoint3 = new Endpoint({ id: 'endpoint3', name: 'default' });
-        var endpoint4 = new Endpoint({ id: 'endpoint4', name: 'default' });
-        var endpoint5 = new Endpoint({ id: 'endpoint5', name: 'default' });
-
-        components = {
-            'conversation1': new Conversation({
-                id: 'conversation1',
-                name: "Register",
-                description: "4 Steps",
-                endpoints: [endpoint1],
-                colour: '#f82943',
-                x: 220,
-                y: 120
-            }),
-            'channel1': new Channel({
-                id: 'channel1',
-                name: "SMS",
-                description: "082 335 29 24",
-                endpoints: [endpoint2],
-                utilization: 0.4,
-                x: 840,
-                y: 360
-            }),
-            'router1': new Router({
-                id: 'router1',
-                name: "K",
-                description: "Keyword",
-                endpoints: [endpoint3, endpoint4, endpoint5],
-                x: 500,
-                y: 220
-            }),
-            'connection1': new Connection({
-                id: 'connection1',
-                routes: [new Route({
-                    source: endpoint1,
-                    target: endpoint4
-                })]
-            })
+        data = {
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'Register',
+                        description: '4 Steps',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: [],
+                        name: 'SMS',
+                        description: '082 335 29 24',
+                        utilization: 0.4,
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'router1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'router1',
+                        name: 'K',
+                        description: 'Keyword',
+                        endpoints: {
+                            'endpoint3': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint3',
+                                name: 'default'
+                            },
+                            'endpoint4': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint4',
+                                name: 'default'
+                            },
+                            'endpoint5': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint5',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint4': {
+                        source: 'endpoint1',
+                        target: 'endpoint4'
+                    }
+                },
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {
+                    'conversation1': {
+                        x: 220,
+                        y: 120,
+                        colour: '#f82943'
+                    },
+                    'channel1': {
+                        x: 840,
+                        y: 360
+                    },
+                    'router1': {
+                        x: 500,
+                        y: 220
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint4': 'connection1',
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'conversation1',
+                            'endpoint4': 'router1'
+                        },
+                        path: [{
+                            x: 220,
+                            y: 120,
+                        }, {
+                            x: 500,
+                            y: 220
+                        }],
+                        colour: '#f82943'
+                    }
+                }
+            }
         };
 
-        _.forEach(components['connection1'].endpoints, function (endpoint) {
-            endpoint.component = components['connection1'];
-        });
+        manager = new ComponentManager(data);
 
-        _.forEach(components['channel1'].endpoints, function (endpoint) {
-            endpoint.component = components['channel1'];
-        });
-
-        _.forEach(components['router1'].endpoints, function (endpoint) {
-            endpoint.component = components['router1'];
-        });
-
-        conversationLayout()([components['conversation1']]);
-        routerLayout()([components['router1']]);
-        channelLayout()([components['channel1']]);
-        connectionLayout()([components['connection1']]);
+        conversationLayout()(manager.findComponents({ type: 'conversation' }));
+        routerLayout()(manager.findComponents({ type: 'router' }));
+        channelLayout()(manager.findComponents({ type: 'channel' }));
+        connectionLayout()(manager.findComponents({ type: 'connection' }));
 
         layout = menuLayout();
     }));
 
     it('should compute menu layout', inject(function (goUtils) {
-        layout(_.pluck(_.filter(components, 'menu'), 'menu'));
+        layout(manager.findComponents({ type: 'menu' }));
+
+        var components = manager.components;
 
         var expected = {
             active: false,
             layout: {
-                x: components['conversation1'].x,
-                y: components['conversation1'].y + components['conversation1'].meta().layout.outer.r + 20
+                x: components['conversation1'].x(),
+                y: components['conversation1'].y() + components['conversation1'].meta().layout.outer.r + 20
             }
         };
 
@@ -91,8 +145,8 @@ describe('menuLayout', function () {
         expected = {
             active: false,
             layout: {
-                x: components['channel1'].x,
-                y: components['channel1'].y + components['channel1'].meta().layout.outer.r + 20
+                x: components['channel1'].x(),
+                y: components['channel1'].y() + components['channel1'].meta().layout.outer.r + 20
             }
         };
 
@@ -106,8 +160,8 @@ describe('menuLayout', function () {
         expected = {
             active: false,
             layout: {
-                x: components['router1'].x,
-                y: components['router1'].y + components['router1'].meta().layout.r + 20
+                x: components['router1'].x(),
+                y: components['router1'].y() + components['router1'].meta().layout.r + 20
             }
         };
 
@@ -118,9 +172,9 @@ describe('menuLayout', function () {
             expect(item.meta()).to.deep.equal(expected);
         });
 
-        var point1 = components['connection1'].points[0];
-        var point2 = components['connection1'].points[1];
-        var midpoint = goUtils.midpoint(point1, point2);
+        var point1 = components['connection1'].points()[0];
+        var point2 = components['connection1'].points()[1];
+        var midpoint = goUtils.midpoint(point1.x(), point1.y(), point2.x(), point2.y());
         expected = {
             active: false,
             layout: {

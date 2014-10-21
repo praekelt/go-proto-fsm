@@ -88,11 +88,50 @@ describe('zoomBehavior', function () {
 });
 
 describe('dragBehavior', function () {
-    var element, scope, canvas;
+    var data, manager, element, scope, canvas;
 
+    beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function ($rootScope, dragBehavior) {
+    beforeEach(inject(function ($rootScope, ComponentManager, dragBehavior) {
+        data = {
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {
+                    'component1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'component1',
+                        name: "Conversation 1",
+                        description: "Test conversation",
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {},
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {
+                    'component1': {
+                        x: 0,
+                        y: 0,
+                        colour: '#cccccc'
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -116,7 +155,7 @@ describe('dragBehavior', function () {
             .call();
 
         canvas.selectAll('.component')
-            .data([{uuid: 'component1', x: 0, y: 0}])
+            .data(manager.findComponents({ type: 'conversation' }))
             .enter().append('g')
                 .attr('class', 'component')
                 .attr('transform', 'translate(0,0)')

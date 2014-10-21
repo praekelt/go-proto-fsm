@@ -1,5 +1,5 @@
 describe('conversationComponent', function () {
-    var element, componentManager, conversation;
+    var element, data, componentManager, conversation;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
@@ -10,17 +10,43 @@ describe('conversationComponent', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        componentManager = new ComponentManager({
-            conversations: [{
-                uuid: 'conversation1',
-                name: "Conversation 1",
-                description: "Test conversation",
-                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
-                colour: '#cccccc',
-                x: 50,
-                y: 50,
-            }]
-        });
+        data = {
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: "Conversation 1",
+                        description: "Test conversation",
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {},
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {
+                    'conversation1': {
+                        x: 50,
+                        y: 50,
+                        colour: '#cccccc'
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        componentManager = new ComponentManager(data);
 
         var drag = dragBehavior()
             .canvasWidth(100)
@@ -33,11 +59,11 @@ describe('conversationComponent', function () {
 
         componentManager.layoutComponents();
 
-        var meta = componentManager.getComponent('conversation1').meta();
+        var meta = componentManager.getComponentById('conversation1').meta();
         meta.selected = true;
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
     }));
 
@@ -50,7 +76,7 @@ describe('conversationComponent', function () {
         expect(conversation.attr('class').indexOf('selected')).not.to.equal(-1);
 
         var disc = conversation.find('.disc.outer').eq(0);
-        var meta = componentManager.getComponent('conversation1').meta();
+        var meta = componentManager.getComponentById('conversation1').meta();
         var r = meta.layout.outer.r;
         expect(disc.attr('r')).to.equal(String(r));
         expect(d3.rgb(disc.css('fill'))).to.deep.equal(d3.rgb(204, 204, 204));
@@ -73,22 +99,36 @@ describe('conversationComponent', function () {
         var conversations = element.find('.conversation');
         expect(conversations).to.have.length(1);
 
-        componentManager.load({
-            conversations: [{
-                uuid: "conversation2",
-                name: "Conversation 2",
-                description: "Another conversation",
-                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
-                colour: '#e32',
-                x: 100,
-                y: 100
-            }]
+        data.routing_table.components["conversation2"] = {
+            type: 'conversation',
+            conversation_type: 'bulk-message',
+            uuid: 'conversation2',
+            name: "Conversation 2",
+            description: "Another conversation",
+            endpoints: {
+                'endpoint2': {
+                    type: 'conversation_endpoint',
+                    uuid: 'endpoint2',
+                    name: 'default'
+                }
+            }
+        };
+
+        data.layout.components["conversation2"] = {
+            colour: '#e32',
+            x: 100,
+            y: 100
+        };
+
+        componentManager.createComponent({
+            id: "conversation2",
+            type: 'conversation'
         });
 
         componentManager.layoutComponents();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
 
         conversations = element.find('.conversation');
@@ -102,7 +142,7 @@ describe('conversationComponent', function () {
         componentManager.reset();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
 
         conversations = element.find('.conversation');

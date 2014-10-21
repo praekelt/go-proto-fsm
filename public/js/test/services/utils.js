@@ -209,7 +209,7 @@ describe('goUtils', function () {
     beforeEach(module('vumigo.services'));
 
     it('should determine midpoint', inject(function (goUtils) {
-        midpoint = goUtils.midpoint({x: 10, y: 10}, {x: 30, y: 30});
+        midpoint = goUtils.midpoint(10, 10, 30, 30);
         expect(midpoint).to.deep.equal({x: 20, y: 20});
     }));
 

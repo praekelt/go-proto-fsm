@@ -1,10 +1,12 @@
 describe('menuComponent', function () {
-    var element, scope, menu;
+    var manager, element, scope, menu;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
 
-    beforeEach(inject(function ($rootScope, Menu, MenuItem, menuComponent) {
+    beforeEach(inject(function ($rootScope, ComponentManager, Menu, MenuItem, menuComponent) {
+        manager = new ComponentManager();
+
         element = angular.element(
             '<div id="viewport" style="width: 20px; height: 20px">' +
                 '<svg width="100" height="100"></svg>' +
@@ -13,18 +15,12 @@ describe('menuComponent', function () {
         scope = $rootScope;
 
         menu = new Menu({
+            manager: manager,
             component: { id: 'component1' },
-            items: [
-                new MenuItem({
-                    icon: 'icon1',
-                    action: 'go:action1'
-                }),
-                new MenuItem({
-                    icon: 'icon2',
-                    action: 'go:action2'
-                })
-            ],
         });
+
+        menu.addItem('icon1', 'go:action1');
+        menu.addItem('icon2', 'go:action2');
 
         menu.meta().layout = { x: 50, y: 50 };
         menu.meta().active = false;
