@@ -309,7 +309,7 @@ angular.module('vumigo.services').factory('Channel', [
                     tag: options.tag || [],
                     name: options.name,
                     description: options.description || "",
-                    utilization: options.utilization || 0,
+                    utilization: options.utilization || 0.5,
                     endpoints: {}
                 };
 
