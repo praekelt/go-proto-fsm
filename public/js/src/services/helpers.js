@@ -135,14 +135,14 @@ angular.module('vumigo.services').factory('RoutingComponent', [
         /**
          * Return the component data.
          */
-        RoutingComponent.prototype.datum = function () {
+        RoutingComponent.prototype.datum = function (datum) {
             return null;
         };
 
         /**
          * Return the component layout.
          */
-        RoutingComponent.prototype.layout = function () {
+        RoutingComponent.prototype.layout = function (layout) {
             return null;
         };
 
@@ -179,10 +179,16 @@ angular.module('vumigo.services').factory('Endpoint', [
             }
         };
 
-        Endpoint.prototype.datum = function () {
-            return this.data.routing_table
+        Endpoint.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table
+                    .components[this.component.id]
+                    .endpoints[this.id];
+            }
+
+            this.data.routing_table
                 .components[this.component.id]
-                .endpoints[this.id];
+                .endpoints[this.id] = datum;
         };
 
         Endpoint.prototype.name = function (name) {
@@ -226,12 +232,18 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
             if (_.isEmpty(this.datum().name)) throw new GoError("Component name is empty");
         };
 
-        ConnectableComponent.prototype.datum = function () {
-            return this.data.routing_table.components[this.id];
+        ConnectableComponent.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table.components[this.id];
+            }
+            this.data.routing_table.components[this.id] = datum;
         };
 
-        ConnectableComponent.prototype.layout = function () {
-            return this.data.layout.components[this.id];
+        ConnectableComponent.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.components[this.id];
+            }
+            this.data.layout.components[this.id] = layout;
         };
 
         ConnectableComponent.prototype.endpoints = function (type) {
@@ -352,7 +364,7 @@ angular.module('vumigo.services').factory('Conversation', [
                 this.data.layout.components[this.id] = {
                     x: 0,
                     y: 0,
-                    colour: 'white'
+                    colour: options.colour || 'white'
                 };
 
                 this.manager.createComponent({
@@ -460,12 +472,18 @@ angular.module('vumigo.services').factory('Route', [
             }
         };
 
-        Route.prototype.datum = function () {
-            return this.data.routing_table.routing[this.id];
+        Route.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table.routing[this.id];
+            }
+            this.data.routing_table.routing[this.id] = datum;
         };
 
-        Route.prototype.layout = function () {
-            return this.data.layout.routing[this.id];
+        Route.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.routing[this.id];
+            }
+            this.data.layout.routing[this.id] = layout;
         };
 
         Route.prototype.source = function (source) {
@@ -530,10 +548,17 @@ angular.module('vumigo.services').factory('ControlPoint', [
             return parseInt(this.id.split(':')[1]);
         };
 
-        ControlPoint.prototype.layout = function () {
-            return this.data.layout
+        ControlPoint.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout
+                    .connections[this.connection.id]
+                    .path[this.index()];
+
+            }
+
+            this.data.layout
                 .connections[this.connection.id]
-                .path[this.index()];
+                .path[this.index()] = layout;
         };
 
         ControlPoint.prototype.x = function (x) {
@@ -599,8 +624,11 @@ angular.module('vumigo.services').factory('Connection', [
             }, this);
         };
 
-        Connection.prototype.layout = function () {
-            return this.data.layout.connections[this.id];
+        Connection.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.connections[this.id];
+            }
+            this.data.layout.connections[this.id] = layout;
         };
 
         Connection.prototype.points = function () {

@@ -70,173 +70,77 @@ directives.directive('goCampaignDesigner', [
             };
 
             /**
-             * Open conversation form modal dialog.
+             * Open component form modal dialog.
              */
-            $scope.openConversationForm = function (conversation) {
+            $scope.openComponentForm = function (options) {
+                var templateUrl;
+                switch (options.type) {
+                    case 'conversation':
+                        templateUrl = '/templates/conversation_form_modal.html';
+                        break;
+
+                    case 'router':
+                        templateUrl = '/templates/router_form_modal.html';
+                        break;
+
+                    case 'channel':
+                        templateUrl = '/templates/channel_form_modal.html';
+                        break;
+
+                    default:
+                        // TODO: Emit error signal
+                        break;
+                }
+
+                var datum = null;
+                var layout = null;
+
                 $modal.open({
-                    templateUrl: '/templates/conversation_form_modal.html',
+                    templateUrl: templateUrl,
                     size: 'md',
                     controller: ['$scope', function ($scope) {
-                        $scope.conversation = conversation;
-                        $scope.data = {};
+                        if (!_.isUndefined(options.instance)) {
+                            $scope.instance = options.instance;
+                            $scope.data = options.instance.datum();
+                            $scope.layout = options.instance.layout();
 
-                        if (conversation) {
-                            $scope.data.name = conversation.name;
-                            $scope.data.description = conversation.description;
-                            $scope.data.colour = conversation.colour;
+                            datum = _.cloneDeep($scope.data);
+                            layout = _.cloneDeep($scope.layout);
+
+                        } else {
+                            $scope.data = {};
+                            $scope.layout = {};
                         }
                     }]
-                }).result.then(function (data) {
-                    if (conversation) {
-                        conversation.name = data.name;
-                        conversation.description = data.description;
-                        conversation.colour = data.colour;
-                        $scope.refresh();
+                }).result.then(function (result) {
+                    if (_.isUndefined(options.instance)) {
+                        $scope.newComponent = {
+                            type: options.type
+                        };
+
+                        _.merge($scope.newComponent,
+                                result.data || {},
+                                result.layout || {});
 
                     } else {
-                        $scope.newComponent = new Conversation({
-                            name: data.name,
-                            description: data.description,
-                            colour: data.colour
-                        });
+                        $scope.refresh();
                     }
-                });
-            };
 
-            /**
-             * Open channel form modal dialog.
-             */
-            $scope.openChannelForm = function (channel) {
-                $modal.open({
-                    templateUrl: '/templates/channel_form_modal.html',
-                    size: 'md',
-                    controller: ['$scope', function ($scope) {
-                        $scope.channel = channel;
-                        $scope.data = {};
-
-                        if (channel) {
-                            $scope.data.name = channel.name;
-                            $scope.data.description = channel.description;
-                        }
-                    }]
-                }).result.then(function (data) {
-                    if (channel) {
-                        channel.name = data.name;
-                        channel.description = data.description;
-                        $scope.refresh();
-
-                    } else {
-                        $scope.newComponent = new Channel({
-                            name: data.name,
-                            description: data.description
-                        });
-                    }
-                });
-            };
-
-            /**
-             * Open router form modal dialog.
-             */
-            $scope.openRouterForm = function (router) {
-                $modal.open({
-                    templateUrl: '/templates/router_form_modal.html',
-                    size: 'md',
-                    controller: ['$scope', function ($scope) {
-                        $scope.router = router;
-                        $scope.data = {
-                            endpoints: [{ name: "" }]
-                        };
-
-                        if (router) {
-                            $scope.data.name = router.name;
-
-                            var endpoints = _.reject(router.endpoints, function (endpoint) {
-                                return _.isEqual(endpoint.name, 'default');
-                            });
-
-                            $scope.data.endpoints =  _.map(endpoints, function (endpoint) {
-                                return {
-                                    id: endpoint.id,
-                                    name: endpoint.name,
-                                    connected: !_.isEmpty(endpoint.connections)
-                                };
-                            });
-                        }
-
-                        $scope.addEndpoint = function (form) {
-                            $scope.data.endpoints.push({ name: "" });
-                            form.$setDirty();
-                        };
-
-                        $scope.removeEndpoint = function (form, index) {
-                            $scope.data.endpoints.splice(index, 1);
-                            form.$setDirty();
-                        };
-                    }]
-                }).result.then(function (data) {
-                    if (router) {
-                        router.name = data.name;
-
-                        router.endpoints = _.remove(router.endpoints, function (endpoint) {
-                            if (_.isEqual(endpoint.name, 'default')) return true;
-                            return !_.isUndefined(_.find(data.endpoints, function (d) {
-                                return _.isEqual(d.id, endpoint.id);
-                            }));
-                        });
-
-                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
-                            if (_.isUndefined(d.id)) {
-                                router.addEndpoint(new Endpoint({
-                                    name: d.name,
-                                    accepts: ['conversation']
-                                }));
-
-                            } else {
-                                var endpoint = router.getEndpoint(d.id);
-                                endpoint.name = d.name;
-                            }
-                        });
-
-                        $scope.refresh();
-
-                    } else {
-                        var options = {
-                            name: data.name,
-                            endpoints: []
-                        };
-
-                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
-                            options.endpoints.push(new Endpoint({
-                                name: d.name,
-                                accepts: ['conversation']
-                            }));
-                        });
-
-                        $scope.newComponent = new Router(options);
+                }, function () {
+                    if (!_.isUndefined(options.instance)) {
+                        options.instance.datum(datum);
+                        options.instance.layout(layout);
                     }
                 });
             };
 
             $scope.edit = function () {
                 if ($scope.selectedComponentId) {
-                    var component = componentManager.getComponent($scope.selectedComponentId);
-                    switch (component.type) {
-                        case 'conversation':
-                            $scope.openConversationForm(component);
-                            break;
-
-                        case 'router':
-                            $scope.openRouterForm(component);
-                            break;
-
-                        case 'channel':
-                            $scope.openChannelForm(component);
-                            break;
-
-                        default:
-                            // TODO: Emit error signal
-                            break;
-                    }
+                    var component = componentManager.getComponentById($scope.selectedComponentId);
+                    $scope.openComponentForm({
+                        type: component.type,
+                        instance: component
+                    });
                 }
             };
 
@@ -258,10 +162,10 @@ directives.directive('goCampaignDesigner', [
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
                         controller: ['$scope', function ($scope) {
-                            $scope.component = componentManager.getComponent(componentId);
+                            $scope.component = componentManager.getComponentById(componentId);
                         }]
                     }).result.then(function (data) {
-                        componentManager.removeComponent(componentId);
+                        componentManager.deleteComponent(componentId);
                         $scope.clearSelection();
                     });
                 }
@@ -504,9 +408,9 @@ directives.directive('goCampaignDesigner', [
 
             function clicked(event, coordinates) {
                 if (scope.newComponent) {
-                    scope.newComponent.x = coordinates[0];
-                    scope.newComponent.y = coordinates[1];
-                    componentManager.addComponent(scope.newComponent);
+                    var component = componentManager.createComponent(scope.newComponent);
+                    component.x(coordinates[0]);
+                    component.y(coordinates[1]);
                     scope.newComponent = null;
                     repaint();
 

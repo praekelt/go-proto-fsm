@@ -11,17 +11,20 @@
             </a>
             <ul class="dropdown-menu" role="menu">
                 <li>
-                    <a href="javascript://" class="btn-add-conversation" data-ng-click="openConversationForm()">
+                    <a href="javascript://" class="btn-add-conversation"
+                       data-ng-click="openComponentForm({ type: 'conversation' })">
                         <span class="glyphicon glyphicon-cog"></span> Conversation
                     </a>
                 </li>
                 <li>
-                    <a href="javascript://" class="btn-add-channel" data-ng-click="openChannelForm()">
+                    <a href="javascript://" class="btn-add-channel"
+                       data-ng-click="openComponentForm({ type: 'channel' })">
                         <span class="glyphicon glyphicon-road"></span> Channel
                     </a>
                 </li>
                 <li>
-                    <a href="javascript://" class="btn-add-router" data-ng-click="openRouterForm()">
+                    <a href="javascript://" class="btn-add-router"
+                       data-ng-click="openComponentForm({ type: 'router' })">
                         <span class="glyphicon glyphicon-random"></span> Router
                     </a>
                 </li>
