@@ -16,7 +16,13 @@ app.config(['$routeProvider', '$httpProvider', '$locationProvider',
         }).otherwise({
             redirectTo: '/'
         });
-        $locationProvider.html5Mode(true).hashPrefix('!');
+
+        $locationProvider
+        .html5Mode({
+            enabled: true,
+            requireBase: false
+        })
+        .hashPrefix('!');
     }
 
 ]).run(['$rootScope',
