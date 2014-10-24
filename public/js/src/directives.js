@@ -179,47 +179,40 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            // TODO: With the new release of AngularJS (1.3.x) use `$scope.$watchGroup`
-            $scope.$watch(function () {
-                return angular.toJson({
-                    id: $scope.selectedComponentId,
-                    endpointId: $scope.selectedEndpointId
-                });
-
-            }, function (newValue, oldValue) {
-                newValue = angular.fromJson(newValue);
-                oldValue = angular.fromJson(oldValue);
+            $scope.$watchGroup(['selectedComponentId', 'selectedEndpointId'], function (newValues, oldValues) {
+                var newId = newValues[0];
+                var newEndpointId = newValues[1];
+                var oldId = oldValues[0];
+                var oldEndpointId = oldValues[1];
 
                 // The very first time $watch fires this function oldValue will be the same as newValue
-                if (newValue.id == oldValue.id &&
-                        newValue.endpointId == oldValue.endpointId)
-                    return;
+                if (newId == oldId && newEndpointId == oldEndpointId) return;
 
                 // If there was a component selected, unselect it.
                 var oldComponent = null;
                 var oldEndpoint = null;
-                if (oldValue.id) {
-                    oldComponent = componentManager.getComponentById(oldValue.id);
+                if (oldId) {
+                    oldComponent = componentManager.getComponentById(oldId);
                     if (oldComponent) {
                         oldComponent.meta().selected = false;
 
                         // If the selected component had a selected endpoint, unselect it
-                        if (oldValue.endpointId) {
-                            oldEndpoint = componentManager.getComponentById(oldValue.endpointId);
+                        if (oldEndpointId) {
+                            oldEndpoint = componentManager.getComponentById(oldEndpointId);
                             oldEndpoint.meta().selected = false;
                         }
                     }
                 }
 
                 // If a new component has been selected update its metadata
-                if (newValue.id) {
-                    var component = componentManager.getComponentById(newValue.id);
+                if (newId) {
+                    var component = componentManager.getComponentById(newId);
                     component.meta().selected = true;
 
                     // If the user selected a specific endpoint update it metadata
                     var endpoint = null;
-                    if (newValue.endpointId) {
-                        endpoint = componentManager.getComponentById(newValue.endpointId);
+                    if (newEndpointId) {
+                        endpoint = componentManager.getComponentById(newEndpointId);
                         endpoint.meta().selected = true;
                     }
 

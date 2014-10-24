@@ -18,10 +18,16 @@ then install the project dependencies:
 
 # Running the app in development
 
+First run 
+
+	grunt concat 
+
+to build the CSS and JS files. Then run
+
     grunt watch &
     nodemon app
 
-then visit [http://localhost:3000](http://localhost:3000) in your browser
+and visit [http://localhost:3000](http://localhost:3000) in your browser.
 
 # Running the tests
 
