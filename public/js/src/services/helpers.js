@@ -255,6 +255,24 @@ angular.module('vumigo.services').factory('Endpoint', [
             return this.manager.getComponentById(id);
         };
 
+        Endpoint.prototype.routes = function (direction) {
+            var routes = this.manager.findComponents({ type: 'route' });
+
+            if (!_.isUndefined(direction)) {
+                routes = _.filter(routes, function (route) {
+                    if (direction == 'in') {
+                        return route.target().id == this.id;
+                    } else if (direction == 'out') {
+                        return route.source().id == this.id;
+                    } else {
+                        return false;
+                    }
+                }, this);
+            }
+
+            return routes;
+        };
+
         return Endpoint;
     }
 ]);
@@ -593,6 +611,13 @@ angular.module('vumigo.services').factory('Route', [
             return this;
         };
 
+        Route.prototype.flip = function () {
+            var source = this.datum().source;
+            this.datum().source = this.datum().target;
+            this.datum().target = source;
+            return this;
+        };
+
         return Route;
     }
 ]);
@@ -767,6 +792,36 @@ angular.module('vumigo.services').factory('Connection', [
             if (!arguments.length) return this.layout().colour;
             this.layout().colour = colour;
             return this;
+        };
+
+        Connection.prototype.flipDirection = function () {
+            var routes = this.routes();
+            if (routes.length == 2) {
+                this.manager.deleteComponent(routes[1]);
+            } else {
+                if (_.isEmpty(routes[0].target().routes('out'))) {
+                    routes[0].flip();
+                } else {
+                    // TODO: Trigger error; endpoint can have only one outgoing route
+                }
+            }
+        };
+
+        Connection.prototype.biDirectional = function () {
+            var routes = this.routes();
+            if (routes.length == 1) {
+                if (_.isEmpty(routes[0].target().routes('out'))) {
+                    this.manager.createComponent({
+                        type: 'route',
+                        connection: this,
+                        source: routes[0].target(),
+                        target: routes[0].source()
+                    });
+
+                } else {
+                    // TODO: Trigger error; endpoint can have only one outgoing route
+                }
+            }
         };
 
         return Connection;
