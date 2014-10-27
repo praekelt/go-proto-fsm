@@ -54,6 +54,16 @@ angular.module('vumigo.services').factory('Menu', ['BaseComponent',
 
         Menu.prototype = Object.create(BaseComponent.prototype);
 
+        Menu.prototype.delete = function () {
+            if (!BaseComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.items, function (item) {
+                this.manager.deleteComponent(item);
+            }, this);
+
+            return true;
+        };
+
         Menu.prototype.addItem = function (icon, event) {
             var item = this.manager.createComponent({
                 type: 'menu_item',
@@ -108,6 +118,14 @@ angular.module('vumigo.services').factory('RoutingComponent', [
 
         RoutingComponent.prototype = Object.create(BaseComponent.prototype);
 
+        RoutingComponent.prototype.delete = function () {
+            if (!BaseComponent.prototype.delete.call(this)) return false;
+
+            this.manager.deleteComponent(this.menu);
+
+            return true;
+        };
+
         RoutingComponent.prototype.initialize = function (options) {
             this.actions = options.actions;
 
@@ -146,6 +164,27 @@ angular.module('vumigo.services').factory('RoutingComponent', [
             return null;
         };
 
+        /**
+         * Serialize the component to a JSON representation.
+         */
+        RoutingComponent.prototype.toJson = function () {
+            var data = {
+                datum: this.datum(),
+                layout: this.layout()
+            };
+
+            return angular.toJson(data);
+        };
+
+        /**
+         * Restore the component from a JSON representation.
+         */
+        RoutingComponent.prototype.fromJson = function (json) {
+            var data = angular.fromJson(json);
+            this.datum(data.datum);
+            this.layout(data.layout);
+        };
+
         return RoutingComponent;
     }
 ]);
@@ -160,6 +199,16 @@ angular.module('vumigo.services').factory('Endpoint', [
         }
 
         Endpoint.prototype = Object.create(RoutingComponent.prototype);
+
+        Endpoint.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.routing_table
+                    .components[this.component.id]
+                    .endpoints[this.id];
+
+            return true;
+        };
 
         Endpoint.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -197,6 +246,15 @@ angular.module('vumigo.services').factory('Endpoint', [
             return this;
         };
 
+        Endpoint.prototype.connection = function () {
+            var id = _.find(this.data.layout.routing, function (value, key) {
+                var pattern = '(' + this.id + ':\\w+)|(\\w+:' + this.id + ')';
+                return new RegExp(pattern, 'i').test(key);
+            }, this);
+
+            return this.manager.getComponentById(id);
+        };
+
         return Endpoint;
     }
 ]);
@@ -211,6 +269,20 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
         }
 
         ConnectableComponent.prototype = Object.create(RoutingComponent.prototype);
+
+        ConnectableComponent.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.endpoints(), function (endpoint) {
+                this.manager.deleteComponent(endpoint.connection());
+                this.manager.deleteComponent(endpoint);
+            }, this);
+
+            delete this.data.routing_table.components[this.id];
+            delete this.data.layout.components[this.id];
+
+            return true;
+        };
 
         ConnectableComponent.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -392,8 +464,8 @@ angular.module('vumigo.services').factory('Conversation', [
 ]);
 
 angular.module('vumigo.services').factory('Router', [
-    'ConnectableComponent', 'GoError',
-    function (ConnectableComponent, GoError) {
+    'ConnectableComponent', 'Endpoint', 'GoError',
+    function (ConnectableComponent, Endpoint, GoError) {
 
         function Router(options) {
             options = options || {};
@@ -441,6 +513,16 @@ angular.module('vumigo.services').factory('Router', [
             }
         };
 
+        Router.prototype.addEndpoint = function (options) {
+            options.type = 'conversation_endpoint';
+            options.component = this;
+            this.manager.createComponent(options);
+        };
+
+        Router.prototype.deleteEndpoint = function (endpoint) {
+            this.manager.deleteComponent(endpoint);
+        };
+
         return Router;
     }
 ]);
@@ -456,6 +538,15 @@ angular.module('vumigo.services').factory('Route', [
         }
 
         Route.prototype = Object.create(RoutingComponent.prototype);
+
+        Route.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.routing_table.routing[this.id];
+            delete this.data.layout.routing[this.id];
+
+            return true;
+        };
 
         Route.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -517,6 +608,16 @@ angular.module('vumigo.services').factory('ControlPoint', [
         }
 
         ControlPoint.prototype = Object.create(RoutingComponent.prototype);
+
+        ControlPoint.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.layout
+                .connections[this.connection.id]
+                .path[this.index()];
+
+            return true;
+        };
 
         ControlPoint.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -590,6 +691,22 @@ angular.module('vumigo.services').factory('Connection', [
 
         Connection.prototype = Object.create(RoutingComponent.prototype);
 
+        Connection.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.points(), function (point) {
+                this.manager.deleteComponent(point);
+            }, this);
+
+            _.forEach(this.routes(), function (route) {
+                this.manager.deleteComponent(route);
+            }, this);
+
+            delete this.data.layout.connections[this.id];
+
+            return true;
+        };
+
         Connection.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
 
@@ -657,12 +774,12 @@ angular.module('vumigo.services').factory('Connection', [
 ]);
 
 angular.module('vumigo.services').factory('ComponentManager', [
-    'Endpoint', 'Conversation', 'Router', 'Channel', 'Route', 'Connection',
-    'ControlPoint', 'Menu', 'MenuItem', 'conversationLayout', 'routerLayout',
-    'channelLayout', 'connectionLayout', 'menuLayout',
-    function (Endpoint, Conversation, Router, Channel, Route, Connection,
-              ControlPoint, Menu, MenuItem, conversationLayout, routerLayout,
-              channelLayout, connectionLayout, menuLayout) {
+    'BaseComponent', 'Endpoint', 'Conversation', 'Router', 'Channel', 'Route',
+    'Connection', 'ControlPoint', 'Menu', 'MenuItem', 'conversationLayout',
+    'routerLayout', 'channelLayout', 'connectionLayout', 'menuLayout',
+    function (BaseComponent, Endpoint, Conversation, Router, Channel, Route,
+              Connection, ControlPoint, Menu, MenuItem, conversationLayout,
+              routerLayout, channelLayout, connectionLayout, menuLayout) {
 
         var layoutConversations = conversationLayout();
         var layoutRouters = routerLayout();
@@ -780,10 +897,12 @@ angular.module('vumigo.services').factory('ComponentManager', [
             return _.where(this.components, props);
         };
 
-        ComponentManager.prototype.deleteComponent = function (id) {
-            var component = this.getComponentById(id);
+        ComponentManager.prototype.deleteComponent = function (component) {
+            if (!(component instanceof BaseComponent)) {
+                component = this.getComponentById(component);
+            }
             if (_.isUndefined(component)) return;
-            if (component.delete()) delete this.components[id];
+            if (component.delete()) delete this.components[component.id];
         };
 
         ComponentManager.prototype.connectComponents = function (

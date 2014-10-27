@@ -16,6 +16,7 @@ directives.directive('goCampaignDesigner', [
     'routeComponent',
     'menuComponent',
     'ComponentManager',
+    'RoutingComponent',
     'Conversation',
     'Router',
     'Channel',
@@ -23,7 +24,8 @@ directives.directive('goCampaignDesigner', [
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
               connectionComponent, controlPointComponent, routeComponent,
-              menuComponent, ComponentManager, Conversation, Router, Channel, Endpoint) {
+              menuComponent, ComponentManager, RoutingComponent, Conversation,
+              Router, Channel, Endpoint) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
@@ -71,65 +73,61 @@ directives.directive('goCampaignDesigner', [
 
             /**
              * Open component form modal dialog.
+             *
+             * @param {options} Either an instance of `RoutingComponent`
+             *  or options for creating a new component.
              */
             $scope.openComponentForm = function (options) {
-                var templateUrl;
-                switch (options.type) {
-                    case 'conversation':
-                        templateUrl = '/templates/conversation_form_modal.html';
-                        break;
+                var component, json, editing;
+                if (options instanceof RoutingComponent) {
+                    component = options;
+                    json = component.toJson();
+                    editing = true;
 
-                    case 'router':
-                        templateUrl = '/templates/router_form_modal.html';
-                        break;
-
-                    case 'channel':
-                        templateUrl = '/templates/channel_form_modal.html';
-                        break;
-
-                    default:
-                        // TODO: Emit error signal
-                        break;
+                } else {
+                    component = componentManager.createComponent(options);
+                    editing = false;
                 }
 
-                var datum = null;
-                var layout = null;
+                var templates = {
+                    'conversation': '/templates/conversation_form_modal.html',
+                    'router': '/templates/router_form_modal.html',
+                    'channel': '/templates/channel_form_modal.html'
+                };
 
                 $modal.open({
-                    templateUrl: templateUrl,
+                    templateUrl: templates[component.type],
                     size: 'md',
                     controller: ['$scope', function ($scope) {
-                        if (!_.isUndefined(options.instance)) {
-                            $scope.instance = options.instance;
-                            $scope.data = options.instance.datum();
-                            $scope.layout = options.instance.layout();
+                        var properties = {};
 
-                            datum = _.cloneDeep($scope.data);
-                            layout = _.cloneDeep($scope.layout);
+                        $scope.component = component;
 
-                        } else {
-                            $scope.data = {};
-                            $scope.layout = {};
-                        }
-                    }]
-                }).result.then(function (result) {
-                    if (_.isUndefined(options.instance)) {
-                        $scope.newComponent = {
-                            type: options.type
+                        $scope.editing = function () {
+                            return editing;
                         };
 
-                        _.merge($scope.newComponent,
-                                result.data || {},
-                                result.layout || {});
-
-                    } else {
+                        $scope.property = function(options) {
+                            var object = options.object || component;
+                            var name = options.name;
+                            var id = object.id + '_' + name;
+                            if (!_.has(properties, id)) {
+                                properties[id] = _.bind(object[name], object);
+                            }
+                            return properties[id];
+                        };
+                    }]
+                }).result.then(function () {
+                    if (editing) {
                         $scope.refresh();
+                    } else {
+                        $scope.newComponent = component;
                     }
-
                 }, function () {
-                    if (!_.isUndefined(options.instance)) {
-                        options.instance.datum(datum);
-                        options.instance.layout(layout);
+                    if (editing) {
+                        component.fromJson(json);
+                    } else {
+                        componentManager.deleteComponent(component);
                     }
                 });
             };
@@ -137,10 +135,7 @@ directives.directive('goCampaignDesigner', [
             $scope.edit = function () {
                 if ($scope.selectedComponentId) {
                     var component = componentManager.getComponentById($scope.selectedComponentId);
-                    $scope.openComponentForm({
-                        type: component.type,
-                        instance: component
-                    });
+                    $scope.openComponentForm(component);
                 }
             };
 
@@ -162,7 +157,15 @@ directives.directive('goCampaignDesigner', [
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
                         controller: ['$scope', function ($scope) {
-                            $scope.component = componentManager.getComponentById(componentId);
+                            var component = componentManager.getComponentById(componentId);
+
+                            $scope.type = component.type;
+
+                            if (_.isFunction(component.name)) {
+                                $scope.name = component.name();
+                            } else {
+                                $scope.name = component.name;
+                            }
                         }]
                     }).result.then(function (data) {
                         componentManager.deleteComponent(componentId);
@@ -401,9 +404,8 @@ directives.directive('goCampaignDesigner', [
 
             function clicked(event, coordinates) {
                 if (scope.newComponent) {
-                    var component = componentManager.createComponent(scope.newComponent);
-                    component.x(coordinates[0]);
-                    component.y(coordinates[1]);
+                    scope.newComponent.x(coordinates[0]);
+                    scope.newComponent.y(coordinates[1]);
                     scope.newComponent = null;
                     repaint();
 
