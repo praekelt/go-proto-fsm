@@ -220,10 +220,12 @@ angular.module('vumigo.services').factory('Endpoint', [
                 .endpoints;
 
             if (!_.has(data, this.id)) {
+                var name = options.name;
+                if (_.isUndefined(name)) name = "default";
                 data[this.id] = {
                     type: this.type,
                     uuid: this.id,
-                    name: options.name || "default"
+                    name: name
                 }
             }
         };
@@ -515,7 +517,9 @@ angular.module('vumigo.services').factory('Router', [
         };
 
         Router.prototype.addEndpoint = function (options) {
+            options = options || {};
             options.type = 'conversation_endpoint';
+            options.name = options.name || "";
             options.component = this;
             this.manager.createComponent(options);
         };
