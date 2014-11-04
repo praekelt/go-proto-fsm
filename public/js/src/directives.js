@@ -101,25 +101,6 @@ directives.directive('goCampaignDesigner', [
             };
 
             $scope.add = function (options) {
-                switch (options.type) {
-                    case 'conversation':
-                        options.name = 'New conversation';
-                        options.conversation_type = 'bulk-message';
-                        break;
-
-                    case 'channel':
-                        options.name = 'New channel';
-                        break;
-
-                    case 'router':
-                        options.router_type = 'keyword';
-                        options.name = 'New router';
-                        break;
-
-                    default:
-                        // TODO: Unsupported component type
-                }
-
                 var component = componentManager.createComponent(options);
                 $scope.openComponentForm({
                     component: component

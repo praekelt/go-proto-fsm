@@ -280,8 +280,8 @@ angular.module('vumigo.services').factory('Endpoint', [
 ]);
 
 angular.module('vumigo.services').factory('ConnectableComponent', [
-    'RoutingComponent', 'GoError',
-    function (RoutingComponent, GoError) {
+    'RoutingComponent',
+    function (RoutingComponent) {
 
         function ConnectableComponent(options) {
             options = options || {};
@@ -317,11 +317,6 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
                     });
                 }, this);
             }
-        };
-
-        ConnectableComponent.prototype.validate = function () {
-            RoutingComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().name)) throw new GoError("Component name is empty");
         };
 
         ConnectableComponent.prototype.datum = function (datum) {
@@ -428,8 +423,8 @@ angular.module('vumigo.services').factory('Channel', [
 ]);
 
 angular.module('vumigo.services').factory('Conversation', [
-    'ConnectableComponent', 'GoError',
-    function (ConnectableComponent, GoError) {
+    'ConnectableComponent',
+    function (ConnectableComponent) {
 
         function Conversation(options) {
             options = options || {};
@@ -466,13 +461,6 @@ angular.module('vumigo.services').factory('Conversation', [
             }
         };
 
-        Conversation.prototype.validate = function () {
-            ConnectableComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().conversation_type)) {
-                throw new GoError("Conversation type is empty");
-            }
-        };
-
         Conversation.prototype.colour = function (colour) {
             if (!arguments.length) return this.layout().colour;
             this.layout().colour = colour;
@@ -484,8 +472,8 @@ angular.module('vumigo.services').factory('Conversation', [
 ]);
 
 angular.module('vumigo.services').factory('Router', [
-    'ConnectableComponent', 'Endpoint', 'GoError',
-    function (ConnectableComponent, Endpoint, GoError) {
+    'ConnectableComponent', 'Endpoint',
+    function (ConnectableComponent, Endpoint) {
 
         function Router(options) {
             options = options || {};
@@ -523,13 +511,6 @@ angular.module('vumigo.services').factory('Router', [
                     type: 'conversation_endpoint',
                     component: this
                 });
-            }
-        };
-
-        Router.prototype.validate = function () {
-            ConnectableComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().router_type)) {
-                throw new GoError("Router type is empty");
             }
         };
 

@@ -550,20 +550,6 @@ describe('Conversation', function () {
         expect(d).to.deep.equal({ x: 0, y: 0, colour: 'white' });
     }));
 
-    it('should validate new component', inject(function (Conversation, GoError) {
-        var fn = function () {
-            new Conversation({
-                id: 'conversation2',
-                data: data,
-                manager: manager,
-                name: "Conversation 2",
-                description: "Test conversation"
-            });
-        };
-
-        expect(fn).to.throw(GoError, /Conversation type is empty/);
-    }));
-
 });
 
 describe('Router', function () {
@@ -667,20 +653,6 @@ describe('Router', function () {
 
         d = data.layout.components['router2'];
         expect(d).to.deep.equal({ x: 0, y: 0 });
-    }));
-
-    it('should validate new component', inject(function (Router, GoError) {
-        var fn = function () {
-            new Router({
-                id: 'router2',
-                data: data,
-                manager: manager,
-                name: "Router 2",
-                description: "Test router"
-            });
-        };
-
-        expect(fn).to.throw(GoError, /Router type is empty/);
     }));
 
 });
