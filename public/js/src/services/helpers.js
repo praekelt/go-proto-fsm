@@ -247,12 +247,14 @@ angular.module('vumigo.services').factory('Endpoint', [
         };
 
         Endpoint.prototype.connection = function () {
-            var id = _.find(this.data.layout.routing, function (value, key) {
-                var pattern = '(' + this.id + ':\\w+)|(\\w+:' + this.id + ')';
-                return new RegExp(pattern, 'i').test(key);
+            var connectionId;
+            _.forEach(this.data.layout.connections, function (connection, id) {
+                if (_.has(connection.endpoints, this.id)) {
+                    connectionId = id;
+                    return false;
+                }
             }, this);
-
-            return this.manager.getComponentById(id);
+            return this.manager.getComponentById(connectionId);
         };
 
         Endpoint.prototype.routes = function (direction) {
