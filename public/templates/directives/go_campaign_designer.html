@@ -12,19 +12,19 @@
             <ul class="dropdown-menu" role="menu">
                 <li>
                     <a href="javascript://" class="btn-add-conversation"
-                       data-ng-click="openComponentForm({ type: 'conversation', conversation_type: 'bulk-message', name: 'New conversation' })">
+                       data-ng-click="add({ type: 'conversation' })">
                         <span class="glyphicon glyphicon-cog"></span> Conversation
                     </a>
                 </li>
                 <li>
                     <a href="javascript://" class="btn-add-channel"
-                       data-ng-click="openComponentForm({ type: 'channel', name: 'New channel' })">
+                       data-ng-click="add({ type: 'channel' })">
                         <span class="glyphicon glyphicon-road"></span> Channel
                     </a>
                 </li>
                 <li>
                     <a href="javascript://" class="btn-add-router"
-                       data-ng-click="openComponentForm({ type: 'router', router_type: 'keyword', name: 'New conversation' })">
+                       data-ng-click="add({ type: 'router' })">
                         <span class="glyphicon glyphicon-random"></span> Router
                     </a>
                 </li>

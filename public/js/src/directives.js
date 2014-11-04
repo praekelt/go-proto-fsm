@@ -71,44 +71,24 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();
             };
 
-            /**
-             * Open component form modal dialog.
-             *
-             * @param {options} Either an instance of `RoutingComponent`
-             *  or options for creating a new component.
-             */
             $scope.openComponentForm = function (options) {
-                var component, json, editing;
-                if (options instanceof RoutingComponent) {
-                    component = options;
-                    json = component.toJson();
-                    editing = true;
-
-                } else {
-                    component = componentManager.createComponent(options);
-                    editing = false;
-                }
-
                 var templates = {
                     'conversation': '/templates/conversation_form_modal.html',
                     'router': '/templates/router_form_modal.html',
                     'channel': '/templates/channel_form_modal.html'
                 };
 
-                $modal.open({
-                    templateUrl: templates[component.type],
+                return $modal.open({
+                    templateUrl: templates[options.component.type],
                     size: 'md',
                     controller: ['$scope', function ($scope) {
                         var properties = {};
 
-                        $scope.component = component;
-
-                        $scope.editing = function () {
-                            return editing;
-                        };
+                        $scope.component = options.component;
+                        $scope.editing = options.editing;
 
                         $scope.property = function(options) {
-                            var object = options.object || component;
+                            var object = options.object || $scope.component;
                             var name = options.name;
                             var id = object.id + '_' + name;
                             if (!_.has(properties, id)) {
@@ -117,25 +97,53 @@ directives.directive('goCampaignDesigner', [
                             return properties[id];
                         };
                     }]
-                }).result.then(function () {
-                    if (editing) {
-                        $scope.refresh();
-                    } else {
-                        $scope.newComponent = component;
-                    }
+                }).result;
+            };
+
+            $scope.add = function (options) {
+                switch (options.type) {
+                    case 'conversation':
+                        options.name = 'New conversation';
+                        options.conversation_type = 'bulk-message';
+                        break;
+
+                    case 'channel':
+                        options.name = 'New channel';
+                        break;
+
+                    case 'router':
+                        options.router_type = 'keyword';
+                        options.name = 'New router';
+                        break;
+
+                    default:
+                        // TODO: Unsupported component type
+                }
+
+                var component = componentManager.createComponent(options);
+                $scope.openComponentForm({
+                    component: component
+                }).then(function () {
+                    $scope.newComponent = component;
                 }, function () {
-                    if (editing) {
-                        component.fromJson(json);
-                    } else {
-                        componentManager.deleteComponent(component);
-                    }
+                    componentManager.deleteComponent(component);
                 });
             };
 
             $scope.edit = function () {
                 if ($scope.selectedComponentId) {
-                    var component = componentManager.getComponentById($scope.selectedComponentId);
-                    $scope.openComponentForm(component);
+                    var component = componentManager
+                        .getComponentById($scope.selectedComponentId);
+
+                    var json = component.toJson();
+                    $scope.openComponentForm({
+                        component: component,
+                        editing: true
+                    }).then(function () {
+                        $scope.refresh();
+                    }, function () {
+                        component.fromJson(json);
+                    });
                 }
             };
 
