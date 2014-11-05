@@ -651,4 +651,62 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.connection')).to.have.length(0);
     }));
 
+    it('should flip connection direction', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
+    it('should make connection bi-directional', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
 });
