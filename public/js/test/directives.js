@@ -658,6 +658,54 @@ describe('goCampaignDesigner', function () {
         expect(datum.name()).to.equal("K");
     }));
 
+    it('should add router endpoint', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        expect(datum.endpoints('conversation_endpoint')).to.have.length(2);
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        $modal.find('a.keyword-add').click();
+
+        var $keywordField = $modal.find('input#field-endpoint-2');
+        expect($keywordField).to.have.length(1);
+        $keywordField.scope().component.endpoints('conversation_endpoint')[2].name("test");
+
+        $modal.find('button.btn-primary').click();  // click OK
+
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        var endpoints = datum.endpoints('conversation_endpoint');
+        expect(endpoints).to.have.length(3);
+        expect(endpoints[2].name()).to.equal("test");
+    }));
+
+    it.only('should delete router endpoint', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        expect(datum.endpoints('conversation_endpoint')).to.have.length(2);
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        $modal.find('label[for="field-endpoint-2"] a.btn-link').click();
+
+        $modal.find('button.btn-primary').click();  // click OK
+
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        var endpoints = datum.endpoints('conversation_endpoint');
+        expect(endpoints).to.have.length(1);
+    }));
+
     it('should delete component', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 

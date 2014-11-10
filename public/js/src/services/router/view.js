@@ -35,10 +35,10 @@ angular.module('vumigo.services').factory('routerComponent', ['$rootScope', 'bou
                         return d.meta().selected;
                     });
 
-                selection.selectAll('.disc')
+                selection.select('.disc')
                     .attr('r', function (d) { return d.meta().layout.r; });
 
-                selection.selectAll('.name')
+                selection.select('.name')
                     .style('font-size', function (d) {
                         return d.meta().layout.r;
                     })

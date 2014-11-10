@@ -14,7 +14,7 @@
                     <label for="field-endpoint-{{ $index }}">
                         <span>Keyword #{{ $index + 1 }}</span>
                         <a class="btn btn-link"
-                           data-ng-click="component.deleteEndpoint(endpoint)">
+                           data-ng-click="component.deleteEndpoint(endpoint); form.$setDirty()">
                             <i class="fa fa-times-circle"></i>&nbsp;Remove keyword
                         </a>
                     </label>
