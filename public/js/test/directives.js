@@ -684,7 +684,7 @@ describe('goCampaignDesigner', function () {
         expect(endpoints[2].name()).to.equal("test");
     }));
 
-    it.only('should delete router endpoint', inject(function () {
+    it('should delete router endpoint', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var router = element.find('.router').eq(0);
