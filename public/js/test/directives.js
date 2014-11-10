@@ -832,4 +832,68 @@ describe('goCampaignDesigner', function () {
         expect(scope.data.routing_table.routing).to.deep.equal(expected);
     }));
 
+    it('should not flip bi-directional connection', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        // Make bi-directional
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        // Try to flip
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
+    it('should toggle bi-directional connection', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        // Make bi-directional
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        // Try to flip
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
 });
