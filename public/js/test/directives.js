@@ -406,6 +406,36 @@ describe('goCampaignDesigner', function () {
         expect(datum.colour()).to.equal("#000000");
     }));
 
+    it('should not edit conversation', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var conversation = element.find('.conversation').eq(0);
+        var datum = conversation.get(0).__data__;
+        expect(datum.name()).to.equal("Register");
+        expect(datum.description()).to.equal("4 Steps");
+        expect(datum.colour()).to.equal("#f82943");
+
+        conversation.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("Test");
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        $descriptionField.scope().component.description("Test conversation");
+
+        var $colourField = $modal.find('input#field-colour');
+        $colourField.scope().component.colour("#000000");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("Register");
+        expect(datum.description()).to.equal("4 Steps");
+        expect(datum.colour()).to.equal("#f82943");
+    }));
+
     it('should open channel add dialog', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
@@ -490,6 +520,31 @@ describe('goCampaignDesigner', function () {
 
         expect(datum.name()).to.equal("Test");
         expect(datum.description()).to.equal("Test channel");
+    }));
+
+    it('should not edit channel', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var channel = element.find('.channel').eq(0);
+        var datum = channel.get(0).__data__;
+        expect(datum.name()).to.equal("SMS");
+        expect(datum.description()).to.equal("082 335 29 24");
+
+        channel.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("Test");
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        $descriptionField.scope().component.description("Test channel");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("SMS");
+        expect(datum.description()).to.equal("082 335 29 24");
     }));
 
     it('should open router add dialog', inject(function () {
@@ -581,6 +636,26 @@ describe('goCampaignDesigner', function () {
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
 
         expect(datum.name()).to.equal("T");
+    }));
+
+    it('should not edit router', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.name()).to.equal("K");
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("T");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("K");
     }));
 
     it('should delete component', inject(function () {
