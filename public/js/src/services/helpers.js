@@ -783,9 +783,7 @@ angular.module('vumigo.services').factory('Connection', [
 
         Connection.prototype.flipDirection = function () {
             var routes = this.routes();
-            if (routes.length == 2) {
-                this.manager.deleteComponent(routes[1]);
-            } else {
+            if (routes.length == 1) {  // do nothing for bi-directional connections
                 if (_.isEmpty(routes[0].target().routes('out'))) {
                     routes[0].flip();
                 } else {
@@ -796,7 +794,11 @@ angular.module('vumigo.services').factory('Connection', [
 
         Connection.prototype.biDirectional = function () {
             var routes = this.routes();
-            if (routes.length == 1) {
+            if (routes.length == 2) {
+                // If the connection is already bi-directional
+                // remove the second route
+                this.manager.deleteComponent(routes[1]);
+            } else {
                 if (_.isEmpty(routes[0].target().routes('out'))) {
                     this.manager.createComponent({
                         type: 'route',
