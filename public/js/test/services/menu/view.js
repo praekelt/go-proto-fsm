@@ -16,11 +16,11 @@ describe('menuComponent', function () {
 
         menu = new Menu({
             manager: manager,
-            component: { id: 'component1' },
+            component: { id: 'component1' }
         });
 
-        menu.addItem('icon1', 'go:action1');
-        menu.addItem('icon2', 'go:action2');
+        menu.addItem('icon1', 'go:action1', "Action1");
+        menu.addItem('icon2', 'go:action2', "Action2");
 
         menu.meta().layout = { x: 50, y: 50 };
         menu.meta().active = false;
@@ -56,6 +56,10 @@ describe('menuComponent', function () {
         expect(text.eq(0).attr('x')).to.equal('10');
         expect(text.eq(0).attr('dy')).to.equal('20');
         expect(text.eq(0).text()).to.equal('icon1');
+
+        var title = item.find('title');
+        expect(title).to.have.length(1);
+        expect(title.eq(0).text()).to.equal('Action1');
     }));
 
     it('should trigger action on click', inject(function () {

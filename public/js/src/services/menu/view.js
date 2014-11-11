@@ -46,6 +46,7 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
 
                 selection.append('rect');
                 selection.append('text');
+                selection.append('title');
             }
 
             function update(selection) {
@@ -73,6 +74,9 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
                     })
                     .attr('x', function (d) { return d.meta().layout.text.x; })
                     .attr('dy', function (d) { return d.meta().layout.text.dy; });
+
+                selection.selectAll('title')
+                    .text(function (d) { return d.title; });
             }
 
             function exit(selection) {

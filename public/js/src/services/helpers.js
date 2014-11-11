@@ -32,6 +32,7 @@ angular.module('vumigo.services').factory('MenuItem', ['BaseComponent',
             this.menu = options.menu;
             this.icon = options.icon;
             this.event = options.event;
+            this.title = options.title;
         }
 
         MenuItem.prototype = Object.create(BaseComponent.prototype);
@@ -64,12 +65,13 @@ angular.module('vumigo.services').factory('Menu', ['BaseComponent',
             return true;
         };
 
-        Menu.prototype.addItem = function (icon, event) {
+        Menu.prototype.addItem = function (icon, event, title) {
             var item = this.manager.createComponent({
                 type: 'menu_item',
                 menu: this,
                 icon: icon,
-                event: event
+                event: event,
+                title: title
             });
 
             this.items.push(item);
@@ -86,23 +88,28 @@ angular.module('vumigo.services').factory('RoutingComponent', [
         var actions = {
             'edit': {
                 icon: '\uf040',
-                event: 'go:campaignDesignerEdit'
+                event: 'go:campaignDesignerEdit',
+                title: "Edit"
             },
             'connect': {
                 icon: '\uf0c1',
-                event: 'go:campaignDesignerConnect'
+                event: 'go:campaignDesignerConnect',
+                title: "Connect"
             },
             'flipDirection': {
                 icon: '\uf065',
-                event: 'go:campaignDesignerFlipDirection'
+                event: 'go:campaignDesignerFlipDirection',
+                title: "Reverse"
             },
             'biDirectional': {
                 icon: '\uf066',
-                event: 'go:campaignDesignerBiDirectional'
+                event: 'go:campaignDesignerBiDirectional',
+                title: "Both directions"
             },
             'delete': {
                 icon: '\uf00d',
-                event: 'go:campaignDesignerRemove'
+                event: 'go:campaignDesignerRemove',
+                title: "Delete"
             }
         };
 
@@ -138,7 +145,7 @@ angular.module('vumigo.services').factory('RoutingComponent', [
 
                 _.forEach(this.actions, function (name) {
                     var action = actions[name];
-                    this.menu.addItem(action.icon, action.event);
+                    this.menu.addItem(action.icon, action.event, action.title);
                 }, this);
             }
         };
