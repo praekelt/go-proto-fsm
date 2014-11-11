@@ -1,35 +1,34 @@
 <div class="modal-header">
-    <h3 class="modal-title"><span class="glyphicon glyphicon-plus"></span>&nbsp;<span data-ng-if="!router">Add router</span><span data-ng-if="router">Edit router</span></h3>
+    <h3 class="modal-title"><span class="glyphicon glyphicon-plus"></span>&nbsp;<span data-ng-if="!editing">Add router</span><span data-ng-if="editing">Edit router</span></h3>
 </div>
 <div class="modal-body">
-    <form name="form">
+    <form name="form" data-ng-model-options="{ getterSetter: true }">
         <div class="form-group required" ng-class="{ 'has-error': form.name.$invalid && form.name.$dirty }">
             <label for="field-name">Name</label>
             <input id="field-name" type="text" name="name" class="form-control"
-                   data-ng-model="data.name" />
+                   data-ng-model="property({ name: 'name' })" />
         </div>
-        <div data-ng-repeat="endpoint in data.endpoints track by $index">
+        <div data-ng-repeat="endpoint in component.endpoints() track by $index">
             <ng-form name="f">
                 <div class="form-group">
                     <label for="field-endpoint-{{ $index }}">
                         <span>Keyword #{{ $index + 1 }}</span>
                         <a class="btn btn-link"
-                           data-ng-show="!endpoint.connected"
-                           data-ng-click="removeEndpoint(form, $index)">
+                           data-ng-click="component.deleteEndpoint(endpoint); form.$setDirty()">
                             <i class="fa fa-times-circle"></i>&nbsp;Remove keyword
                         </a>
                     </label>
                     <input id="field-endpoint-{{ $index }}" type="text" name="endpoint{{ $index }}"
-                           class="form-control" data-ng-model="endpoint.name"></input>
+                           class="form-control" data-ng-model="property({ object: endpoint, name: 'name' })"></input>
                 </div>
             </ng-form>
         </div>
-        <a class="btn btn-link" data-ng-click="addEndpoint(form)">
+        <a class="btn btn-link keyword-add" data-ng-click="component.addEndpoint(); form.$setDirty()">
             <i class="fa fa-plus-circle"></i>&nbsp;<span>Add keyword</span>
         </a>
     </form>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary" data-ng-click="$close(data)" data-ng-disabled="form.$pristine || form.$invalid">OK</button>
+    <button class="btn btn-primary" data-ng-click="$close()" data-ng-disabled="form.$pristine || form.$invalid">OK</button>
     <button class="btn btn-warning" data-ng-click="$dismiss('cancel')">Cancel</button>
 </div>

@@ -308,7 +308,7 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.connection')).to.have.length(0);
     });
 
-    it.skip('should open conversation add dialog', inject(function () {
+    it('should open conversation add dialog', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         expect($('.modal-dialog')).to.have.length(0);
@@ -320,20 +320,20 @@ describe('goCampaignDesigner', function () {
 
         var $nameField = $modal.find('input#field-name');
         expect($nameField).to.have.length(1);
-        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+        expect($nameField.attr('data-ng-model')).to.equal("property({ name: 'name' })");
 
         var $descriptionField = $modal.find('textarea#field-description');
         expect($descriptionField).to.have.length(1);
-        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
+        expect($descriptionField.attr('data-ng-model')).to.equal("property({ name: 'description' })");
 
         var $colourField = $modal.find('input#field-colour');
         expect($colourField).to.have.length(1);
-        expect($colourField.attr('data-ng-model')).to.equal('data.colour');
+        expect($colourField.attr('data-ng-model')).to.equal("property({ name: 'colour' })");
 
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close()');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
@@ -341,23 +341,27 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
-    it.skip('should add new conversation', inject(function (rfc4122, Endpoint) {
+    it('should add new conversation', inject(function (rfc4122, Endpoint) {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var stub = sinon.stub(rfc4122, 'v4');
         stub.onCall(0).returns('conversation3');
-        stub.onCall(1).returns('endpoint8');
+        stub.onCall(1).returns('menu1');
+        stub.onCall(2).returns('menu-item1');
+        stub.onCall(3).returns('menu-item2');
+        stub.onCall(4).returns('menu-item3');
+        stub.onCall(5).returns('endpoint8');
 
         element.find('.nav .btn-add-conversation').click();  // open modal
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "Conversation 3";
+        $nameField.scope().component.name("Conversation 3");
 
         var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test conversation";
+        $descriptionField.scope().component.description("Test conversation");
 
         var $colourField = $('.modal-dialog').find('input#field-colour');
-        $colourField.scope().data.colour = "#000000";
+        $colourField.scope().component.colour("#000000");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
         element.find('.container').d3().simulate('mousedown');  // select position on canvas
@@ -367,42 +371,72 @@ describe('goCampaignDesigner', function () {
 
         var datum = conversations.get(2).__data__;
         expect(datum.id).to.equal("conversation3");
-        expect(datum.name).to.equal("Conversation 3");
-        expect(datum.description).to.equal("Test conversation");
-        expect(datum.endpoints).to.have.length(1);
-        expect(datum.endpoints[0].id).to.equal("endpoint8");
-        expect(datum.endpoints[0].name).to.equal("default");
+        expect(datum.name()).to.equal("Conversation 3");
+        expect(datum.description()).to.equal("Test conversation");
+        expect(datum.endpoints()).to.have.length(1);
+        expect(datum.endpoints()[0].id).to.equal("endpoint8");
+        expect(datum.endpoints()[0].name()).to.equal("default");
     }));
 
-    it.skip('should edit conversation', inject(function () {
+    it('should edit conversation', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var conversation = element.find('.conversation').eq(0);
         var datum = conversation.get(0).__data__;
-        expect(datum.name).to.equal("Register");
-        expect(datum.description).to.equal("4 Steps");
-        expect(datum.colour).to.equal("#f82943");
+        expect(datum.name()).to.equal("Register");
+        expect(datum.description()).to.equal("4 Steps");
+        expect(datum.colour()).to.equal("#f82943");
 
         conversation.d3().simulate('dragstart');
         element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "Test";
+        $nameField.scope().component.name("Test");
 
         var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test conversation";
+        $descriptionField.scope().component.description("Test conversation");
 
         var $colourField = $('.modal-dialog').find('input#field-colour');
-        $colourField.scope().data.colour = "#000000";
+        $colourField.scope().component.colour("#000000");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
 
-        expect(datum.name).to.equal("Test");
-        expect(datum.description).to.equal("Test conversation");
-        expect(datum.colour).to.equal("#000000");
+        expect(datum.name()).to.equal("Test");
+        expect(datum.description()).to.equal("Test conversation");
+        expect(datum.colour()).to.equal("#000000");
     }));
 
-    it.skip('should open channel add dialog', inject(function () {
+    it('should not edit conversation', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var conversation = element.find('.conversation').eq(0);
+        var datum = conversation.get(0).__data__;
+        expect(datum.name()).to.equal("Register");
+        expect(datum.description()).to.equal("4 Steps");
+        expect(datum.colour()).to.equal("#f82943");
+
+        conversation.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("Test");
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        $descriptionField.scope().component.description("Test conversation");
+
+        var $colourField = $modal.find('input#field-colour');
+        $colourField.scope().component.colour("#000000");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("Register");
+        expect(datum.description()).to.equal("4 Steps");
+        expect(datum.colour()).to.equal("#f82943");
+    }));
+
+    it('should open channel add dialog', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         expect($('.modal-dialog')).to.have.length(0);
@@ -414,16 +448,16 @@ describe('goCampaignDesigner', function () {
 
         var $nameField = $modal.find('input#field-name');
         expect($nameField).to.have.length(1);
-        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+        expect($nameField.attr('data-ng-model')).to.equal("property({ name: 'name'})");
 
         var $descriptionField = $modal.find('textarea#field-description');
         expect($descriptionField).to.have.length(1);
-        expect($descriptionField.attr('data-ng-model')).to.equal('data.description');
+        expect($descriptionField.attr('data-ng-model')).to.equal("property({ name: 'description'})");
 
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close()');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
@@ -431,20 +465,24 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
-    it.skip('should add new channel', inject(function (rfc4122, Endpoint) {
+    it('should add new channel', inject(function (rfc4122, Endpoint) {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var stub = sinon.stub(rfc4122, 'v4');
         stub.onCall(0).returns('channel3');
-        stub.onCall(1).returns('endpoint8');
+        stub.onCall(1).returns('menu1');
+        stub.onCall(2).returns('menu-item1');
+        stub.onCall(3).returns('menu-item2');
+        stub.onCall(4).returns('menu-item3');
+        stub.onCall(5).returns('endpoint8');
 
         element.find('.nav .btn-add-channel').click();  // open modal
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "Channel 3";
+        $nameField.scope().component.name("Channel 3");
 
         var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test channel";
+        $descriptionField.scope().component.description("Test channel");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
         element.find('.container').d3().simulate('mousedown');  // select position on canvas
@@ -454,37 +492,62 @@ describe('goCampaignDesigner', function () {
 
         var datum = channels.get(2).__data__;
         expect(datum.id).to.equal("channel3");
-        expect(datum.name).to.equal("Channel 3");
-        expect(datum.description).to.equal("Test channel");
-        expect(datum.endpoints).to.have.length(1);
-        expect(datum.endpoints[0].id).to.equal("endpoint8");
-        expect(datum.endpoints[0].name).to.equal("default");
+        expect(datum.name()).to.equal("Channel 3");
+        expect(datum.description()).to.equal("Test channel");
+        expect(datum.endpoints()).to.have.length(1);
+        expect(datum.endpoints()[0].id).to.equal("endpoint8");
+        expect(datum.endpoints()[0].name()).to.equal("default");
     }));
 
-    it.skip('should edit channel', inject(function () {
+    it('should edit channel', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var channel = element.find('.channel').eq(0);
         var datum = channel.get(0).__data__;
-        expect(datum.name).to.equal("SMS");
-        expect(datum.description).to.equal("082 335 29 24");
+        expect(datum.name()).to.equal("SMS");
+        expect(datum.description()).to.equal("082 335 29 24");
 
         channel.d3().simulate('dragstart');
         element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "Test";
+        $nameField.scope().component.name("Test");
 
         var $descriptionField = $('.modal-dialog').find('textarea#field-description');
-        $descriptionField.scope().data.description = "Test channel";
+        $descriptionField.scope().component.description("Test channel");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
 
-        expect(datum.name).to.equal("Test");
-        expect(datum.description).to.equal("Test channel");
+        expect(datum.name()).to.equal("Test");
+        expect(datum.description()).to.equal("Test channel");
     }));
 
-    it.skip('should open router add dialog', inject(function () {
+    it('should not edit channel', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var channel = element.find('.channel').eq(0);
+        var datum = channel.get(0).__data__;
+        expect(datum.name()).to.equal("SMS");
+        expect(datum.description()).to.equal("082 335 29 24");
+
+        channel.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("Test");
+
+        var $descriptionField = $modal.find('textarea#field-description');
+        $descriptionField.scope().component.description("Test channel");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("SMS");
+        expect(datum.description()).to.equal("082 335 29 24");
+    }));
+
+    it('should open router add dialog', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         expect($('.modal-dialog')).to.have.length(0);
@@ -496,16 +559,16 @@ describe('goCampaignDesigner', function () {
 
         var $nameField = $modal.find('input#field-name');
         expect($nameField).to.have.length(1);
-        expect($nameField.attr('data-ng-model')).to.equal('data.name');
+        expect($nameField.attr('data-ng-model')).to.equal("property({ name: 'name' })");
 
         var $endpointField = $modal.find('input#field-endpoint-0');
         expect($endpointField).to.have.length(1);
-        expect($endpointField.attr('data-ng-model')).to.equal('endpoint.name');
+        expect($endpointField.attr('data-ng-model')).to.equal("property({ object: endpoint, name: 'name' })");
 
         var $okButton = $modal.find('button.btn-primary');
         expect($okButton).to.have.length(1);
         expect($okButton.text()).to.equal("OK");
-        expect($okButton.attr('data-ng-click')).to.equal('$close(data)');
+        expect($okButton.attr('data-ng-click')).to.equal('$close()');
 
         var $cancelButton = $modal.find('button.btn-warning');
         expect($cancelButton).to.have.length(1);
@@ -513,24 +576,28 @@ describe('goCampaignDesigner', function () {
         expect($cancelButton.attr('data-ng-click')).to.equal("$dismiss('cancel')");
     }));
 
-    it.skip('should add new router', inject(function (rfc4122, Endpoint) {
+    it('should add new router', inject(function (rfc4122, Endpoint) {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var stub = sinon.stub(rfc4122, 'v4');
-        stub.onCall(0).returns('endpoint8');
-        stub.onCall(1).returns('router2');
-        stub.onCall(2).returns('endpoint9');
-        stub.onCall(3).returns('endpoint10');
+        stub.onCall(0).returns('router2');
+        stub.onCall(1).returns('menu1');
+        stub.onCall(2).returns('menu-item1');
+        stub.onCall(3).returns('menu-item2');
+        stub.onCall(4).returns('menu-item3');
+        stub.onCall(5).returns('endpoint8');
+        stub.onCall(6).returns('endpoint9');
+        stub.onCall(7).returns('endpoint10');
 
         element.find('.nav .btn-add-router').click();  // open modal
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "Router 2";
+        $nameField.scope().component.name("Router 2");
 
-        var $endpointField = $('.modal-dialog').find('input#field-endpoint-0');
-        $endpointField.scope().data.endpoints = [{
-            name: "Keyword 1"
-        }];
+        $('.modal-dialog').find('.keyword-add').click();
+
+        var $endpointField = $('.modal-dialog').find('input#field-endpoint-2');
+        $nameField.scope().component.endpoints()[2].name("Keyword 1");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
         element.find('.container').d3().simulate('mousedown');  // select position on canvas
@@ -540,38 +607,106 @@ describe('goCampaignDesigner', function () {
 
         var datum = routers.get(1).__data__;
         expect(datum.id).to.equal("router2");
-        expect(datum.name).to.equal("Router 2");
-        expect(datum.endpoints).to.have.length(3);
-        expect(datum.endpoints[0].id).to.equal("endpoint8");
-        expect(datum.endpoints[0].name).to.equal("Keyword 1");
-        expect(datum.endpoints[0].accepts).to.deep.equal(['conversation']);
-        expect(datum.endpoints[1].id).to.equal("endpoint9");
-        expect(datum.endpoints[1].name).to.equal("default");
-        expect(datum.endpoints[1].accepts).to.deep.equal(['conversation']);
-        expect(datum.endpoints[2].id).to.equal("endpoint10");
-        expect(datum.endpoints[2].name).to.equal("default");
-        expect(datum.endpoints[2].accepts).to.deep.equal(['channel']);
+        expect(datum.name()).to.equal("Router 2");
+        expect(datum.endpoints()).to.have.length(3);
+        expect(datum.endpoints()[0].id).to.equal("endpoint8");
+        expect(datum.endpoints()[0].type).to.equal('channel_endpoint');
+        expect(datum.endpoints()[0].name()).to.equal("default");
+        expect(datum.endpoints()[1].id).to.equal("endpoint9");
+        expect(datum.endpoints()[1].type).to.equal('conversation_endpoint');
+        expect(datum.endpoints()[1].name()).to.equal("default");
+        expect(datum.endpoints()[2].id).to.equal("endpoint10");
+        expect(datum.endpoints()[2].type).to.equal('conversation_endpoint');
+        expect(datum.endpoints()[2].name()).to.equal("Keyword 1");
     }));
 
-    it.skip('should edit router', inject(function () {
+    it('should edit router', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         var router = element.find('.router').eq(0);
         var datum = router.get(0).__data__;
-        expect(datum.name).to.equal("K");
+        expect(datum.name()).to.equal("K");
 
         router.d3().simulate('dragstart');
         element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
 
         var $nameField = $('.modal-dialog').find('input#field-name');
-        $nameField.scope().data.name = "T";
+        $nameField.scope().component.name("T");
 
         $('.modal-dialog').find('button.btn-primary').click();  // click OK
 
-        expect(datum.name).to.equal("T");
+        expect(datum.name()).to.equal("T");
     }));
 
-    it.skip('should delete component', inject(function () {
+    it('should not edit router', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.name()).to.equal("K");
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        var $nameField = $modal.find('input#field-name');
+        $nameField.scope().component.name("T");
+
+        $modal.find('button.btn-warning').click();  // click Cancel
+
+        expect(datum.name()).to.equal("K");
+    }));
+
+    it('should add router endpoint', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        expect(datum.endpoints('conversation_endpoint')).to.have.length(2);
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+        $modal.find('a.keyword-add').click();
+
+        var $keywordField = $modal.find('input#field-endpoint-2');
+        expect($keywordField).to.have.length(1);
+        $keywordField.scope().component.endpoints('conversation_endpoint')[2].name("test");
+
+        $modal.find('button.btn-primary').click();  // click OK
+
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        var endpoints = datum.endpoints('conversation_endpoint');
+        expect(endpoints).to.have.length(3);
+        expect(endpoints[2].name()).to.equal("test");
+    }));
+
+    it('should delete router endpoint', inject(function () {
+        angular.element(document.body).append(element);  // attach element to DOM
+
+        var router = element.find('.router').eq(0);
+        var datum = router.get(0).__data__;
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        expect(datum.endpoints('conversation_endpoint')).to.have.length(2);
+
+        router.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        var $modal = $('.modal-dialog');
+
+        $modal.find('label[for="field-endpoint-2"] a.btn-link').click();
+
+        $modal.find('button.btn-primary').click();  // click OK
+
+        expect(datum.endpoints('channel_endpoint')).to.have.length(1);
+        var endpoints = datum.endpoints('conversation_endpoint');
+        expect(endpoints).to.have.length(1);
+    }));
+
+    it('should delete component', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         expect($('.modal-dialog')).to.have.length(0);
@@ -605,7 +740,7 @@ describe('goCampaignDesigner', function () {
         expect(element.find('.conversation')).to.have.length(1);
     }));
 
-    it.skip('should delete connection', inject(function () {
+    it('should delete connection', inject(function () {
         angular.element(document.body).append(element);  // attach element to DOM
 
         expect($('.modal-dialog')).to.have.length(0);
@@ -637,6 +772,128 @@ describe('goCampaignDesigner', function () {
 
         $yesButton.click();
         expect(element.find('.connection')).to.have.length(0);
+    }));
+
+    it('should flip connection direction', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
+    it('should make connection bi-directional', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
+    it('should not flip bi-directional connection', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        // Make bi-directional
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        // Try to flip
+        element.find('.menu.active > .menu-item:nth-child(1)').d3().simulate('mousedown');
+
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+    }));
+
+    it('should toggle bi-directional connection', inject(function () {
+        var connections = element.find('.connection');
+        expect(connections).to.have.length(1);
+
+        var connection = connections.eq(0);
+        var datum = connection.get(0).__data__;
+
+        // Make bi-directional
+        connection.d3().simulate('dragstart');
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        var expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            },
+            'endpoint6:endpoint1': {
+                source: 'endpoint6',
+                target: 'endpoint1'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
+
+        // Try to flip
+        element.find('.menu.active > .menu-item:nth-child(2)').d3().simulate('mousedown');
+
+        expected = {
+            'endpoint1:endpoint6': {
+                source: 'endpoint1',
+                target: 'endpoint6'
+            }
+        };
+        expect(scope.data.routing_table.routing).to.deep.equal(expected);
     }));
 
 });

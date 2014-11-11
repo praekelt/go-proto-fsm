@@ -54,6 +54,16 @@ angular.module('vumigo.services').factory('Menu', ['BaseComponent',
 
         Menu.prototype = Object.create(BaseComponent.prototype);
 
+        Menu.prototype.delete = function () {
+            if (!BaseComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.items, function (item) {
+                this.manager.deleteComponent(item);
+            }, this);
+
+            return true;
+        };
+
         Menu.prototype.addItem = function (icon, event) {
             var item = this.manager.createComponent({
                 type: 'menu_item',
@@ -108,6 +118,14 @@ angular.module('vumigo.services').factory('RoutingComponent', [
 
         RoutingComponent.prototype = Object.create(BaseComponent.prototype);
 
+        RoutingComponent.prototype.delete = function () {
+            if (!BaseComponent.prototype.delete.call(this)) return false;
+
+            this.manager.deleteComponent(this.menu);
+
+            return true;
+        };
+
         RoutingComponent.prototype.initialize = function (options) {
             this.actions = options.actions;
 
@@ -135,15 +153,36 @@ angular.module('vumigo.services').factory('RoutingComponent', [
         /**
          * Return the component data.
          */
-        RoutingComponent.prototype.datum = function () {
+        RoutingComponent.prototype.datum = function (datum) {
             return null;
         };
 
         /**
          * Return the component layout.
          */
-        RoutingComponent.prototype.layout = function () {
+        RoutingComponent.prototype.layout = function (layout) {
             return null;
+        };
+
+        /**
+         * Serialize the component to a JSON representation.
+         */
+        RoutingComponent.prototype.toJson = function () {
+            var data = {
+                datum: this.datum(),
+                layout: this.layout()
+            };
+
+            return angular.toJson(data);
+        };
+
+        /**
+         * Restore the component from a JSON representation.
+         */
+        RoutingComponent.prototype.fromJson = function (json) {
+            var data = angular.fromJson(json);
+            this.datum(data.datum);
+            this.layout(data.layout);
         };
 
         return RoutingComponent;
@@ -161,6 +200,16 @@ angular.module('vumigo.services').factory('Endpoint', [
 
         Endpoint.prototype = Object.create(RoutingComponent.prototype);
 
+        Endpoint.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.routing_table
+                    .components[this.component.id]
+                    .endpoints[this.id];
+
+            return true;
+        };
+
         Endpoint.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
 
@@ -171,18 +220,26 @@ angular.module('vumigo.services').factory('Endpoint', [
                 .endpoints;
 
             if (!_.has(data, this.id)) {
+                var name = options.name;
+                if (_.isUndefined(name)) name = "default";
                 data[this.id] = {
                     type: this.type,
                     uuid: this.id,
-                    name: options.name || "default"
+                    name: name
                 }
             }
         };
 
-        Endpoint.prototype.datum = function () {
-            return this.data.routing_table
+        Endpoint.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table
+                    .components[this.component.id]
+                    .endpoints[this.id];
+            }
+
+            this.data.routing_table
                 .components[this.component.id]
-                .endpoints[this.id];
+                .endpoints[this.id] = datum;
         };
 
         Endpoint.prototype.name = function (name) {
@@ -191,13 +248,42 @@ angular.module('vumigo.services').factory('Endpoint', [
             return this;
         };
 
+        Endpoint.prototype.connection = function () {
+            var connectionId;
+            _.forEach(this.data.layout.connections, function (connection, id) {
+                if (_.has(connection.endpoints, this.id)) {
+                    connectionId = id;
+                    return false;
+                }
+            }, this);
+            return this.manager.getComponentById(connectionId);
+        };
+
+        Endpoint.prototype.routes = function (direction) {
+            var routes = this.manager.findComponents({ type: 'route' });
+
+            if (!_.isUndefined(direction)) {
+                routes = _.filter(routes, function (route) {
+                    if (direction == 'in') {
+                        return route.target().id == this.id;
+                    } else if (direction == 'out') {
+                        return route.source().id == this.id;
+                    } else {
+                        return false;
+                    }
+                }, this);
+            }
+
+            return routes;
+        };
+
         return Endpoint;
     }
 ]);
 
 angular.module('vumigo.services').factory('ConnectableComponent', [
-    'RoutingComponent', 'GoError',
-    function (RoutingComponent, GoError) {
+    'RoutingComponent',
+    function (RoutingComponent) {
 
         function ConnectableComponent(options) {
             options = options || {};
@@ -205,6 +291,20 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
         }
 
         ConnectableComponent.prototype = Object.create(RoutingComponent.prototype);
+
+        ConnectableComponent.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.endpoints(), function (endpoint) {
+                this.manager.deleteComponent(endpoint.connection());
+                this.manager.deleteComponent(endpoint);
+            }, this);
+
+            delete this.data.routing_table.components[this.id];
+            delete this.data.layout.components[this.id];
+
+            return true;
+        };
 
         ConnectableComponent.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -221,17 +321,18 @@ angular.module('vumigo.services').factory('ConnectableComponent', [
             }
         };
 
-        ConnectableComponent.prototype.validate = function () {
-            RoutingComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().name)) throw new GoError("Component name is empty");
+        ConnectableComponent.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table.components[this.id];
+            }
+            this.data.routing_table.components[this.id] = datum;
         };
 
-        ConnectableComponent.prototype.datum = function () {
-            return this.data.routing_table.components[this.id];
-        };
-
-        ConnectableComponent.prototype.layout = function () {
-            return this.data.layout.components[this.id];
+        ConnectableComponent.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.components[this.id];
+            }
+            this.data.layout.components[this.id] = layout;
         };
 
         ConnectableComponent.prototype.endpoints = function (type) {
@@ -297,7 +398,7 @@ angular.module('vumigo.services').factory('Channel', [
                     tag: options.tag || [],
                     name: options.name,
                     description: options.description || "",
-                    utilization: options.utilization || 0,
+                    utilization: options.utilization || 0.5,
                     endpoints: {}
                 };
 
@@ -324,8 +425,8 @@ angular.module('vumigo.services').factory('Channel', [
 ]);
 
 angular.module('vumigo.services').factory('Conversation', [
-    'ConnectableComponent', 'GoError',
-    function (ConnectableComponent, GoError) {
+    'ConnectableComponent',
+    function (ConnectableComponent) {
 
         function Conversation(options) {
             options = options || {};
@@ -352,20 +453,13 @@ angular.module('vumigo.services').factory('Conversation', [
                 this.data.layout.components[this.id] = {
                     x: 0,
                     y: 0,
-                    colour: 'white'
+                    colour: options.colour || 'white'
                 };
 
                 this.manager.createComponent({
                     type: 'conversation_endpoint',
                     component: this
                 });
-            }
-        };
-
-        Conversation.prototype.validate = function () {
-            ConnectableComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().conversation_type)) {
-                throw new GoError("Conversation type is empty");
             }
         };
 
@@ -380,8 +474,8 @@ angular.module('vumigo.services').factory('Conversation', [
 ]);
 
 angular.module('vumigo.services').factory('Router', [
-    'ConnectableComponent', 'GoError',
-    function (ConnectableComponent, GoError) {
+    'ConnectableComponent', 'Endpoint',
+    function (ConnectableComponent, Endpoint) {
 
         function Router(options) {
             options = options || {};
@@ -422,11 +516,16 @@ angular.module('vumigo.services').factory('Router', [
             }
         };
 
-        Router.prototype.validate = function () {
-            ConnectableComponent.prototype.validate.call(this);
-            if (_.isEmpty(this.datum().router_type)) {
-                throw new GoError("Router type is empty");
-            }
+        Router.prototype.addEndpoint = function (options) {
+            options = options || {};
+            options.type = 'conversation_endpoint';
+            options.name = options.name || "";
+            options.component = this;
+            this.manager.createComponent(options);
+        };
+
+        Router.prototype.deleteEndpoint = function (endpoint) {
+            this.manager.deleteComponent(endpoint);
         };
 
         return Router;
@@ -445,6 +544,15 @@ angular.module('vumigo.services').factory('Route', [
 
         Route.prototype = Object.create(RoutingComponent.prototype);
 
+        Route.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.routing_table.routing[this.id];
+            delete this.data.layout.routing[this.id];
+
+            return true;
+        };
+
         Route.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
 
@@ -460,12 +568,18 @@ angular.module('vumigo.services').factory('Route', [
             }
         };
 
-        Route.prototype.datum = function () {
-            return this.data.routing_table.routing[this.id];
+        Route.prototype.datum = function (datum) {
+            if (!arguments.length) {
+                return this.data.routing_table.routing[this.id];
+            }
+            this.data.routing_table.routing[this.id] = datum;
         };
 
-        Route.prototype.layout = function () {
-            return this.data.layout.routing[this.id];
+        Route.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.routing[this.id];
+            }
+            this.data.layout.routing[this.id] = layout;
         };
 
         Route.prototype.source = function (source) {
@@ -484,6 +598,13 @@ angular.module('vumigo.services').factory('Route', [
             return this;
         };
 
+        Route.prototype.flip = function () {
+            var source = this.datum().source;
+            this.datum().source = this.datum().target;
+            this.datum().target = source;
+            return this;
+        };
+
         return Route;
     }
 ]);
@@ -499,6 +620,16 @@ angular.module('vumigo.services').factory('ControlPoint', [
         }
 
         ControlPoint.prototype = Object.create(RoutingComponent.prototype);
+
+        ControlPoint.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            delete this.data.layout
+                .connections[this.connection.id]
+                .path[this.index()];
+
+            return true;
+        };
 
         ControlPoint.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -530,10 +661,17 @@ angular.module('vumigo.services').factory('ControlPoint', [
             return parseInt(this.id.split(':')[1]);
         };
 
-        ControlPoint.prototype.layout = function () {
-            return this.data.layout
+        ControlPoint.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout
+                    .connections[this.connection.id]
+                    .path[this.index()];
+
+            }
+
+            this.data.layout
                 .connections[this.connection.id]
-                .path[this.index()];
+                .path[this.index()] = layout;
         };
 
         ControlPoint.prototype.x = function (x) {
@@ -564,6 +702,22 @@ angular.module('vumigo.services').factory('Connection', [
         }
 
         Connection.prototype = Object.create(RoutingComponent.prototype);
+
+        Connection.prototype.delete = function () {
+            if (!RoutingComponent.prototype.delete.call(this)) return false;
+
+            _.forEach(this.points(), function (point) {
+                this.manager.deleteComponent(point);
+            }, this);
+
+            _.forEach(this.routes(), function (route) {
+                this.manager.deleteComponent(route);
+            }, this);
+
+            delete this.data.layout.connections[this.id];
+
+            return true;
+        };
 
         Connection.prototype.initialize = function (options) {
             RoutingComponent.prototype.initialize.call(this, options);
@@ -599,8 +753,11 @@ angular.module('vumigo.services').factory('Connection', [
             }, this);
         };
 
-        Connection.prototype.layout = function () {
-            return this.data.layout.connections[this.id];
+        Connection.prototype.layout = function (layout) {
+            if (!arguments.length) {
+                return this.data.layout.connections[this.id];
+            }
+            this.data.layout.connections[this.id] = layout;
         };
 
         Connection.prototype.points = function () {
@@ -624,17 +781,49 @@ angular.module('vumigo.services').factory('Connection', [
             return this;
         };
 
+        Connection.prototype.flipDirection = function () {
+            var routes = this.routes();
+            if (routes.length == 1) {  // do nothing for bi-directional connections
+                if (_.isEmpty(routes[0].target().routes('out'))) {
+                    routes[0].flip();
+                } else {
+                    // TODO: Trigger error; endpoint can have only one outgoing route
+                }
+            }
+        };
+
+        Connection.prototype.biDirectional = function () {
+            var routes = this.routes();
+            if (routes.length == 2) {
+                // If the connection is already bi-directional
+                // remove the second route
+                this.manager.deleteComponent(routes[1]);
+            } else {
+                if (_.isEmpty(routes[0].target().routes('out'))) {
+                    this.manager.createComponent({
+                        type: 'route',
+                        connection: this,
+                        source: routes[0].target(),
+                        target: routes[0].source()
+                    });
+
+                } else {
+                    // TODO: Trigger error; endpoint can have only one outgoing route
+                }
+            }
+        };
+
         return Connection;
     }
 ]);
 
 angular.module('vumigo.services').factory('ComponentManager', [
-    'Endpoint', 'Conversation', 'Router', 'Channel', 'Route', 'Connection',
-    'ControlPoint', 'Menu', 'MenuItem', 'conversationLayout', 'routerLayout',
-    'channelLayout', 'connectionLayout', 'menuLayout',
-    function (Endpoint, Conversation, Router, Channel, Route, Connection,
-              ControlPoint, Menu, MenuItem, conversationLayout, routerLayout,
-              channelLayout, connectionLayout, menuLayout) {
+    'BaseComponent', 'Endpoint', 'Conversation', 'Router', 'Channel', 'Route',
+    'Connection', 'ControlPoint', 'Menu', 'MenuItem', 'conversationLayout',
+    'routerLayout', 'channelLayout', 'connectionLayout', 'menuLayout',
+    function (BaseComponent, Endpoint, Conversation, Router, Channel, Route,
+              Connection, ControlPoint, Menu, MenuItem, conversationLayout,
+              routerLayout, channelLayout, connectionLayout, menuLayout) {
 
         var layoutConversations = conversationLayout();
         var layoutRouters = routerLayout();
@@ -752,10 +941,12 @@ angular.module('vumigo.services').factory('ComponentManager', [
             return _.where(this.components, props);
         };
 
-        ComponentManager.prototype.deleteComponent = function (id) {
-            var component = this.getComponentById(id);
+        ComponentManager.prototype.deleteComponent = function (component) {
+            if (!(component instanceof BaseComponent)) {
+                component = this.getComponentById(component);
+            }
             if (_.isUndefined(component)) return;
-            if (component.delete()) delete this.components[id];
+            if (component.delete()) delete this.components[component.id];
         };
 
         ComponentManager.prototype.connectComponents = function (
