@@ -51,6 +51,7 @@ module.exports = function (grunt) {
                     'public/js/src/controllers.js',
                     'public/js/src/directives.js',
                     'public/js/src/services/index.js',
+                    'public/js/src/services/errors.js',
                     'public/js/src/services/utils.js',
                     'public/js/src/services/behaviour.js',
                     'public/js/src/services/helpers.js',

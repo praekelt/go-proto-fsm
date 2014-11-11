@@ -1,16 +1,34 @@
 describe('BaseComponent', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {},
+                routing: {}
+            },
+            layout: {
+                components: {},
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
 
     it('should initialise new component', inject(function (BaseComponent) {
         var component = new BaseComponent({
             id: 'component1',
-            type: 'test component'
+            type: 'test component',
+            manager: manager
         });
 
         expect(component.id).to.equal('component1');
         expect(component.type).to.equal('test component');
+        expect(component.manager).to.equal(manager);
     }));
 
     it('should generate an id', inject(function (BaseComponent) {
@@ -37,125 +55,6 @@ describe('BaseComponent', function () {
 
 });
 
-describe('ConnectableComponent', function () {
-
-    beforeEach(module('uuid'));
-    beforeEach(module('vumigo.services'));
-
-    it('should initialise new component', inject(function (BaseComponent, ConnectableComponent) {
-        var component = new ConnectableComponent({
-            id: 'component1',
-            type: 'test component'
-        });
-
-        expect(component instanceof BaseComponent).to.be.true;
-        expect(component.id).to.equal('component1');
-        expect(component.type).to.equal('test component');
-        expect(component.endpoints).not.to.be.undefined;
-        expect(component.endpoints).to.be.empty;
-    }));
-
-    it('should add endpoint', inject(function (ConnectableComponent, Endpoint) {
-        var component = new ConnectableComponent({
-            id: 'component1',
-            type: 'test component'
-        });
-
-        expect(component.endpoints).to.be.empty;
-
-        component.addEndpoint(new Endpoint({
-            id: 'endpoint1',
-            name: 'default'
-        }));
-
-        expect(component.endpoints).to.have.length(1);
-
-        component.addEndpoints([
-            new Endpoint({ id: 'endpoint2', name: 'default' }),
-            new Endpoint({ id: 'endpoint3', name: 'default' })
-        ]);
-
-        expect(component.endpoints).to.have.length(3);
-
-        expect(component.endpoints[0].id).to.equal('endpoint1');
-        expect(component.endpoints[0].component).to.equal(component);
-        expect(component.endpoints[1].id).to.equal('endpoint2');
-        expect(component.endpoints[1].component).to.equal(component);
-        expect(component.endpoints[2].id).to.equal('endpoint3');
-        expect(component.endpoints[2].component).to.equal(component);
-    }));
-
-    it('should get endpoint by id', inject(function (ConnectableComponent, Endpoint) {
-        var component = new ConnectableComponent({
-            id: 'component1',
-            type: 'test component'
-        });
-
-        var endpoint = new Endpoint({
-            id: 'endpoint1',
-            name: 'default'
-        });
-
-        component.addEndpoint(endpoint);
-
-        expect(component.getEndpoint('endpoint1')).to.equal(endpoint);
-    }));
-
-    it('should get endpoints by component type', inject(function (ConnectableComponent, Endpoint) {
-        var component = new ConnectableComponent({
-            id: 'component1',
-            type: 'test component'
-        });
-
-        var endpoints = [
-            new Endpoint({ id: 'endpoint1', name: 'default', accepts: ['conversation'] }),
-            new Endpoint({ id: 'endpoint2', name: 'default', accepts: ['channel'] })
-        ];
-
-        component.addEndpoints(endpoints);
-
-        expect(component.getEndpoints('conversation')).to.deep.equal([endpoints[0]]);
-    }));
-});
-
-describe('Endpoint', function () {
-
-    beforeEach(module('uuid'));
-    beforeEach(module('vumigo.services'));
-
-    it('should initialise new component', inject(function (BaseComponent, Endpoint) {
-        var component = new BaseComponent({
-            type: 'test component'
-        });
-
-        var endpoint = new Endpoint({
-            id: 'endpoint1',
-            component: component,
-            name: 'default',
-            accepts: ['test component']
-        });
-
-        expect(component instanceof BaseComponent).to.be.true;
-        expect(endpoint.id).to.equal('endpoint1');
-        expect(endpoint.component).to.equal(component);
-        expect(endpoint.name).to.equal('default');
-        expect(endpoint.accepts).to.deep.equal(['test component']);
-    }));
-
-
-    it('should determine which component types can connect to it', inject(function (BaseComponent, Endpoint) {
-        var endpoint = new Endpoint({
-            id: 'endpoint1',
-            name: 'default',
-            accepts: ['test component', 'other component']
-        });
-
-        expect(endpoint.acceptsConnectionsFrom('test component')).to.be.true;
-        expect(endpoint.acceptsConnectionsFrom('unsupported component')).to.be.false;
-    }));
-
-});
-
 describe('MenuItem', function () {
 
     beforeEach(module('uuid'));
@@ -167,481 +66,1004 @@ describe('MenuItem', function () {
         var item = new MenuItem({
             menu: menu,
             icon: 'icon1',
-            action: "action1"
+            event: "event1"
         });
 
         expect(item instanceof BaseComponent).to.be.true;
-        expect(item.type).to.equal('menu item');
+        expect(item.type).to.equal('menu_item');
         expect(item.menu).to.deep.equal(menu);
         expect(item.icon).to.equal('icon1');
-        expect(item.action).to.equal('action1');
+        expect(item.event).to.equal('event1');
     }));
 
 });
 
 describe('Menu', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {},
+                routing: {}
+            },
+            layout: {
+                components: {},
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
 
     it('should initialise new component', inject(function (BaseComponent, Menu, MenuItem) {
         var component = new BaseComponent();
 
-        var items = [new MenuItem({
-            icon: 'icon1',
-            action: "action1"
-        })];
-
         var menu = new Menu({
-            component: component,
-            items: items
+            manager: manager,
+            component: component
         });
 
         expect(menu instanceof BaseComponent).to.be.true;
         expect(menu.type).to.equal('menu');
         expect(menu.component).to.deep.equal(component);
-        expect(menu.items).to.have.length(1);
-        expect(menu.items[0].menu).to.deep.equal(menu);
-    }));
-
-    it('should add items', inject(function (BaseComponent, Menu, MenuItem) {
-        var menu = new Menu();
-
         expect(menu.items).to.be.empty;
 
-        menu.addItems([new MenuItem({
-            icon: 'icon1',
-            action: "action1"
-        })]);
+        menu.addItem('icon1', "event1");
 
         expect(menu.items).to.have.length(1);
+        expect(menu.items[0] instanceof MenuItem).to.be.true;
+        expect(menu.items[0].menu).to.deep.equal(menu);
+        expect(menu.items[0].icon).to.equal('icon1');
+        expect(menu.items[0].event).to.equal('event1');
+    }));
+});
 
-        menu.addItem(new MenuItem({
-            icon: 'icon1',
-            action: "action1"
-        }));
+describe('RoutingComponent', function () {
+    var data, manager;
 
-        expect(menu.items).to.have.length(2);
+    beforeEach(module('uuid'));
+    beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {},
+                routing: {}
+            },
+            layout: {
+                components: {},
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (BaseComponent, RoutingComponent) {
+        var component = new RoutingComponent({
+            id: 'component1',
+            type: 'test component',
+            manager: manager,
+            data: data
+        });
+
+        expect(component instanceof BaseComponent).to.be.true;
+        expect(component.id).to.equal('component1');
+        expect(component.type).to.equal('test component');
+        expect(component.manager).to.equal(manager);
+        expect(component.data).to.equal(data);
+    }));
+
+    it('should create menu', inject(function (RoutingComponent, Menu, MenuItem) {
+        var component = new RoutingComponent({
+            id: 'component1',
+            type: 'test component',
+            manager: manager,
+            data: data,
+            actions: ['edit', 'connect', 'flipDirection', 'biDirectional', 'delete']
+        });
+
+        expect(component.actions).to.deep.equal(['edit', 'connect', 'flipDirection', 'biDirectional', 'delete']);
+        expect(component.menu instanceof Menu).to.be.true;
+        expect(component.menu.items).to.have.length(5);
+        expect(component.menu.items[0].icon).to.equal('\uf040');
+        expect(component.menu.items[0].event).to.equal('go:campaignDesignerEdit');
+        expect(component.menu.items[1].icon).to.equal('\uf0c1');
+        expect(component.menu.items[1].event).to.equal('go:campaignDesignerConnect');
+        expect(component.menu.items[2].icon).to.equal('\uf065');
+        expect(component.menu.items[2].event).to.equal('go:campaignDesignerFlipDirection');
+        expect(component.menu.items[3].icon).to.equal('\uf066');
+        expect(component.menu.items[3].event).to.equal('go:campaignDesignerBiDirectional');
+        expect(component.menu.items[4].icon).to.equal('\uf00d');
+        expect(component.menu.items[4].event).to.equal('go:campaignDesignerRemove');
+    }));
+});
+
+describe('Endpoint', function () {
+    var data, manager;
+
+    beforeEach(module('uuid'));
+    beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'component1': {
+                        type: 'channel',
+                        uuid: 'component1',
+                        name: 'Test component',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {}
+            },
+            layout: {
+                components: {
+                    'component1': {
+                        x: 0,
+                        y: 0
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (RoutingComponent, ConnectableComponent, Endpoint) {
+        var component = new ConnectableComponent({
+            id: 'component1',
+            type: 'channel',
+            manager: manager,
+            data: data
+        });
+
+        var endpoint = new Endpoint({
+            id: 'endpoint1',
+            type: 'channel_endpoint',
+            manager: manager,
+            data: data,
+            component: component
+        });
+
+        expect(endpoint instanceof RoutingComponent).to.be.true;
+        expect(endpoint.id).to.equal('endpoint1');
+        expect(endpoint.type).to.equal('channel_endpoint');
+        expect(endpoint.component).to.equal(component);
+        expect(endpoint.name()).to.equal('default');
+    }));
+
+    it('should create new component', inject(function (ConnectableComponent, Endpoint) {
+        var component = new ConnectableComponent({
+            id: 'component1',
+            type: 'channel',
+            manager: manager,
+            data: data
+        });
+
+        var endpoint = new Endpoint({
+            id: 'endpoint2',
+            type: 'conversation_endpoint',
+            name: 'test_endpoint',
+            manager: manager,
+            data: data,
+            component: component
+        });
+
+        var d = data.routing_table.components['component1'].endpoints['endpoint2'];
+        var expected = {
+            type: 'conversation_endpoint',
+            uuid: 'endpoint2',
+            name: 'test_endpoint'
+        };
+        expect(d).to.deep.equal(expected);
     }));
 
 });
 
-describe('Conversation', function () {
+describe('ConnectableComponent', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'component1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'component1',
+                        name: 'Test',
+                        description: 'Test component',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            },
+                            'endpoint2': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {}
+            },
+            layout: {
+                components: {
+                    'component1': {
+                        x: 0,
+                        y: 0
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
 
-    it('should initialise new component', inject(function (ConnectableComponent, Conversation, Endpoint) {
-        var conversation = new Conversation({
-            id: 'conversation1',
-            name: 'test conversation',
-            description: "my test conversation",
-            x: 100,
-            y: 100,
-            colour: 'red',
-            endpoints: [new Endpoint({ id: 'endpoint1' })]
-        });
-
-        expect(conversation instanceof ConnectableComponent).to.be.true;
-        expect(conversation.id).to.equal('conversation1');
-        expect(conversation.type).to.equal('conversation');
-        expect(conversation.name).to.equal('test conversation');
-        expect(conversation.description).to.equal('my test conversation');
-        expect(conversation.x).to.equal(100);
-        expect(conversation.y).to.equal(100);
-        expect(conversation.colour).to.equal('red');
-        expect(conversation.endpoints).to.have.length(1);
-        expect(conversation.menu).not.to.be.undefined;
-
-        var menu = conversation.menu;
-        expect(menu.items).to.have.length(3);
-        expect(menu.items[0].icon).to.equal('\uf040');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
-        expect(menu.items[1].icon).to.equal('\uf0c1');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[2].icon).to.equal('\uf00d');
-        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
+        manager = new ComponentManager(data);
     }));
 
-});
-
-describe('Router', function () {
-
-    beforeEach(module('uuid'));
-    beforeEach(module('vumigo.services'));
-
-    it('should initialise new component', inject(function (ConnectableComponent, Router, Endpoint) {
-        var router = new Router({
-            id: 'router1',
-            name: 'test router',
-            description: "my test router",
-            x: 100,
-            y: 100,
-            endpoints: [
-                new Endpoint({ id: 'endpoint1' }),
-                new Endpoint({ id: 'endpoint2' })
-            ]
+    it('should initialise new component', inject(function (BaseComponent, ConnectableComponent) {
+        var component = new ConnectableComponent({
+            id: 'component1',
+            type: 'router',
+            manager: manager,
+            data: data
         });
 
-        expect(router instanceof ConnectableComponent).to.be.true;
-        expect(router.id).to.equal('router1');
-        expect(router.type).to.equal('router');
-        expect(router.name).to.equal('test router');
-        expect(router.description).to.equal('my test router');
-        expect(router.x).to.equal(100);
-        expect(router.y).to.equal(100);
-        expect(router.endpoints).to.have.length(2);
-        expect(router.menu).not.to.be.undefined;
-
-        var menu = router.menu;
-        expect(menu.items).to.have.length(3);
-        expect(menu.items[0].icon).to.equal('\uf040');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
-        expect(menu.items[1].icon).to.equal('\uf0c1');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[2].icon).to.equal('\uf00d');
-        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
+        expect(component instanceof BaseComponent).to.be.true;
+        expect(component.id).to.equal('component1');
+        expect(component.type).to.equal('router');
+        expect(component.endpoints()).to.have.length(2);
+        expect(component.name()).to.equal('Test');
+        expect(component.description()).to.equal('Test component');
+        expect(component.x()).to.equal(0);
+        expect(component.y()).to.equal(0);
     }));
 
+    it('should get endpoints by type', inject(function (ConnectableComponent, Endpoint) {
+        var component = new ConnectableComponent({
+            id: 'component1',
+            type: 'router',
+            manager: manager,
+            data: data
+        });
+
+        expect(component.endpoints()).to.deep.equal([
+            manager.getComponentById('endpoint1'),
+            manager.getComponentById('endpoint2')
+        ]);
+
+        expect(component.endpoints('channel_endpoint')).to.deep.equal([
+            manager.getComponentById('endpoint1')
+        ]);
+
+        expect(component.endpoints('conversation_endpoint')).to.deep.equal([
+            manager.getComponentById('endpoint2')
+        ]);
+    }));
 });
 
 describe('Channel', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: ['apposit_sms', '*121#'],
+                        name: '*121#',
+                        description: 'Apposit Sms: *121#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint3': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint3',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {}
+            },
+            layout: {
+                components: {
+                    'channel1': {
+                        x: 0,
+                        y: 0
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
 
-    it('should initialise new component', inject(function (ConnectableComponent, Channel, Endpoint) {
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (ConnectableComponent, Channel) {
         var channel = new Channel({
             id: 'channel1',
-            name: 'test channel',
-            description: "my test channel",
-            x: 100,
-            y: 100,
-            utilization: 0.5,
-            endpoints: [new Endpoint({ id: 'endpoint1' })]
+            data: data,
+            manager: manager
         });
 
         expect(channel instanceof ConnectableComponent).to.be.true;
         expect(channel.id).to.equal('channel1');
         expect(channel.type).to.equal('channel');
-        expect(channel.name).to.equal('test channel');
-        expect(channel.description).to.equal('my test channel');
-        expect(channel.x).to.equal(100);
-        expect(channel.y).to.equal(100);
-        expect(channel.utilization).to.equal(0.5);
-        expect(channel.endpoints).to.have.length(1);
-        expect(channel.menu).not.to.be.undefined;
+        expect(channel.name()).to.equal('*121#');
+        expect(channel.description()).to.equal('Apposit Sms: *121#');
+        expect(channel.x()).to.equal(0);
+        expect(channel.y()).to.equal(0);
+        expect(channel.utilization()).to.equal(0.5);
+    }));
 
-        var menu = channel.menu;
-        expect(menu.items).to.have.length(3);
-        expect(menu.items[0].icon).to.equal('\uf040');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerEdit');
-        expect(menu.items[1].icon).to.equal('\uf0c1');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerConnect');
-        expect(menu.items[2].icon).to.equal('\uf00d');
-        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
+    it('should create new component', inject(function (Channel, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint4');
+
+        var channel = new Channel({
+            id: 'channel2',
+            data: data,
+            manager: manager,
+            name: "Channel 2",
+            description: "Test channel",
+            utilization: 0.1
+        });
+
+        var d = data.routing_table.components['channel2'];
+        var expected = {
+            type: 'channel',
+            uuid: 'channel2',
+            tag: [],
+            name: "Channel 2",
+            description: 'Test channel',
+            utilization: 0.1,
+            endpoints: {
+                'endpoint4': {
+                    type: 'channel_endpoint',
+                    uuid: 'endpoint4',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['channel2'];
+        expect(d).to.deep.equal({ x: 0, y: 0 });
+    }));
+
+});
+
+describe('Conversation', function () {
+    var data, manager;
+
+    beforeEach(module('uuid'));
+    beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'bulk-message1',
+                        description: 'Some Bulk Message App',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {}
+            },
+            layout: {
+                components: {
+                    'conversation1': {
+                        x: 0,
+                        y: 0,
+                        colour: 'white'
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (ConnectableComponent, Conversation) {
+        var conversation = new Conversation({
+            id: 'conversation1',
+            data: data,
+            manager: manager
+        });
+
+        expect(conversation instanceof ConnectableComponent).to.be.true;
+        expect(conversation.id).to.equal('conversation1');
+        expect(conversation.type).to.equal('conversation');
+        expect(conversation.name()).to.equal('bulk-message1');
+        expect(conversation.description()).to.equal('Some Bulk Message App');
+        expect(conversation.x()).to.equal(0);
+        expect(conversation.y()).to.equal(0);
+        expect(conversation.colour()).to.equal('white');
+        expect(conversation.actions).to.deep.equal(['edit', 'connect', 'delete']);
+    }));
+
+    it('should create new component', inject(function (Conversation, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint2');
+
+        var channel = new Conversation({
+            id: 'conversation2',
+            data: data,
+            manager: manager,
+            conversation_type: 'bulk-message',
+            name: "Conversation 2",
+            description: "Test conversation"
+        });
+
+        var d = data.routing_table.components['conversation2'];
+        var expected = {
+            type: 'conversation',
+            conversation_type: 'bulk-message',
+            uuid: 'conversation2',
+            name: "Conversation 2",
+            description: "Test conversation",
+            endpoints: {
+                'endpoint2': {
+                    type: 'conversation_endpoint',
+                    uuid: 'endpoint2',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['conversation2'];
+        expect(d).to.deep.equal({ x: 0, y: 0, colour: 'white' });
+    }));
+
+});
+
+describe('Router', function () {
+    var data, manager;
+
+    beforeEach(module('uuid'));
+    beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'router1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'router1',
+                        name: 'K',
+                        description: 'Keyword',
+                        endpoints: {
+                            'endpoint5': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint5',
+                                name: 'default'
+                            },
+                            'endpoint6': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint6',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {}
+            },
+            layout: {
+                components: {
+                    'router1': {
+                        x: 0,
+                        y: 0
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (ConnectableComponent, Router) {
+        var router = new Router({
+            id: 'router1',
+            data: data,
+            manager: manager
+        });
+
+        expect(router instanceof ConnectableComponent).to.be.true;
+        expect(router.id).to.equal('router1');
+        expect(router.type).to.equal('router');
+        expect(router.name()).to.equal('K');
+        expect(router.description()).to.equal('Keyword');
+        expect(router.x()).to.equal(0);
+        expect(router.y()).to.equal(0);
+        expect(router.actions).to.deep.equal(['edit', 'connect', 'delete']);
+    }));
+
+    it('should create new component', inject(function (Router, rfc4122) {
+        var stub = sinon.stub(rfc4122, 'v4');
+        stub.onCall(4).returns('endpoint7');
+        stub.onCall(5).returns('endpoint8');
+
+        var router = new Router({
+            id: 'router2',
+            router_type: 'keyword',
+            data: data,
+            manager: manager,
+            name: "Router 2",
+            description: "Test router"
+        });
+
+        var d = data.routing_table.components['router2'];
+        var expected = {
+            type: 'router',
+            router_type: 'keyword',
+            uuid: 'router2',
+            name: 'Router 2',
+            description: 'Test router',
+            endpoints: {
+                'endpoint7': {
+                    type: 'channel_endpoint',
+                    uuid: 'endpoint7',
+                    name: 'default'
+                },
+                'endpoint8': {
+                    type: 'conversation_endpoint',
+                    uuid: 'endpoint8',
+                    name: 'default'
+                }
+            }
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.components['router2'];
+        expect(d).to.deep.equal({ x: 0, y: 0 });
     }));
 
 });
 
 describe('Route', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: ['apposit_sms', '*121#'],
+                        name: '*121#',
+                        description: 'Apposit Sms: *121#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'bulk-message1',
+                        description: 'Some Bulk Message App',
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                }
+            },
+            layout: {
+                components: {
+                    'channel1': {
+                        x: 840,
+                        y: 360
+                    },
+                    'conversation1': {
+                        x: 220,
+                        y: 120,
+                        colour: '#f82943'
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: '#f82943'
+                    }
+                }
+            }
+        };
 
-    it('should initialise new component', inject(function (BaseComponent, Route, Endpoint) {
-        var source = new Endpoint({ id: 'endpoint1' });
-        var target = new Endpoint({ id: 'endpoint2' });
-
-        var route = new Route({
-            id: 'route1',
-            source: source,
-            target: target
-        });
-
-        expect(route instanceof BaseComponent).to.be.true;
-        expect(route.id).to.equal('route1');
-        expect(route.type).to.equal('route');
-        expect(route.source).to.equal(source);
-        expect(route.target).to.equal(target);
+        manager = new ComponentManager(data);
     }));
 
-    it('should flip direction', inject(function (Route, Endpoint) {
-        var source = new Endpoint({ id: 'endpoint1' });
-        var target = new Endpoint({ id: 'endpoint2' });
-
+    it('should initialise new component', inject(function (RoutingComponent, Route) {
         var route = new Route({
-            source: source,
-            target: target
+            id: 'endpoint1:endpoint2',
+            manager: manager,
+            data: data
         });
 
-        route.flip();
+        expect(route instanceof RoutingComponent).to.be.true;
+        expect(route.id).to.equal('endpoint1:endpoint2');
+        expect(route.type).to.equal('route');
+        expect(route.source()).to.equal(manager.getComponentById('endpoint1'));
+        expect(route.target()).to.equal(manager.getComponentById('endpoint2'));
+    }));
 
-        expect(route.source).to.equal(target);
-        expect(route.target).to.equal(source);
+    it('should create new component', inject(function (Route) {
+        var route = new Route({
+            id: 'endpoint2:endpoint1',
+            manager: manager,
+            data: data,
+            source: manager.getComponentById('endpoint2'),
+            target: manager.getComponentById('endpoint1'),
+            connection: manager.getComponentById('connection1')
+        });
+
+        var d = data.routing_table.routing['endpoint2:endpoint1'];
+        var expected = {
+            source: 'endpoint2',
+            target: 'endpoint1'
+        };
+        expect(d).to.deep.equal(expected);
+
+        d = data.layout.routing['endpoint2:endpoint1'];
+        expect(d).to.equal('connection1');
     }));
 
 });
 
 describe('ControlPoint', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: ['apposit_sms', '*121#'],
+                        name: '*121#',
+                        description: 'Apposit Sms: *121#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'bulk-message1',
+                        description: 'Some Bulk Message App',
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                }
+            },
+            layout: {
+                components: {
+                    'channel1': {
+                        x: 840,
+                        y: 360
+                    },
+                    'conversation1': {
+                        x: 220,
+                        y: 120,
+                        colour: '#f82943'
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: '#f82943'
+                    }
+                }
+            }
+        };
 
-    it('should initialise new component', inject(function (BaseComponent, ControlPoint) {
+        manager = new ComponentManager(data);
+    }));
+
+    it('should initialise new component', inject(function (RoutingComponent, ControlPoint) {
+        var connection = manager.getComponentById('connection1');
+
         var point = new ControlPoint({
-            id: 'point1',
-            x: 100,
-            y: 100
+            manager: manager,
+            data: data,
+            connection: connection,
+            index: 0
         });
 
-        expect(point instanceof BaseComponent).to.be.true;
-        expect(point.id).to.equal('point1');
-        expect(point.x).to.equal(100);
-        expect(point.y).to.equal(100);
+        expect(point instanceof RoutingComponent).to.be.true;
+        expect(point.id).to.equal(connection.id + ':' + 0);
+        expect(point.x()).to.equal(840);
+        expect(point.y()).to.equal(360);
+    }));
+
+    it('should create new component', inject(function (ControlPoint) {
+        var connection = manager.getComponentById('connection1');
+
+        var point = new ControlPoint({
+            manager: manager,
+            data: data,
+            connection: connection
+        });
+
+        var d = data.layout
+                .connections['connection1']
+                .path[2];
+
+        expect(d).to.deep.equal({ x: 0, y: 0 });
+    }));
+
+    it('should validate new component', inject(function (ControlPoint, GoError) {
+        var connection = manager.getComponentById('connection1');
+
+        var fn = function () {
+            var point = new ControlPoint({
+                manager: manager,
+                data: data,
+                connection: connection,
+                index: 0
+            });
+
+            point.id = "invalid_id";
+            point.validate();
+        };
+
+        expect(fn).to.throw(GoError, /Invalid control point id/);
     }));
 
 });
 
 describe('Connection', function () {
+    var data, manager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
+    beforeEach(inject(function (ComponentManager) {
+        data = {
+            routing_table: {
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: ['apposit_sms', '*121#'],
+                        name: '*121#',
+                        description: 'Apposit Sms: *121#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'bulk-message1',
+                        description: 'Some Bulk Message App',
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'router1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'router1',
+                        name: 'K',
+                        description: 'Keyword',
+                        endpoints: {
+                            'endpoint3': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint3',
+                                name: 'default'
+                            },
+                            'endpoint4': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint4',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                }
+            },
+            layout: {
+                components: {
+                    'channel1': {
+                        x: 840,
+                        y: 360
+                    },
+                    'conversation1': {
+                        x: 220,
+                        y: 120,
+                        colour: '#f82943'
+                    },
+                    'router1': {
+                        x: 220,
+                        y: 500,
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: '#f82943'
+                    }
+                }
+            }
+        };
 
-    it('should initialise new component', inject(function (BaseComponent, ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
+        manager = new ComponentManager(data);
+    }));
 
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
+    it('should initialise new component', inject(function (RoutingComponent, Connection) {
         var connection = new Connection({
             id: 'connection1',
-            routes: [
-                new Route({
-                    id: 'route1',
-                    source: endpoint1,
-                    target: endpoint2
-                })
-            ]
+            manager: manager,
+            data: data
         });
 
-        expect(connection instanceof BaseComponent).to.be.true;
+        expect(connection instanceof RoutingComponent).to.be.true;
         expect(connection.id).to.equal('connection1');
         expect(connection.type).to.equal('connection');
-        expect(connection.routes).to.have.length(1);
-        expect(connection.points).to.have.length(2);
-        expect(connection.menu).not.to.be.undefined;
-
-        var menu = connection.menu;
-        expect(menu.items).to.have.length(3);
-        expect(menu.items[0].icon).to.equal('\uf065');
-        expect(menu.items[0].action).to.equal('go:campaignDesignerFlipDirection');
-        expect(menu.items[1].icon).to.equal('\uf066');
-        expect(menu.items[1].action).to.equal('go:campaignDesignerBiDirectional');
-        expect(menu.items[2].icon).to.equal('\uf00d');
-        expect(menu.items[2].action).to.equal('go:campaignDesignerRemove');
+        expect(connection.actions).to.deep.equal(['flipDirection', 'biDirectional', 'delete']);
+        expect(connection.points()).to.deep.equal([
+            manager.getComponentById('connection1:0'),
+            manager.getComponentById('connection1:1')
+        ]);
+        expect(connection.routes()).to.deep.equal([
+            manager.getComponentById('endpoint1:endpoint2'),
+        ]);
+        expect(connection.colour()).to.equal('#f82943');
     }));
 
-    it('should add route', inject(function (BaseComponent, ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
+    it('should create new component', inject(function (Connection) {
         var connection = new Connection({
-            id: 'connection1'
-        });
-
-        expect(connection.routes).to.be.empty;
-
-        var route = new Route({
-            id: 'route1',
-            source: endpoint1,
-            target: endpoint2
-        });
-
-        connection.addRoute(route);
-
-        expect(connection.routes).to.have.length(1);
-    }));
-
-    it('should get unique list of endpoints', inject(function (BaseComponent, ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
-        var connection = new Connection({
-            id: 'connection1'
-        });
-
-        connection.addRoute(new Route({
-            id: 'route1',
-            source: endpoint1,
-            target: endpoint2
-        }));
-
-        connection.addRoute(new Route({
-            id: 'route2',
-            source: endpoint2,
-            target: endpoint1
-        }));
-
-        var endpoints = connection.getEndpoints();
-
-        expect(endpoints).to.deep.equal([endpoint1, endpoint2]);
-    }));
-
-    it('should determine whether it is connected to endpoints', inject(
-            function (BaseComponent, ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
-        var endpoint3 = new Endpoint({ id: 'endpoint3' });
-
-        var connection = new Connection({
-            id: 'connection1',
-            routes: [new Route({
-                id: 'route1',
-                source: endpoint1,
-                target: endpoint2
-            })]
-        });
-
-        expect(connection.isConnectedTo([endpoint1, endpoint3])).to.be.true;
-        expect(connection.isConnectedTo([endpoint3])).to.be.false;
-    }));
-
-    it('should flip direction', inject(function (ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
-        var connection = new Connection({
-            id: 'connection1',
-            routes: [new Route({
-                id: 'route1',
-                source: endpoint1,
-                target: endpoint2
-            })]
-        });
-
-        connection.flipDirection();
-
-        var expected = [new Route({
-            id: 'route1',
-            source: endpoint2,
-            target: endpoint1
-        })];
-
-        expect(connection.routes).to.deep.equal(expected);
-    }));
-
-    it('should make bi-directional', inject(function (ConnectableComponent, Endpoint, Route, Connection, rfc4122) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
-        var connection = new Connection({
-            id: 'connection1',
-            routes: [new Route({
-                id: 'route1',
-                source: endpoint1,
-                target: endpoint2
-            })]
-        });
-
-        var stub = sinon.stub(rfc4122, 'v4');
-        stub.onCall(0).returns('route2');
-
-        connection.biDirectional();
-
-        var expected = [
-            new Route({
-                id: 'route1',
-                source: endpoint1,
-                target: endpoint2
-            }),
-            new Route({
-                id: 'route2',
-                source: endpoint2,
-                target: endpoint1
-            })
-        ];
-
-        expect(connection.routes).to.deep.equal(expected);
-    }));
-
-    it('should restrict endpoint to single outgoing route', inject(function (ConnectableComponent, Endpoint, Route, Connection) {
-        var component1 = new ConnectableComponent({ id: 'component1' });
-        var endpoint1 = new Endpoint({ id: 'endpoint1' });
-        component1.addEndpoint(endpoint1);
-
-        var component2 = new ConnectableComponent({ id: 'component2' });
-        var endpoint2 = new Endpoint({ id: 'endpoint2' });
-        component2.addEndpoint(endpoint2);
-
-        var component3 = new ConnectableComponent({ id: 'component3' });
-        var endpoint3 = new Endpoint({ id: 'endpoint3' });
-        component3.addEndpoint(endpoint3);
-
-        var connection1 = new Connection({
-            id: 'connection1',
-            routes: [new Route({
-                id: 'route1',
-                source: endpoint1,
-                target: endpoint2
-            })]
-        });
-
-        var connection2 = new Connection({
             id: 'connection2',
-            routes: [new Route({
-                id: 'route2',
-                source: endpoint2,
-                target: endpoint3
-            })]
+            manager: manager,
+            data: data,
+            source: manager.getComponentById('endpoint2'),
+            target: manager.getComponentById('endpoint4')
         });
 
-        connection1.flipDirection();
-
-        var expected = [new Route({
-            id: 'route1',
-            source: endpoint1,
-            target: endpoint2
-        })];
-
-        expect(connection1.routes).to.deep.equal(expected);
-
-        expected = [new Route({
-            id: 'route2',
-            source: endpoint2,
-            target: endpoint3
-        })];
-
-        expect(connection2.routes).to.deep.equal(expected);
+        var d = data.layout.connections['connection2'];
+        var expected = {
+            endpoints: {
+                'endpoint2': 'conversation1',
+                'endpoint4': 'router1'
+            },
+            path: [{
+                x: 220,
+                y: 120,
+            }, {
+                x: 220,
+                y: 500
+            }],
+            colour: 'grey'
+        };
+        expect(d).to.deep.equal(expected);
     }));
 
 });
@@ -654,179 +1076,362 @@ describe('ComponentManager', function () {
 
     beforeEach(inject(function () {
         data = {
-            conversations: [{
-                uuid: 'conversation1',
-                name: "Register",
-                description: "4 Steps",
-                endpoints: [{uuid: 'endpoint1', name: 'default'}],
-                colour: '#f82943',
-                x: 220,
-                y: 120
-            }, {
-                uuid: 'conversation2',
-                name: "Survey",
-                description: "4 Questions",
-                endpoints: [{uuid: 'endpoint2', name: 'default'}],
-                colour: '#fbcf3b',
-                x: 220,
-                y: 340
-            }],
-            channels: [{
-                uuid: 'channel1',
-                name: "SMS",
-                description: "082 335 29 24",
-                endpoints: [{uuid: 'endpoint3', name: 'default'}],
-                utilization: 0.4,
-                x: 840,
-                y: 360
-            }, {
-                uuid: 'channel2',
-                name: "USSD",
-                description: "*120*10001#",
-                endpoints: [{uuid: 'endpoint4', name: 'default'}],
-                utilization: 0.9,
-                x: 840,
-                y: 140
-            }],
-            routers: [{
-                uuid: 'router1',
-                name: "K",
-                description: "Keyword",
-                channel_endpoints: [{uuid: 'endpoint5', name: 'default'}],
-                conversation_endpoints: [{
-                    uuid: 'endpoint6',
-                    name: 'default'
-                }, {
-                    uuid: 'endpoint7',
-                    name: 'default'
-                }],
-                x: 500,
-                y: 220
-            }],
-            routing_entries: [{
-                uuid: 'connection1',
-                source: {uuid: 'endpoint1'},
-                target: {uuid: 'endpoint6'}
-            }]
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: ['apposit_sms', '*121#'],
+                        name: '*121#',
+                        description: 'Apposit Sms: *121#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint3': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint3',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'channel2': {
+                        type: 'channel',
+                        uuid: 'channel2',
+                        tag: ['sigh_sms', '*131#'],
+                        name: '*131#',
+                        description: 'Sigh Sms: *131#',
+                        utilization: 0.5,
+                        endpoints: {
+                            'endpoint4': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint4',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'router1': {
+                        type: 'router',
+                        router_type: 'keyword',
+                        uuid: 'router1',
+                        name: 'K',
+                        description: 'Keyword',
+                        endpoints: {
+                            'endpoint5': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint5',
+                                name: 'default'
+                            },
+                            'endpoint6': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint6',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'bulk-message1',
+                        description: 'Some Bulk Message App',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'conversation2': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation2',
+                        name: 'bulk-message2',
+                        description: 'Some Other Bulk Message App',
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint6': {
+                        source: 'endpoint1',
+                        target: 'endpoint6'
+                    },
+                    'endpoint6:endpoint1': {
+                        source: 'endpoint6',
+                        target: 'endpoint1'
+                    }
+                },
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {
+                    'channel1': {
+                        x: 840,
+                        y: 360
+                    },
+                    'channel2': {
+                        x: 840,
+                        y: 140
+                    },
+                    'router1': {
+                        x: 500,
+                        y: 220
+                    },
+                    'conversation1': {
+                        x: 220,
+                        y: 120,
+                        colour: '#f82943'
+                    },
+                    'conversation2': {
+                        x: 220,
+                        y: 340,
+                        colour: '#fbcf3b'
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint6': 'connection1',
+                    'endpoint6:endpoint1': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint6': 'router1'
+                        },
+                        path: [{
+                            x: 220,
+                            y: 120,
+                        }, {
+                            x: 500,
+                            y: 220
+                        }],
+                        colour: '#f82943'
+                    }
+                }
+            }
         };
     }));
 
     it('should initialise components', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        expect(_.values(componentManager.components)).to.have.length(6);
-    }));
+        var manager = new ComponentManager(data);
 
-    it('should load data', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager();
-        expect(componentManager.components).to.be.empty;
-        componentManager.load(data);
-        expect(_.values(componentManager.components)).to.have.length(6);
+        expect(manager.data).to.equal(data);
+
+        expect(manager.components).to.have.ownProperty('channel1');
+        expect(manager.components).to.have.ownProperty('channel2');
+        expect(manager.components).to.have.ownProperty('conversation1');
+        expect(manager.components).to.have.ownProperty('conversation2');
+        expect(manager.components).to.have.ownProperty('router1');
+        expect(manager.components).to.have.ownProperty('connection1');
+        expect(manager.components).to.have.ownProperty('connection1:0');
+        expect(manager.components).to.have.ownProperty('connection1:1');
+        expect(manager.components).to.have.ownProperty('endpoint1');
+        expect(manager.components).to.have.ownProperty('endpoint2');
+        expect(manager.components).to.have.ownProperty('endpoint3');
+        expect(manager.components).to.have.ownProperty('endpoint4');
+        expect(manager.components).to.have.ownProperty('endpoint5');
+        expect(manager.components).to.have.ownProperty('endpoint6');
+        expect(manager.components).to.have.ownProperty('endpoint1:endpoint6');
+        expect(manager.components).to.have.ownProperty('endpoint6:endpoint1');
     }));
 
     it('should reset components', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        expect(componentManager.components).not.to.be.empty;
-        componentManager.reset();
-        expect(componentManager.components).to.be.empty;
+        var manager = new ComponentManager(data);
+        expect(manager.data).to.deep.equal(data);
+        expect(manager.components).not.to.be.empty;
+
+        manager.reset();
+
+        expect(manager.components).to.be.empty;
+        expect(manager.data).to.deep.equal({
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {},
+                routing: {}
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {},
+                routing: {},
+                connections: {}
+            }
+        });
+    }));
+
+    it('should create component', inject(function (
+        ComponentManager, Channel, Conversation, Router,
+        Endpoint, Route, Connection, ControlPoint,
+        Menu, MenuItem) {
+
+        var manager = new ComponentManager(data);
+
+        var component = manager.createComponent({
+            id: 'channel1',
+            type: 'channel'
+        });
+        expect(component instanceof Channel).to.be.true;
+
+        component = manager.createComponent({
+            id: 'conversation1',
+            type: 'conversation'
+        });
+        expect(component instanceof Conversation).to.be.true;
+
+        component = manager.createComponent({
+            id: 'router1',
+            type: 'router'
+        });
+        expect(component instanceof Router).to.be.true;
+
+        component = manager.createComponent({
+            id: 'endpoint3',
+            type: 'channel_endpoint',
+            component: manager.getComponentById('channel1')
+        });
+        expect(component instanceof Endpoint).to.be.true;
+
+        component = manager.createComponent({
+            id: 'endpoint1',
+            type: 'conversation_endpoint',
+            component: manager.getComponentById('conversation1')
+        });
+        expect(component instanceof Endpoint).to.be.true;
+
+        component = manager.createComponent({
+            id: 'endpoint1:endpoint6',
+            type: 'route'
+        });
+        expect(component instanceof Route).to.be.true;
+
+        component = manager.createComponent({
+            id: 'connection1',
+            type: 'connection'
+        });
+        expect(component instanceof Connection).to.be.true;
+
+        component = manager.createComponent({
+            type: 'control_point',
+            index: 0,
+            connection: manager.getComponentById('connection1')
+        });
+        expect(component instanceof ControlPoint).to.be.true;
+
+        component = manager.createComponent({
+            id: 'menu1',
+            type: 'menu'
+        });
+        expect(component instanceof Menu).to.be.true;
+
+        component = manager.createComponent({
+            id: 'menu_item1',
+            type: 'menu_item'
+        });
+        expect(component instanceof MenuItem).to.be.true;
+
+        component = manager.createComponent({
+            type: 'not_supported'
+        });
+        expect(component).to.be.undefined;
     }));
 
     it('should add component', inject(function (ComponentManager, BaseComponent) {
-        var componentManager = new ComponentManager();
-        componentManager.addComponent(new BaseComponent({
-            id: 'component1',
-            type: 'test component'
+        var manager = new ComponentManager(data);
+        manager.addComponent(new BaseComponent({
+            id: 'test1',
+            type: 'test_component'
         }));
-        expect(_.values(componentManager.components)).to.have.length(1);
-        expect(componentManager.components['component1'].type).to.equal('test component');
+
+        expect(manager.components).to.have.ownProperty('test1');
     }));
 
     it('should get component by id', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        var conversation = componentManager.getComponent('conversation1');
-        expect(conversation).to.deep.equal(componentManager.components['conversation1']);
+        var manager = new ComponentManager(data);
+        var component = manager.getComponentById('conversation1');
+        expect(component).not.to.be.undefined;
+        expect(component.id).to.equal('conversation1');
     }));
 
-    it('should get endpoint by id', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        var endpoint = componentManager.getEndpoint('endpoint1');
-        expect(endpoint).to.deep.equal(componentManager.components['conversation1'].endpoints[0]);
+    it('should find components', inject(function (ComponentManager) {
+        var manager = new ComponentManager(data);
+        var components = manager.findComponents({ type: 'channel' });
+        expect(components).to.have.length(2);
+        expect(_.pluck(components, 'type')).to.deep.equal(['channel', 'channel']);
     }));
 
-    it('should remove component', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        expect(componentManager.components['conversation1']).not.to.be.empty;
-
-        var component = componentManager.components['conversation1'];
-        sinon.stub(component, 'beforeRemove');
-
-        componentManager.removeComponent('conversation1');
-        expect(component.beforeRemove.calledWith()).to.be.true;
-        expect(componentManager.components['conversation1']).to.be.undefined;
-        expect(componentManager.getConnections()).to.be.empty;
+    it('should delete component', inject(function (ComponentManager) {
+        var manager = new ComponentManager(data);
+        expect(manager.components).to.have.ownProperty('channel2');
+        manager.deleteComponent('channel2');
+        expect(manager.components['channel2']).to.be.undefined;
     }));
 
     it('should connect components', inject(function (ComponentManager, rfc4122) {
-        var componentManager = new ComponentManager(data);
-        expect(componentManager.getConnections()).to.have.length(1);
-
-        var conversation2 = componentManager.components['conversation2'];
-        var channel1 = componentManager.components['channel1'];
+        var manager = new ComponentManager(data);
+        expect(_.keys(data.layout.connections)).to.have.length(1);
 
         var stub = sinon.stub(rfc4122, 'v4');
-        stub.onCall(0).returns('route2');
-        stub.onCall(1).returns('connection2');
+        stub.onCall(0).returns('connection2');
 
-        componentManager.connectComponents(conversation2, null, channel1, null);
-        expect(componentManager.getConnections()).to.have.length(2);
+        var conversation = manager.getComponentById('conversation2');
+        var channel = manager.getComponentById('channel2');
 
-        var connection = componentManager.components['connection2'];
-        expect(connection).not.to.be.empty;
-        expect(connection.routes).to.have.length(1);
-        expect(connection.routes[0].source).to.deep.equal(conversation2.endpoints[0]);
-        expect(connection.routes[0].target).to.deep.equal(channel1.endpoints[0]);
-    }));
+        manager.connectComponents(conversation, null, channel, null);
 
-    it('should get components by type', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
+        var expected = {
+            endpoints: {
+                'endpoint2': 'conversation2',
+                'endpoint4': 'channel2'
+            },
+            path: [{
+                x: 220,
+                y: 340,
+            }, {
+                x: 840,
+                y: 140
+            }],
+            colour: 'grey'
+        };
+        expect(data.layout.connections['connection2']).to.deep.equal(expected);
 
-        var conversations = componentManager.getConversations();
-        expect(conversations).to.have.length(2);
-        expect(_.pluck(conversations, 'type')).to.deep.equal([
-            'conversation', 'conversation']);
+        expected = { source: 'endpoint2', target: 'endpoint4' };
+        expect(data.routing_table.routing['endpoint2:endpoint4']).to.deep.equal(expected);
 
-        var channels = componentManager.getChannels();
-        expect(channels).to.have.length(2);
-        expect(_.pluck(channels, 'type')).to.deep.equal([
-            'channel', 'channel']);
-
-        var routers = componentManager.getRouters();
-        expect(routers).to.have.length(1);
-        expect(_.pluck(routers, 'type')).to.deep.equal(['router']);
-
-        var connections = componentManager.getConnections();
-        expect(connections).to.have.length(1);
-        expect(_.pluck(connections, 'type')).to.deep.equal(['connection']);
-
-        var points = componentManager.getControlPoints();
-        expect(points).to.have.length(2);
-        expect(_.pluck(points, 'type')).to.deep.equal([
-            'control point', 'control point']);
-
-        var menus = componentManager.getMenus();
-        expect(menus).to.have.length(6);
-        expect(_.pluck(menus, 'type')).to.deep.equal([
-            'menu', 'menu', 'menu', 'menu', 'menu', 'menu']);
+        expect(data.layout.routing['endpoint2:endpoint4']).to.equal('connection2');
     }));
 
     it('should compute component layouts', inject(function (ComponentManager) {
-        var componentManager = new ComponentManager(data);
-        var meta = _.pluck(_.filter(componentManager.components, '_meta'), '_meta');
-        expect(meta).to.be.empty;
-        componentManager.layoutComponents();
-        meta = _.pluck(_.filter(componentManager.components, '_meta'), '_meta');
-        expect(meta).to.have.length(6);
-        var layouts = _.pluck(_.filter(meta, 'layout'), 'layout');
-        expect(meta).to.have.length(6);
+        var manager = new ComponentManager(data);
+
+        var channels = manager.findComponents({ type: 'channel' });
+        expect(_.filter(_.pluck(channels, '_meta'))).to.be.empty;
+
+        var routers = manager.findComponents({ type: 'router' });
+        expect(_.filter(_.pluck(routers, '_meta'))).to.be.empty;
+
+        var conversations = manager.findComponents({ type: 'conversation' });
+        expect(_.filter(_.pluck(conversations, '_meta'))).to.be.empty;
+
+        var connections = manager.findComponents({ type: 'connection' });
+        expect(_.filter(_.pluck(connections, '_meta'))).to.be.empty;
+
+        var menus = manager.findComponents({ type: 'menu' });
+        expect(_.filter(_.pluck(menus, '_meta'))).to.be.empty;
+
+        manager.layoutComponents();
+
+        expect(_.pluck(_.filter(_.pluck(channels, '_meta')), 'layout')).to.have.length(2);
+        expect(_.pluck(_.filter(_.pluck(routers, '_meta')), 'layout')).to.have.length(1);
+        expect(_.pluck(_.filter(_.pluck(conversations, '_meta')), 'layout')).to.have.length(2);
+        expect(_.pluck(_.filter(_.pluck(connections, '_meta')), 'layout')).to.have.length(1);
+        expect(_.pluck(_.filter(_.pluck(menus, '_meta')), 'layout')).to.have.length(6);
     }));
 
 });

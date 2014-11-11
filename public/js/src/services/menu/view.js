@@ -55,7 +55,7 @@ angular.module('vumigo.services').factory('menuComponent', ['$rootScope',
                     d3.event.stopPropagation();
 
                     $rootScope.$apply(function () {
-                        $rootScope.$emit(d.action, d.menu.component);
+                        $rootScope.$emit(d.event, d.menu.component);
                     });
                 });
 

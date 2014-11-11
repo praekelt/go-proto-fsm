@@ -1,5 +1,5 @@
 describe('connectionComponent', function () {
-    var element, componentManager, connection;
+    var element, data, componentManager, connection;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
@@ -12,33 +12,83 @@ describe('connectionComponent', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        componentManager = new ComponentManager({
-            conversations: [{
-                uuid: 'conversation1',
-                name: "Conversation 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
-                colour: '#red',
-                x: 100,
-                y: 100
-            }],
-            channels: [{
-                uuid: 'channel1',
-                name: "Channel 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
-                utilization: 0.4,
-                x: 200,
-                y: 200
-            }],
-            routers: [],
-            routing_entries: [{
-                source: { uuid: 'endpoint1' },
-                target: { uuid: 'endpoint2' }
-            }]
-        });
+        data = {
+            routing_table: {
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'Conversation 1',
+                        description: '',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: [],
+                        name: 'Channel 1',
+                        description: '',
+                        utilization: 0.4,
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                }
+            },
+            layout: {
+                components: {
+                    'conversation1': {
+                        x: 100,
+                        y: 100,
+                        colour: 'red'
+                    },
+                    'channel1': {
+                        x: 200,
+                        y: 200
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: 'red'
+                    }
+                }
+            }
+        };
 
-        var meta = componentManager.getConnections()[0].meta();
+        componentManager = new ComponentManager(data);
+
+        var meta = componentManager.getComponentById('connection1').meta();
         meta.selected = true;
 
         var drag = dragBehavior()
@@ -61,19 +111,19 @@ describe('connectionComponent', function () {
             .drag(drag);
 
         componentLayer.selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
 
         var channel = channelComponent()
             .drag(drag);
 
         componentLayer.selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
 
         connection = connectionComponent();
         connectionLayer.selectAll('.connection')
-            .data(componentManager.getConnections())
+            .data(componentManager.findComponents({ type: 'connection' }))
             .call(connection);
     }));
 
@@ -84,14 +134,14 @@ describe('connectionComponent', function () {
         expect(connections.eq(0).attr('d')).to.equal('M100,100L200,200');
         expect(connections.eq(0).attr('class').indexOf('selected')).not.to.equal(-1);
 
-        var component = componentManager.getComponent('channel1')
-        component.x = 300;
-        component.y = 300;
+        var component = componentManager.getComponentById('channel1')
+        component.x(300);
+        component.y(300);
 
         componentManager.layoutComponents();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.connection')
-            .data(componentManager.getConnections())
+            .data(componentManager.findComponents({ type: 'connection' }))
             .call(connection);
 
         expect(connections).to.have.length(1);
@@ -101,7 +151,7 @@ describe('connectionComponent', function () {
 });
 
 describe('controlPointComponent', function () {
-    var element, componentManager;
+    var element, data, componentManager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
@@ -115,31 +165,81 @@ describe('controlPointComponent', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        componentManager = new ComponentManager({
-            conversations: [{
-                uuid: 'conversation1',
-                name: "Conversation 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
-                colour: '#red',
-                x: 100,
-                y: 100
-            }],
-            channels: [{
-                uuid: 'channel1',
-                name: "Channel 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
-                utilization: 0.4,
-                x: 200,
-                y: 200
-            }],
-            routers: [],
-            routing_entries: [{
-                source: { uuid: 'endpoint1' },
-                target: { uuid: 'endpoint2' }
-            }]
-        });
+        data = {
+            routing_table: {
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'Conversation 1',
+                        description: '',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: [],
+                        name: 'Channel 1',
+                        description: '',
+                        utilization: 0.4,
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                }
+            },
+            layout: {
+                components: {
+                    'conversation1': {
+                        x: 100,
+                        y: 100,
+                        colour: 'red'
+                    },
+                    'channel1': {
+                        x: 200,
+                        y: 200
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: 'red'
+                    }
+                }
+            }
+        };
+
+        componentManager = new ComponentManager(data);
 
         // Configure behaviors
         var drag = dragBehavior()
@@ -173,7 +273,7 @@ describe('controlPointComponent', function () {
             .drag(drag);
 
         svg.selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
 
         // Draw channels
@@ -181,7 +281,7 @@ describe('controlPointComponent', function () {
             .drag(drag);
 
         svg.selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
 
         // Draw connections
@@ -189,7 +289,7 @@ describe('controlPointComponent', function () {
             .drag(connectionDrag);
 
         svg.selectAll('.connection')
-            .data(componentManager.getConnections())
+            .data(componentManager.findComponents({ type: 'connection' }))
             .call(connection);
 
         // Draw control points
@@ -197,7 +297,7 @@ describe('controlPointComponent', function () {
             .drag(controlPointDrag);
 
         svg.selectAll('.control-point')
-            .data(componentManager.getControlPoints())
+            .data(componentManager.findComponents({ type: 'control_point' }))
             .call(controlPoint);
     }));
 
@@ -227,7 +327,7 @@ describe('controlPointComponent', function () {
 });
 
 describe('routeComponent', function () {
-    var element, componentManager;
+    var element, data, componentManager;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
@@ -241,34 +341,86 @@ describe('routeComponent', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        componentManager = new ComponentManager({
-            conversations: [{
-                uuid: 'conversation1',
-                name: "Conversation 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
-                colour: '#red',
-                x: 100,
-                y: 100
-            }],
-            channels: [{
-                uuid: 'channel1',
-                name: "Channel 1",
-                description: "",
-                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
-                utilization: 0.4,
-                x: 200,
-                y: 200
-            }],
-            routers: [],
-            routing_entries: [{
-                source: { uuid: 'endpoint1' },
-                target: { uuid: 'endpoint2' }
-            }, {
-                source: { uuid: 'endpoint2' },
-                target: { uuid: 'endpoint1' }
-            }]
-        });
+        data = {
+            routing_table: {
+                components: {
+                    'conversation1': {
+                        type: 'conversation',
+                        conversation_type: 'bulk-message',
+                        uuid: 'conversation1',
+                        name: 'Conversation 1',
+                        description: '',
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'conversation_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    },
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        tag: [],
+                        name: 'Channel 1',
+                        description: '',
+                        utilization: 0.4,
+                        endpoints: {
+                            'endpoint2': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint2',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': {
+                        source: 'endpoint1',
+                        target: 'endpoint2'
+                    },
+                    'endpoint2:endpoint1': {
+                        source: 'endpoint2',
+                        target: 'endpoint1'
+                    }
+                }
+            },
+            layout: {
+                components: {
+                    'conversation1': {
+                        x: 100,
+                        y: 100,
+                        colour: 'red'
+                    },
+                    'channel1': {
+                        x: 200,
+                        y: 200
+                    }
+                },
+                routing: {
+                    'endpoint1:endpoint2': 'connection1',
+                    'endpoint2:endpoint1': 'connection1'
+                },
+                connections: {
+                    'connection1': {
+                        endpoints: {
+                            'endpoint1': 'channel1',
+                            'endpoint2': 'conversation1'
+                        },
+                        path: [{
+                            x: 840,
+                            y: 360,
+                        }, {
+                            x: 220,
+                            y: 120
+                        }],
+                        colour: 'red'
+                    }
+                }
+            }
+        };
+
+        componentManager = new ComponentManager(data);
 
         // Configure behaviors
         var drag = dragBehavior()
@@ -302,7 +454,7 @@ describe('routeComponent', function () {
             .drag(drag);
 
         svg.selectAll('.conversation')
-            .data(componentManager.getConversations())
+            .data(componentManager.findComponents({ type: 'conversation' }))
             .call(conversation);
 
         // Draw channels
@@ -310,7 +462,7 @@ describe('routeComponent', function () {
             .drag(drag);
 
         svg.selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
 
         // Draw connections
@@ -318,7 +470,7 @@ describe('routeComponent', function () {
             .drag(connectionDrag);
 
         svg.selectAll('.connection')
-            .data(componentManager.getConnections())
+            .data(componentManager.findComponents({ type: 'connection' }))
             .call(connection);
 
         // Draw control points
@@ -326,14 +478,14 @@ describe('routeComponent', function () {
             .drag(controlPointDrag);
 
         svg.selectAll('.control-point')
-            .data(componentManager.getControlPoints())
+            .data(componentManager.findComponents({ type: 'control_point' }))
             .call(controlPoint);
 
         // Draw arrows
         var route = routeComponent();
 
         svg.selectAll('.arrow')
-            .data(componentManager.getRoutes())
+            .data(componentManager.findComponents({ type: 'route' }))
             .call(route);
     }));
 

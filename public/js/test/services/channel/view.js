@@ -1,5 +1,5 @@
 describe('channelComponent', function () {
-    var element, componentManager, channel, layout;
+    var element, data, componentManager, channel, layout;
 
     beforeEach(module('uuid'));
     beforeEach(module('vumigo.services'));
@@ -10,17 +10,42 @@ describe('channelComponent', function () {
                 '<svg width="100" height="100"></svg>' +
             '</div>');
 
-        componentManager = new ComponentManager({
-            channels: [{
-                uuid: 'channel1',
-                name: "Channel 1",
-                description: "Test channel",
-                endpoints: [{ uuid: 'endpoint1', name: 'default' }],
-                utilization: 0.4,
-                x: 100,
-                y: 100
-            }]
-        });
+        data = {
+            routing_table: {
+                version: 'fsm-0.1',
+                campaign_id: 'campaign1',
+                components: {
+                    'channel1': {
+                        type: 'channel',
+                        uuid: 'channel1',
+                        name: "Channel 1",
+                        description: "Test channel",
+                        utilization: 0.4,
+                        endpoints: {
+                            'endpoint1': {
+                                type: 'channel_endpoint',
+                                uuid: 'endpoint1',
+                                name: 'default'
+                            }
+                        }
+                    }
+                },
+                routing: {},
+            },
+            layout: {
+                version: 'fsm-ui-0.1',
+                components: {
+                    'channel1': {
+                        x: 100,
+                        y: 100
+                    }
+                },
+                routing: {},
+                connections: {}
+            }
+        };
+
+        componentManager = new ComponentManager(data);
 
         var drag = dragBehavior()
             .canvasWidth(100)
@@ -33,11 +58,11 @@ describe('channelComponent', function () {
 
         componentManager.layoutComponents();
 
-        var meta = componentManager.getComponent('channel1').meta();
+        var meta = componentManager.getComponentById('channel1').meta();
         meta.selected = true;
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
     }));
 
@@ -48,7 +73,7 @@ describe('channelComponent', function () {
         var channel = channels.eq(0);
         expect(channel.attr('transform')).to.equal('translate(100,100)');
         expect(channel.attr('class').indexOf('selected')).not.to.equal(-1);
-        var meta = componentManager.getComponent('channel1').meta();
+        var meta = componentManager.getComponentById('channel1').meta();
         var r = meta.layout.outer.r;
         expect(channel.find('.disc.outer').eq(0).attr('r')).to.equal(String(r));
         r = meta.layout.inner.r;
@@ -69,22 +94,35 @@ describe('channelComponent', function () {
         var channels = element.find('.channel');
         expect(channels).to.have.length(1);
 
-        componentManager.load({
-            channels: [{
-                uuid: "channel2",
-                name: "Channel 2",
-                description: "Another channel",
-                endpoints: [{ uuid: 'endpoint2', name: 'default' }],
-                utilization: 0.7,
-                x: 500,
-                y: 500
-            }]
+        data.routing_table.components["channel2"] = {
+            type: 'channel',
+            uuid: 'channel2',
+            name: "Channel 2",
+            description: "Another channel",
+            utilization: 0.7,
+            endpoints: {
+                'endpoint2': {
+                    type: 'channel_endpoint',
+                    uuid: 'endpoint2',
+                    name: 'default'
+                }
+            }
+        };
+
+        data.layout.components["channel2"] = {
+            x: 500,
+            y: 500
+        };
+
+        componentManager.createComponent({
+            id: "channel2",
+            type: 'channel'
         });
 
         componentManager.layoutComponents();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
 
         channels = element.find('.channel');
@@ -98,7 +136,7 @@ describe('channelComponent', function () {
         componentManager.reset();
 
         d3.selectAll(element.find('svg').toArray()).selectAll('.channel')
-            .data(componentManager.getChannels())
+            .data(componentManager.findComponents({ type: 'channel' }))
             .call(channel);
 
         channels = element.find('.channel');

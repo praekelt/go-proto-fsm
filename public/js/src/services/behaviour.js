@@ -146,8 +146,8 @@ angular.module('vumigo.services').factory('dragBehavior', ['$rootScope',
                     if (y > canvasHeight) y = canvasHeight;
                 }
 
-                d.x = x;
-                d.y = y;
+                d.x(x);
+                d.y(y);
 
                 d3.select(this).attr('transform', 'translate(' + [x, y] + ')');
 

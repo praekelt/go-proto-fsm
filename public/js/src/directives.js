@@ -16,6 +16,7 @@ directives.directive('goCampaignDesigner', [
     'routeComponent',
     'menuComponent',
     'ComponentManager',
+    'RoutingComponent',
     'Conversation',
     'Router',
     'Channel',
@@ -23,12 +24,13 @@ directives.directive('goCampaignDesigner', [
     function ($rootScope, $modal, canvasBuilder, dragBehavior,
               conversationComponent, channelComponent, routerComponent,
               connectionComponent, controlPointComponent, routeComponent,
-              menuComponent, ComponentManager, Conversation, Router, Channel, Endpoint) {
+              menuComponent, ComponentManager, RoutingComponent, Conversation,
+              Router, Channel, Endpoint) {
 
         var canvasWidth = 2048;
         var canvasHeight = 2048;
         var gridCellSize = 20;
-        var componentManager = new ComponentManager();
+        var componentManager = null;
 
         /**
          * Directive controller constructor.
@@ -53,7 +55,7 @@ directives.directive('goCampaignDesigner', [
             }
 
             // Initialise the component manager
-            componentManager.load($scope.data);
+            componentManager = new ComponentManager($scope.data);
 
             $scope.selectedComponentId = null;
             $scope.selectedEndpointId = null;
@@ -69,174 +71,60 @@ directives.directive('goCampaignDesigner', [
                 $scope.refresh();
             };
 
-            /**
-             * Open conversation form modal dialog.
-             */
-            $scope.openConversationForm = function (conversation) {
-                $modal.open({
-                    templateUrl: '/templates/conversation_form_modal.html',
+            $scope.openComponentForm = function (options) {
+                var templates = {
+                    'conversation': '/templates/conversation_form_modal.html',
+                    'router': '/templates/router_form_modal.html',
+                    'channel': '/templates/channel_form_modal.html'
+                };
+
+                return $modal.open({
+                    templateUrl: templates[options.component.type],
                     size: 'md',
                     controller: ['$scope', function ($scope) {
-                        $scope.conversation = conversation;
-                        $scope.data = {};
+                        var properties = {};
 
-                        if (conversation) {
-                            $scope.data.name = conversation.name;
-                            $scope.data.description = conversation.description;
-                            $scope.data.colour = conversation.colour;
-                        }
-                    }]
-                }).result.then(function (data) {
-                    if (conversation) {
-                        conversation.name = data.name;
-                        conversation.description = data.description;
-                        conversation.colour = data.colour;
-                        $scope.refresh();
+                        $scope.component = options.component;
+                        $scope.editing = options.editing;
 
-                    } else {
-                        $scope.newComponent = new Conversation({
-                            name: data.name,
-                            description: data.description,
-                            colour: data.colour
-                        });
-                    }
-                });
-            };
-
-            /**
-             * Open channel form modal dialog.
-             */
-            $scope.openChannelForm = function (channel) {
-                $modal.open({
-                    templateUrl: '/templates/channel_form_modal.html',
-                    size: 'md',
-                    controller: ['$scope', function ($scope) {
-                        $scope.channel = channel;
-                        $scope.data = {};
-
-                        if (channel) {
-                            $scope.data.name = channel.name;
-                            $scope.data.description = channel.description;
-                        }
-                    }]
-                }).result.then(function (data) {
-                    if (channel) {
-                        channel.name = data.name;
-                        channel.description = data.description;
-                        $scope.refresh();
-
-                    } else {
-                        $scope.newComponent = new Channel({
-                            name: data.name,
-                            description: data.description
-                        });
-                    }
-                });
-            };
-
-            /**
-             * Open router form modal dialog.
-             */
-            $scope.openRouterForm = function (router) {
-                $modal.open({
-                    templateUrl: '/templates/router_form_modal.html',
-                    size: 'md',
-                    controller: ['$scope', function ($scope) {
-                        $scope.router = router;
-                        $scope.data = {
-                            endpoints: [{ name: "" }]
-                        };
-
-                        if (router) {
-                            $scope.data.name = router.name;
-
-                            var endpoints = _.reject(router.endpoints, function (endpoint) {
-                                return _.isEqual(endpoint.name, 'default');
-                            });
-
-                            $scope.data.endpoints =  _.map(endpoints, function (endpoint) {
-                                return {
-                                    id: endpoint.id,
-                                    name: endpoint.name,
-                                    connected: !_.isEmpty(endpoint.connections)
-                                };
-                            });
-                        }
-
-                        $scope.addEndpoint = function (form) {
-                            $scope.data.endpoints.push({ name: "" });
-                            form.$setDirty();
-                        };
-
-                        $scope.removeEndpoint = function (form, index) {
-                            $scope.data.endpoints.splice(index, 1);
-                            form.$setDirty();
-                        };
-                    }]
-                }).result.then(function (data) {
-                    if (router) {
-                        router.name = data.name;
-
-                        router.endpoints = _.remove(router.endpoints, function (endpoint) {
-                            if (_.isEqual(endpoint.name, 'default')) return true;
-                            return !_.isUndefined(_.find(data.endpoints, function (d) {
-                                return _.isEqual(d.id, endpoint.id);
-                            }));
-                        });
-
-                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
-                            if (_.isUndefined(d.id)) {
-                                router.addEndpoint(new Endpoint({
-                                    name: d.name,
-                                    accepts: ['conversation']
-                                }));
-
-                            } else {
-                                var endpoint = router.getEndpoint(d.id);
-                                endpoint.name = d.name;
+                        $scope.property = function(options) {
+                            var object = options.object || $scope.component;
+                            var name = options.name;
+                            var id = object.id + '_' + name;
+                            if (!_.has(properties, id)) {
+                                properties[id] = _.bind(object[name], object);
                             }
-                        });
-
-                        $scope.refresh();
-
-                    } else {
-                        var options = {
-                            name: data.name,
-                            endpoints: []
+                            return properties[id];
                         };
+                    }]
+                }).result;
+            };
 
-                        _.forEach(_.filter(data.endpoints, 'name'), function (d) {
-                            options.endpoints.push(new Endpoint({
-                                name: d.name,
-                                accepts: ['conversation']
-                            }));
-                        });
-
-                        $scope.newComponent = new Router(options);
-                    }
+            $scope.add = function (options) {
+                var component = componentManager.createComponent(options);
+                $scope.openComponentForm({
+                    component: component
+                }).then(function () {
+                    $scope.newComponent = component;
+                }, function () {
+                    componentManager.deleteComponent(component);
                 });
             };
 
             $scope.edit = function () {
                 if ($scope.selectedComponentId) {
-                    var component = componentManager.getComponent($scope.selectedComponentId);
-                    switch (component.type) {
-                        case 'conversation':
-                            $scope.openConversationForm(component);
-                            break;
+                    var component = componentManager
+                        .getComponentById($scope.selectedComponentId);
 
-                        case 'router':
-                            $scope.openRouterForm(component);
-                            break;
-
-                        case 'channel':
-                            $scope.openChannelForm(component);
-                            break;
-
-                        default:
-                            // TODO: Emit error signal
-                            break;
-                    }
+                    var json = component.toJson();
+                    $scope.openComponentForm({
+                        component: component,
+                        editing: true
+                    }).then(function () {
+                        $scope.refresh();
+                    }, function () {
+                        component.fromJson(json);
+                    });
                 }
             };
 
@@ -258,10 +146,18 @@ directives.directive('goCampaignDesigner', [
                         templateUrl: '/templates/confirm_modal.html',
                         size: 'md',
                         controller: ['$scope', function ($scope) {
-                            $scope.component = componentManager.getComponent(componentId);
+                            var component = componentManager.getComponentById(componentId);
+
+                            $scope.type = component.type;
+
+                            if (_.isFunction(component.name)) {
+                                $scope.name = component.name();
+                            } else {
+                                $scope.name = component.name;
+                            }
                         }]
                     }).result.then(function (data) {
-                        componentManager.removeComponent(componentId);
+                        componentManager.deleteComponent(componentId);
                         $scope.clearSelection();
                     });
                 }
@@ -275,47 +171,40 @@ directives.directive('goCampaignDesigner', [
                 $scope.connectPressed = !$scope.connectPressed;
             };
 
-            // TODO: With the new release of AngularJS (1.3.x) use `$scope.$watchGroup`
-            $scope.$watch(function () {
-                return angular.toJson({
-                    id: $scope.selectedComponentId,
-                    endpointId: $scope.selectedEndpointId
-                });
-
-            }, function (newValue, oldValue) {
-                newValue = angular.fromJson(newValue);
-                oldValue = angular.fromJson(oldValue);
+            $scope.$watchGroup(['selectedComponentId', 'selectedEndpointId'], function (newValues, oldValues) {
+                var newId = newValues[0];
+                var newEndpointId = newValues[1];
+                var oldId = oldValues[0];
+                var oldEndpointId = oldValues[1];
 
                 // The very first time $watch fires this function oldValue will be the same as newValue
-                if (newValue.id == oldValue.id &&
-                        newValue.endpointId == oldValue.endpointId)
-                    return;
+                if (newId == oldId && newEndpointId == oldEndpointId) return;
 
                 // If there was a component selected, unselect it.
                 var oldComponent = null;
                 var oldEndpoint = null;
-                if (oldValue.id) {
-                    oldComponent = componentManager.getComponent(oldValue.id);
+                if (oldId) {
+                    oldComponent = componentManager.getComponentById(oldId);
                     if (oldComponent) {
                         oldComponent.meta().selected = false;
 
                         // If the selected component had a selected endpoint, unselect it
-                        if (oldValue.endpointId) {
-                            oldEndpoint = componentManager.getEndpoint(oldValue.endpointId);
+                        if (oldEndpointId) {
+                            oldEndpoint = componentManager.getComponentById(oldEndpointId);
                             oldEndpoint.meta().selected = false;
                         }
                     }
                 }
 
                 // If a new component has been selected update its metadata
-                if (newValue.id) {
-                    var component = componentManager.getComponent(newValue.id);
+                if (newId) {
+                    var component = componentManager.getComponentById(newId);
                     component.meta().selected = true;
 
                     // If the user selected a specific endpoint update it metadata
                     var endpoint = null;
-                    if (newValue.endpointId) {
-                        endpoint = componentManager.getEndpoint(newValue.endpointId);
+                    if (newEndpointId) {
+                        endpoint = componentManager.getComponentById(newEndpointId);
                         endpoint.meta().selected = true;
                     }
 
@@ -459,37 +348,37 @@ directives.directive('goCampaignDesigner', [
                 componentManager.layoutComponents();
 
                 componentLayer.selectAll('.conversation')
-                    .data(componentManager.getConversations(),
+                    .data(componentManager.findComponents({ type: 'conversation' }),
                           function (d) { return d.id; })
                     .call(conversation);
 
                 componentLayer.selectAll('.router')
-                    .data(componentManager.getRouters(),
+                    .data(componentManager.findComponents({ type: 'router' }),
                           function (d) { return d.id; })
                     .call(router);
 
                 componentLayer.selectAll('.channel')
-                    .data(componentManager.getChannels(),
+                    .data(componentManager.findComponents({ type: 'channel' }),
                           function (d) { return d.id; })
                     .call(channel);
 
                 connectionLayer.selectAll('.connection')
-                    .data(componentManager.getConnections(),
+                    .data(componentManager.findComponents({ type: 'connection' }),
                           function (d) { return d.id; })
                     .call(connection);
 
                 connectionLayer.selectAll('.control-point')
-                    .data(componentManager.getControlPoints(),
+                    .data(componentManager.findComponents({ type: 'control_point' }),
                           function (d) { return d.id; })
                     .call(controlPoint);
 
                 connectionLayer.selectAll('.route')
-                    .data(componentManager.getRoutes(),
+                    .data(componentManager.findComponents({ type: 'route' }),
                           function (d) { return d.id; })
                     .call(route);
 
                 componentLayer.selectAll('.menu')
-                    .data(componentManager.getMenus(),
+                    .data(componentManager.findComponents({ type: 'menu' }),
                           function (d) { return d.id; })
                     .call(menu);
             }
@@ -504,9 +393,8 @@ directives.directive('goCampaignDesigner', [
 
             function clicked(event, coordinates) {
                 if (scope.newComponent) {
-                    scope.newComponent.x = coordinates[0];
-                    scope.newComponent.y = coordinates[1];
-                    componentManager.addComponent(scope.newComponent);
+                    scope.newComponent.x(coordinates[0]);
+                    scope.newComponent.y(coordinates[1]);
                     scope.newComponent = null;
                     repaint();
 

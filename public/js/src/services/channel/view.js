@@ -27,7 +27,7 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
 
                 selection
                     .attr('transform', function (d) {
-                        return 'translate(' + [d.x, d.y] + ')';
+                        return 'translate(' + [d.x(), d.y()] + ')';
                     })
                     .classed('selected', function (d) {
                         return d.meta().selected;
@@ -41,7 +41,7 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
 
                 selection.selectAll('.name')
                     .attr('x', function (d) { return d.meta().layout.name.x; })
-                    .text(function (d) { return d.name; });
+                    .text(function (d) { return d.name(); });
 
                 selection.selectAll('.description')
                     .attr('x', function (d) { return d.meta().layout.description.x; })
@@ -51,7 +51,7 @@ angular.module('vumigo.services').factory('channelComponent', ['boundingBox',
 
                         return parseInt(fontSize);
                     })
-                    .text(function (d) { return d.description; });
+                    .text(function (d) { return d.description(); });
 
                 selection.call(bBox);
             }
